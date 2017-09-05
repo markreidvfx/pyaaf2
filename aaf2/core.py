@@ -72,6 +72,7 @@ class AAFObject(object):
 
     def write_properties(self):
         f = self.dir.touch("properties").open(mode='w')
+        # print("writing", f.dir.path())
         byte_order = 0x4c
         entry_count = len(self.property_entries)
         version = properties.PROPERTY_VERSION
@@ -84,6 +85,16 @@ class AAFObject(object):
             write_u16le(f, p.pid)
             write_u16le(f, p.format)
             write_u16le(f, len(p.data))
+
+        # write the data
+        for p in self.property_entries.values():
+            f.write(p.data)
+
+        # write index's
+        for p in self.property_entries.values():
+            if isinstance(p, properties.SFStrongRefSet):
+                p.write_index()
+
 
     def detach(self):
         pass
@@ -120,7 +131,6 @@ class AAFObject(object):
             if propertydef.property_name == key:
                 fmt = propertydef.store_format
                 p = property_formats[fmt](self, propertydef.pid, fmt)
-                print(type(p), p)
                 return p
 
         return default

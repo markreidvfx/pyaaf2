@@ -78,12 +78,9 @@ class ClassDef(core.AAFObject):
         self.uuid == other.uuid
 
     def isinstance(self, other):
-        if not isinstance(other, ClassDef):
-            other = other.classdef
         for classdef in other.relatives():
             if classdef.uuid == self.uuid:
                 return True
-
         return False
 
 
@@ -259,10 +256,16 @@ class MetaDictionary(core.AAFObject):
 
     def setup_empty(self):
         d = {}
-        for name, typedef in self.typedefs_by_name.items():
+        for name, typedef in self.typedefs_by_uuid.items():
             d[str(uuid.uuid4())] = typedef
 
         self['TypeDefinitions'].value = d
+
+        d = {}
+        for name, classdefs in self.classdefs_by_uuid.items():
+            d[str(uuid.uuid4())] = classdefs
+
+        self['ClassDefinitions'].value = d
 
     def add_classdef(self, name, *args):
         c = ClassDef(self.root, name, *args[:3])

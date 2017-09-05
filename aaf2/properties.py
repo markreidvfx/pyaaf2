@@ -11,6 +11,9 @@ from .utils import (
     read_u8,
     read_u16le,
     read_u32le,
+    write_u8,
+    write_u16le,
+    write_u32le,
     mangle_name,
     )
 
@@ -221,7 +224,11 @@ class SFStrongRefSet(SFStrongRefArray):
         self.references = {}
         self.ref = None
         self.objects = {}
+        self.local_map = {}
         self.next_free_key = 0
+        self.last_free_key = 0
+        self.key_size = 0
+        self.index_pid = 0
 
     def encode(self, data):
         return data.encode("utf-16le") + b"\x00" + b"\x00"
@@ -232,6 +239,7 @@ class SFStrongRefSet(SFStrongRefArray):
         self.ref = None
         self.ref = data[:-2].decode("utf-16le")
         self.objects = {}
+        self.local_map = {}
 
 
         if not self.ref:
@@ -244,10 +252,10 @@ class SFStrongRefSet(SFStrongRefArray):
 
         f = index_dir.open('r')
         count = read_u32le(f)
-        next_free_key = read_u32le(f)
-        last_free_key = read_u32le(f)
-        pid = read_u16le(f)
-        key_size = read_u8(f)
+        self.next_free_key = read_u32le(f)
+        self.last_free_key = read_u32le(f)
+        self.index_pid = read_u16le(f)
+        self.key_size = read_u8(f)
 
         # f = StringIO(f.read())
 
@@ -255,9 +263,27 @@ class SFStrongRefSet(SFStrongRefArray):
             local_key = read_u32le(f)
             ref_count = read_u32le(f)
 
-            key = f.read(key_size).encode("hex")
+            key = f.read(self.key_size).encode("hex")
             ref = "%s{%x}" % (self.ref, local_key)
+            self.local_map[local_key] = ref
             self.references[key] = ref
+
+    def write_index(self):
+        f = self.root.dir.touch(self.ref + " index").open(mode='w')
+        count = len(self.references)
+
+        write_u32le(f, count)
+        write_u32le(f, self.next_free_key)
+        write_u32le(f, self.last_free_key)
+        write_u16le(f, self.index_pid)
+        write_u8(f, self.key_size)
+
+        i = 0
+
+        for key, value in self.references.items():
+            write_u32le(f, i)
+            write_u32le(f, 1)
+            f.write(key.decode("hex"))
 
     def items(self):
 
@@ -274,7 +300,7 @@ class SFStrongRefSet(SFStrongRefArray):
     @property
     def value(self):
 
-        if self.objects:
+        if len(self.objects) == len(self.references):
             return self.objects
         d = {}
         for key, ref in self.items():
@@ -288,18 +314,24 @@ class SFStrongRefSet(SFStrongRefArray):
         classdef = typedef.member_typedef.ref_classdef
 
         for key, obj in value.items():
-            if not classdef.isinstance(obj):
+            if not classdef.isinstance(obj.classdef):
                 raise Exception()
 
         self.objects = value
 
         if self.ref is None:
             propdef = self.propertydef
-            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
+            self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode(self.ref)
+
+        # for key, obj in value.items():
+
 
         if not self.pid in self.root.property_entries:
             self.root.property_entries[self.pid] = self
+
+    def attach(self):
+        pass
 
     def __repr__(self):
         return "<%s to %s %d items>" % (self.__class__.__name__, str(self.ref), len(self.references))
