@@ -360,8 +360,21 @@ class DirEntry(object):
     def isdir(self):
         return self.type in ('storage', 'root storage')
 
+    def isroot(self):
+        return self.type == 'root storage'
+
     def listdir(self):
         return self.storage.listdir(self)
+
+    def makedir(self, relative_path, class_id = None):
+        if not self.isdir():
+            raise Exception()
+        sep = '/'
+        if self.isroot():
+            sep = ''
+
+        path = self.path() + sep + relative_path
+        return self.storage.makedir(path, class_id)
 
     def isfile(self):
         return self.type == 'stream'
@@ -371,6 +384,18 @@ class DirEntry(object):
             if item.name.upper() == name.upper():
                 return item
         return default
+
+    def touch(self, name):
+        item = self.get(name, None)
+        if item:
+            return item
+
+        sep = '/'
+        if self.isroot():
+            sep = ''
+
+        path = self.path() + sep + name
+        return self.storage.create_dir_entry(path, 'stream', None)
 
     def write(self):
         f = self.storage.f
@@ -470,7 +495,13 @@ class CompoundFileBinary(object):
 
         self.debug_grow = False
 
-        if self.f.mode in ("r", "r+", "rb", 'rb+'):
+        if isinstance(self.f, StringIO):
+            self.mode = 'wb+'
+        else:
+            self.mode = self.f.mode
+
+
+        if self.mode in ("r", "r+", "rb", 'rb+'):
 
             self.read_header()
             self.read_fat()
@@ -500,7 +531,7 @@ class CompoundFileBinary(object):
             self.write_fat()
 
     def close(self):
-        if self.f.mode in ("r", "rb"):
+        if self.mode in ("r", "rb"):
             return
 
         self.write_header()

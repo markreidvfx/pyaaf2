@@ -51,3 +51,26 @@ def read_filetime(f):
 
 def write_filetime(f, value):
     write_u64le(f, value)
+
+def squeeze_name(name, size):
+    if len(name) <= size:
+        return name
+
+    half = size//2
+    new_name = ""
+    for i in range(size):
+        if i < half:
+            ch = name[i]
+        elif i == half:
+            ch = '-'
+        else:
+            ch = name[len(name) - (size-i)]
+        new_name += ch
+
+    return new_name
+
+def mangle_name(name, pid, size):
+    p = "%x" % pid
+    max_size = size - len(p) - 1 -1
+    new_name = squeeze_name(name, max_size)
+    return "%s-%s" % (new_name, p)

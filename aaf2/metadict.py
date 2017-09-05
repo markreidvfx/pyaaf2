@@ -16,11 +16,13 @@ from .model import datadefs
 from . import core
 from .utils import read_u16le
 
+import uuid
 from uuid import UUID
 
 class PropertyDef(core.AAFObject):
     def __init__(self, root, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         super(PropertyDef, self).__init__(root)
+        self.class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
         self.property_name = name
         self.uuid = None
         if uuid:
@@ -33,6 +35,9 @@ class PropertyDef(core.AAFObject):
     @property
     def typedef(self):
         return self.root.metadict.lookup_typedef(self.typedef_name)
+    @property
+    def store_format(self):
+        return self.typedef.store_format
 
     def read_properties(self):
         super(PropertyDef, self).read_properties()
@@ -60,6 +65,7 @@ class PropertyDef(core.AAFObject):
 class ClassDef(core.AAFObject):
     def __init__(self, root=None, name=None, uuid=None, parent=None, abstract=None):
         super(ClassDef, self).__init__(root)
+        self.class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
         self.class_name = name
         self.uuid = None
         if uuid:
@@ -67,6 +73,19 @@ class ClassDef(core.AAFObject):
         self.parent_name = parent
         self.abstract = abstract
         self._propertydefs = []
+
+    def __eq__(self, other):
+        self.uuid == other.uuid
+
+    def isinstance(self, other):
+        if not isinstance(other, ClassDef):
+            other = other.classdef
+        for classdef in other.relatives():
+            if classdef.uuid == self.uuid:
+                return True
+
+        return False
+
 
     @property
     def name(self):
@@ -133,9 +152,23 @@ class ClassDef(core.AAFObject):
     def __repr__(self):
         return "<%s %s>" % (self.class_name, "ClassDef")
 
+root_classes = {
+#Hack property ids are class ids
+'Root' : ('b3b398a5-1c90-11d4-8053-080036210804', None, True, {
+    "Header"              : (None, 0x0002, "HeaderStrongRefence", False, False),
+    "MetaDictionary"      : (None, 0x0001, "MetaDictionaryStrongReference", False, False),
+})
+}
+
+root_types = {
+"HeaderStrongRefence"             : (None, "Header"),
+"MetaDictionaryStrongReference"   : (None, "MetaDictionary"),
+}
+
 class MetaDictionary(core.AAFObject):
     def __init__(self, root):
         super(MetaDictionary, self).__init__(root)
+        self.class_id = UUID("0d010101-0225-0000-060e-2b3402060101")
         self.classdefs_by_name = {}
         self.classdefs_by_uuid = {}
         self.typedefs_by_name = {}
@@ -143,20 +176,21 @@ class MetaDictionary(core.AAFObject):
 
         self.typedefs_classes = {}
 
+        for name, args in root_classes.items():
+            self.add_classdef(name, *args)
+
         for name, args in classdefs.classdefs.items():
-            c = ClassDef(self.root, name, *args[:3])
-
-            for prop_name, prop_args in args[3].items():
-                p = PropertyDef(self.root, prop_name, *prop_args)
-                c.propertydefs.append(p)
-
-            self.classdefs_by_name[name]   = c
-            self.classdefs_by_uuid[c.uuid] = c
+            self.add_classdef(name, *args)
 
         for alias, name in classdefs.aliases.items():
             self.classdefs_by_name[alias]= self.classdefs_by_name[name]
 
         # setup typedefs
+
+        for name, args in root_types.items():
+            t = types.TypeDefStrongRef(self.root, name, *args)
+            self.typedefs_by_name[name] = t
+
         for name, args in typedefs.ints.items():
             t = types.TypeDefInt(self.root, name, *args)
             self.typedefs_by_name[name] = t
@@ -221,7 +255,24 @@ class MetaDictionary(core.AAFObject):
 
         for name, typedef in self.typedefs_by_name.items():
             self.typedefs_by_uuid[typedef.auid] = typedef
-            self.typedefs_classes[typedef.base_auid] = typedef.__class__
+            self.typedefs_classes[typedef.class_id] = typedef.__class__
+
+    def setup_empty(self):
+        d = {}
+        for name, typedef in self.typedefs_by_name.items():
+            d[str(uuid.uuid4())] = typedef
+
+        self['TypeDefinitions'].value = d
+
+    def add_classdef(self, name, *args):
+        c = ClassDef(self.root, name, *args[:3])
+
+        for prop_name, prop_args in args[3].items():
+            p = PropertyDef(self.root, prop_name, *prop_args)
+            c.propertydefs.append(p)
+
+        self.classdefs_by_name[name]   = c
+        self.classdefs_by_uuid[c.uuid] = c
 
 
     def lookup_class(self, class_id):
@@ -240,7 +291,17 @@ class MetaDictionary(core.AAFObject):
     def lookup_typedef(self, t):
         if isinstance(t, UUID):
             return self.typedefs_by_uuid.get(t, None)
+
+        # if t == 'MetaDictionaryStrongReference':
+
+
         return self.typedefs_by_name.get(t, None)
+
+
+    def lookup_classdef(self, t):
+        if isinstance(t, UUID):
+            return self.classdefs_by_uuid.get(t, None)
+        return self.classdefs_by_name.get(t, None)
 
     @property
     def classdef(self):
@@ -251,8 +312,6 @@ class MetaDictionary(core.AAFObject):
         for key, typedef in self['TypeDefinitions'].items():
             name = typedef.type_name
             uuid = typedef.auid
-
-
 
             self.typedefs_by_name[name] = typedef
             self.typedefs_by_uuid[uuid] = typedef

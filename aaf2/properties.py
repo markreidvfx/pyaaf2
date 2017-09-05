@@ -11,6 +11,7 @@ from .utils import (
     read_u8,
     read_u16le,
     read_u32le,
+    mangle_name,
     )
 
 SF_DATA                                   = 0x82
@@ -29,8 +30,10 @@ SF_OPAQUE_STREAM                          = 0x40
 SF_DATA_VECTOR                            = 0xD2
 SF_DATA_SET                               = 0xDA
 
+PROPERTY_VERSION=32
+
 class PropertyItem(object):
-    def __init__(self, root, pid, format, version):
+    def __init__(self, root, pid, format, version=PROPERTY_VERSION):
         self.root = root
         self.pid = pid
         self.format = format
@@ -111,17 +114,57 @@ class SFObjectRefArray(SFObjectRef):
     pass
 
 class SFStrongRef(SFObjectRef):
+    def __init__(self, root, pid, format, version=PROPERTY_VERSION):
+        super(SFStrongRef, self).__init__(root, pid, format, version)
+        self.ref = None
+        self.object = None
+
     def decode(self, data):
+        self.data = data
         #null terminated
         self.ref = data[:-2].decode("utf-16le")
+
+    def encode(self, data):
+        return data.encode("utf-16le") + b"\x00" + b"\x00"
 
     def __repr__(self):
         return "<%s %s to %s>" % (self.name, self.__class__.__name__, str(self.ref))
 
     @property
     def value(self):
+        if self.object:
+            return self.object
         dir_entry = self.root.dir.get(self.ref)
-        return self.root.root.read_object(dir_entry)
+        if dir_entry:
+            self.object = self.root.root.read_object(dir_entry)
+        return self.object
+
+
+    @value.setter
+    def value(self, value):
+
+        typedef = self.typedef
+        classdef = typedef.ref_classdef
+
+        if value.classdef != classdef:
+            raise Exception("must be instance of: %s" % classedef.class_name)
+
+        if self.ref is None:
+            propdef = self.propertydef
+            self.ref = mangle_name(propdef.property_name, self.pid, 32)
+            self.data = self.encode(self.ref)
+
+        self.object = value
+        if not self.pid in self.root.property_entries:
+            self.root.property_entries[self.pid] = self
+
+        # attach
+        if self.root.dir:
+            dir_entry = self.root.dir.get(self.ref)
+            if dir_entry is None:
+                dir_entry = self.root.dir.makedir(self.ref)
+
+            value.attach(dir_entry)
 
 # abtract for referenece arrays
 class SFStrongRefArray(SFObjectRefArray):
@@ -173,13 +216,24 @@ class SFStrongRefVector(SFStrongRefArray):
 
 
 class SFStrongRefSet(SFStrongRefArray):
+    def __init__(self, root, pid, format, version=PROPERTY_VERSION):
+        super(SFStrongRefSet, self).__init__(root, pid, format, version)
+        self.references = {}
+        self.ref = None
+        self.objects = {}
+        self.next_free_key = 0
+
+    def encode(self, data):
+        return data.encode("utf-16le") + b"\x00" + b"\x00"
+
     def decode(self, data):
+        self.data = data
         self.references = {}
         self.ref = None
         self.ref = data[:-2].decode("utf-16le")
         self.objects = {}
 
-    # def read_index(self, dir_entry):
+
         if not self.ref:
             return
 
@@ -203,16 +257,19 @@ class SFStrongRefSet(SFStrongRefArray):
 
             key = f.read(key_size).encode("hex")
             ref = "%s{%x}" % (self.ref, local_key)
-
-            # if ref_count > 1:
-            # print("???", pid, ref_count, key, ref)
-
-            self.references[key] = (ref, ref_count)
+            self.references[key] = ref
 
     def items(self):
-        for key, (ref, ref_count) in self.references.items():
+
+        for key, ref in self.references.items():
+            if key in self.objects:
+                yield (key, self.objects[key])
+
             dir_entry = self.root.dir.get(ref)
-            yield (key, self.root.root.read_object(dir_entry))
+            obj = self.root.root.read_object(dir_entry)
+            self.objects[key] = obj
+
+            yield (key, obj)
 
     @property
     def value(self):
@@ -224,6 +281,25 @@ class SFStrongRefSet(SFStrongRefArray):
             d[key] = ref
         self.objects = d
         return d
+
+    @value.setter
+    def value(self, value):
+        typedef = self.typedef
+        classdef = typedef.member_typedef.ref_classdef
+
+        for key, obj in value.items():
+            if not classdef.isinstance(obj):
+                raise Exception()
+
+        self.objects = value
+
+        if self.ref is None:
+            propdef = self.propertydef
+            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
+            self.data = self.encode(self.ref)
+
+        if not self.pid in self.root.property_entries:
+            self.root.property_entries[self.pid] = self
 
     def __repr__(self):
         return "<%s to %s %d items>" % (self.__class__.__name__, str(self.ref), len(self.references))

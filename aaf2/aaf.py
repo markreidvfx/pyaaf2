@@ -12,6 +12,9 @@ from .utils import (
     read_u8,
     read_u16le,
     read_u32le,
+    write_u8,
+    write_u16le,
+    write_u32le,
     )
 
 
@@ -20,9 +23,34 @@ from .core import AAFObject
 from .properties import SFStrongRef, SFStrongRefArray
 from .metadict import MetaDictionary
 
+
+class AAFFactory(object):
+
+    def __init__(self, root):
+        self.root = root
+        self.metadict = root.metadict
+        self.class_name = None
+
+    def __getattr__(self, name):
+        self.class_name = name
+        return self.create_instance
+
+    def from_name(self, name, *args, **kwargs):
+
+        classdef = self.metadict.lookup_classdef(name)
+        if classdef is None:
+            raise Exception("no class found with name: %s" % name)
+        obj = AAFObject(self.root, *args, **kwargs)
+        obj.class_id = classdef.uuid
+
+        return obj
+
+    def create_instance(self, *args, **kwargs):
+        return self.from_name(self.class_name, *args, **kwargs)
+
 class AAFFile(object):
 
-    def __init__(self, path, mode='r'):
+    def __init__(self, path=None, mode='r'):
 
         if mode in ('r', 'rb'):
             mode = 'rb'
@@ -33,20 +61,18 @@ class AAFFile(object):
         else:
             raise Exception("invalid mode: %s" % mode)
         self.mode = mode
-        self.f = open(path, mode)
+        if path is None:
+            self.mode = 'wb+'
+            self.f = StringIO()
+        else:
+            self.f = open(path, mode)
         self.cfb = CompoundFileBinary(self.f)
         self.weakref_table = []
-
-        item = '/MetaDictionary-1'
-
-        item = '/'
-        item = '/Header-2'
-        item = '/Header-2/Content-3b03'
-
         self.path_cache = {}
         self.metadict = MetaDictionary(self)
+        self.create = AAFFactory(self)
 
-        if mode in ("rb", "rb+"):
+        if self.mode in ("rb", "rb+"):
             self.metadict.dir = self.cfb.find('/MetaDictionary-1')
             self.path_cache['/MetaDictionary-1'] = self.metadict
             self.root = self.read_object("/")
@@ -55,6 +81,25 @@ class AAFFile(object):
             header_pid = 0x02
             self.header = self.root.property_entries[header_pid].value
             self.storage = self.header['Content'].value
+
+        elif self.mode in ("wb+",):
+            self.setup_empty()
+
+    def setup_empty(self):
+
+        self.root = self.create.Root()
+        self.root.attach(self.cfb.find("/"))
+
+        self.root['MetaDictionary'].value = self.metadict
+        self.metadict.setup_empty()
+
+        self.header = self.create.Header()
+        self.root['Header'].value = self.header
+        self.storage = self.create.ContentStorage()
+        self.header['Content'].value = self.storage
+
+
+
 
     def read_object(self, path):
         if isinstance(path, DirEntry):
@@ -73,6 +118,7 @@ class AAFFile(object):
 
         obj = obj_class(self)
         obj.dir = dir_entry
+        obj.class_id = dir_entry.class_id
         obj.read_properties()
 
         self.path_cache[path] = obj
@@ -136,36 +182,36 @@ class AAFFile(object):
                 path = []
         assert len(self.weakref_table) == path_count
 
-        # for i in range(len(self.weakref_table)):
-        #     print(self.weakref_path(i))
-        # print(self.weakref_table)
+    def write_reference_properties(self):
+        f = self.cfb.open("/referenced properties", 'w')
+        byte_order = 0x4c
+        path_count = len(self.weakref_table)
+        pid_count = 0
+        for path in self.weakref_table:
+            pid_count += len(path)
+            pid_count += 1 # null byte
+
+        write_u16le(f, byte_order)
+        write_u16le(f, path_count)
+        write_u32le(f, pid_count)
+        for path in self.weakref_table:
+            for pid in path:
+                write_u16le(f, pid)
+            write_u16le(f, 0) # null terminated
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+        self.save()
 
     def __enter__(self):
         return self
 
     def dump(self):
-
         self.root.dump()
 
-        # for root, storage, stream in self.cfb.walk():
-        #     for item in storage:
-        #
-        #         path = item.path()
-        #         # print(path)
-        #         space = " " *len(root.path().split("/")*2)
-        #         obj = self.read_object(item)
-        #         print(space, obj)
-        #
-        #         for p in obj.properties():
-        #
-        #             if isinstance(p, (SFStrongRef, SFStrongRefArray)):
-        #                 continue
-        #
-        #             print(space, "  ", p.name, p.typedef, p.value)
+    def save(self):
+        if self.mode in ("wb+", 'rb+'):
+            self.write_reference_properties()
+            for path, obj in self.path_cache.items():
+                obj.write_properties()
 
-
-    def close(self):
         self.cfb.close()

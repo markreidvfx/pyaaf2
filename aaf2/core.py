@@ -12,6 +12,9 @@ from .utils import (
     read_u8,
     read_u16le,
     read_u32le,
+    write_u8,
+    write_u16le,
+    write_u32le,
     )
 
 from . import properties
@@ -22,15 +25,11 @@ class AAFObject(object):
         self.root = root
         self.dir = None
         self.property_entries = {}
+        self.class_id = None
 
     @property
     def classdef(self):
-
-        # if self.dir.path() == "/":
-        #     return self.root.metadict.classdefs_by_name['Root']
-        #
-        if self.dir:
-            return self.root.metadict.classdefs_by_uuid.get(self.dir.class_id, None)
+        return self.root.metadict.classdefs_by_uuid.get(self.class_id, None)
 
     @property
     def name(self):
@@ -40,7 +39,12 @@ class AAFObject(object):
         return self.__class__.__name__
 
     def read_properties(self):
-        f = self.dir.get('properties').open()
+
+        stream = self.dir.get('properties')
+        if stream is None:
+            return
+
+        f = stream.open()
 
         byte_order = read_u8(f)
         if byte_order != 0x4c:
@@ -66,25 +70,36 @@ class AAFObject(object):
             p.decode(data)
             self.property_entries[pid] = p
 
+    def write_properties(self):
+        f = self.dir.touch("properties").open(mode='w')
+        byte_order = 0x4c
+        entry_count = len(self.property_entries)
+        version = properties.PROPERTY_VERSION
 
-    def dump(self):
-        print(self.dir.path())
-        for p in self.property_entries:
-            print(" |-", p, p.value)
+        write_u8(f, byte_order)
+        write_u8(f, version)
+        write_u16le(f, entry_count)
+
+        for p in self.property_entries.values():
+            write_u16le(f, p.pid)
+            write_u16le(f, p.format)
+            write_u16le(f, len(p.data))
+
+    def detach(self):
+        pass
+
+    def attach(self, dir_entry):
+        if self.dir:
+            self.detach()
+
+        self.dir = dir_entry
+        self.dir.class_id = self.class_id
+        self.root.path_cache[dir_entry.path()] = self
 
     def properties(self):
 
         for pid, p in self.property_entries.items():
             yield p
-
-        # list(self.classdef.all_propertydefs())
-        # for propertydef in self.classdef.all_propertydefs():
-        #
-        #     if propertydef.pid in self.property_entries:
-        #         yield self.property_entries[propertydef.pid]
-        #     else:
-        #         # create PropertyItem
-        #         pass
 
     def keys(self):
         keys = []
@@ -99,6 +114,15 @@ class AAFObject(object):
         for item in self.properties():
             if item.name == key:
                 return item
+
+        classdef = self.classdef
+        for propertydef in classdef.all_propertydefs():
+            if propertydef.property_name == key:
+                fmt = propertydef.store_format
+                p = property_formats[fmt](self, propertydef.pid, fmt)
+                print(type(p), p)
+                return p
+
         return default
 
     def get_value(self, key, default=None):
