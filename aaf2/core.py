@@ -64,8 +64,6 @@ class AAFObject(object):
             # print(self.root.f.tell())
             data = f.read(byte_size)
 
-            if format == 0x42:
-                pass
             p = property_formats[format](self, pid, format, version)
             p.decode(data)
             self.property_entries[pid] = p
@@ -106,6 +104,43 @@ class AAFObject(object):
         self.dir = dir_entry
         self.dir.class_id = self.class_id
         self.root.path_cache[dir_entry.path()] = self
+
+        for pid, p in self.property_entries.items():
+            if isinstance(p, (properties.SFStrongRef,
+                              properties.SFStrongRefVector,
+                              properties.SFStrongRefSet)):
+                p.attach()
+
+
+
+    def walk_references(self, topdown=False):
+
+        if not topdown:
+            yield self
+
+        refs = []
+        for pid, p in self.property_entries.items():
+            if isinstance(p, properties.SFStrongRef):
+                obj = p.value
+                if obj:
+                    refs.append(obj)
+
+            if isinstance(p, properties.SFStrongRefVector):
+                refs.extend(p.value)
+
+            if isinstance(p, properties.SFStrongRefSet):
+                refs.extend([obj for key, obj in p.items()])
+
+        for obj in refs:
+
+            for item in obj.walk_references(topdown):
+                yield item
+
+        if topdown:
+            yield self
+
+
+
 
     def properties(self):
 

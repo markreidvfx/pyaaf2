@@ -35,9 +35,20 @@ class PropertyDef(core.AAFObject):
     @property
     def typedef(self):
         return self.root.metadict.lookup_typedef(self.typedef_name)
+        # else:
+        #     return self['Type'].value
     @property
     def store_format(self):
         return self.typedef.store_format
+
+    def setup_defaults(self):
+        self['Name'].value = self.property_name
+        self['Identification'].value = self.uuid
+        self['Type'].value = self.typedef.auid
+        self['LocalIdentification'].value = self.pid
+        self['IsOptional'].value = self.optional
+        if self.unique:
+            self['IsUniqueIdentifier'].value  = self.unique
 
     def read_properties(self):
         super(PropertyDef, self).read_properties()
@@ -47,7 +58,7 @@ class PropertyDef(core.AAFObject):
         pid_name = 6
         pid_uuid = 5
         pid_type = 11
-        pid_required= 12
+        pid_optional = 12
         pid_pid = 13
         pid_unique = 14
 
@@ -55,7 +66,7 @@ class PropertyDef(core.AAFObject):
         self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
         self.typedef_name = UUID(bytes_le=self.property_entries[pid_type].data)
         self.pid = read_u16le(StringIO(self.property_entries[pid_pid].data))
-        self.required = self.property_entries[pid_required].data == "\x01"
+        self.optional = self.property_entries[pid_optional].data == "\x01"
         if pid_unique in self.property_entries:
             self.unique = self.property_entries[pid_unique].data == "\x01"
 
@@ -63,7 +74,7 @@ class PropertyDef(core.AAFObject):
         return "<%s PropertyDef" % self.property_name
 
 class ClassDef(core.AAFObject):
-    def __init__(self, root=None, name=None, uuid=None, parent=None, abstract=None):
+    def __init__(self, root=None, name=None, uuid=None, parent=None, concrete=None):
         super(ClassDef, self).__init__(root)
         self.class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
         self.class_name = name
@@ -71,11 +82,25 @@ class ClassDef(core.AAFObject):
         if uuid:
             self.uuid = UUID(uuid)
         self.parent_name = parent
-        self.abstract = abstract
+        self.concrete = concrete
         self._propertydefs = []
 
     def __eq__(self, other):
         self.uuid == other.uuid
+
+    def setup_defaults(self):
+        self['Name'].value = self.class_name
+        self['Identification'].value = self.uuid
+        self['IsConcrete'].value = self.concrete
+
+
+        for p in self._propertydefs:
+            p.setup_defaults()
+        if self._propertydefs:
+            self['Properties'].value = self._propertydefs
+        p = self.parent
+        if p and p.dir:
+            self['ParentClass'].value = p
 
     def isinstance(self, other):
         for classdef in other.relatives():
@@ -83,6 +108,22 @@ class ClassDef(core.AAFObject):
                 return True
         return False
 
+    @property
+    def weakref_pid(self):
+
+        # there are not many weakref types
+        MetaDefinition_Identification   = 0x0005
+        DefinitionObject_Identification = 0x1B01
+        Mob_MobID                       = 0x4401
+        EssenceData_MobID               = 0x2701
+
+        if self.class_name in ('MetaDictionary','ClassDefinition'):
+            return MetaDefinition_Identification
+        elif  self.class_name == 'DefinitionObject':
+            return DefinitionObject_Identification
+        else:
+            print(self.class_name)
+            raise Exception()
 
     @property
     def name(self):
@@ -251,21 +292,29 @@ class MetaDictionary(core.AAFObject):
             self.typedefs_by_name[name] = types.TypeDefStream(self.root, name, auid)
 
         for name, typedef in self.typedefs_by_name.items():
+            if typedef.auid is None:
+                continue
+
             self.typedefs_by_uuid[typedef.auid] = typedef
             self.typedefs_classes[typedef.class_id] = typedef.__class__
 
-    def setup_empty(self):
-        d = {}
+    def setup_defaults(self):
+
+        self['TypeDefinitions'].value = self.typedefs_by_uuid.values()
+
         for name, typedef in self.typedefs_by_uuid.items():
-            d[str(uuid.uuid4())] = typedef
+            typedef.setup_defaults()
 
-        self['TypeDefinitions'].value = d
+        classes = []
+        for c in self.classdefs_by_uuid.values():
+            if c.class_name == "Root":
+                continue
+            classes.append(c)
 
-        d = {}
-        for name, classdefs in self.classdefs_by_uuid.items():
-            d[str(uuid.uuid4())] = classdefs
+        self['ClassDefinitions'].value = classes
 
-        self['ClassDefinitions'].value = d
+        for c in classes:
+            c.setup_defaults()
 
     def add_classdef(self, name, *args):
         c = ClassDef(self.root, name, *args[:3])

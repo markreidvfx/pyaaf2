@@ -6,6 +6,7 @@ from __future__ import (
     division,
     )
 
+import uuid
 from StringIO import StringIO
 from .utils import (
     read_u8,
@@ -41,6 +42,7 @@ class PropertyItem(object):
         self.pid = pid
         self.format = format
         self.version = version
+        self.data = None
 
     def format_name(self):
         return str(property_formats[self.format].__name__)
@@ -71,10 +73,19 @@ class PropertyItem(object):
         try:
             return self.typedef.decode(self.data)
         except:
-            print("0x%x" % self.format)
+            print("0x%x" % self.format, "0x%04dx" % self.pid)
             print(self)
             print(self.root.dir.path())
+            print(self.root.classdef)
             raise
+    @value.setter
+    def value(self, value):
+        self.data = self.typedef.encode(value)
+        self.add_pid_entry()
+
+    def add_pid_entry(self):
+        if not self.pid in self.root.property_entries:
+            self.root.property_entries[self.pid] = self
 
 
     def __repr__(self):
@@ -226,8 +237,9 @@ class SFStrongRefSet(SFStrongRefArray):
         self.objects = {}
         self.local_map = {}
         self.next_free_key = 0
-        self.last_free_key = 0
-        self.key_size = 0
+        self.last_free_key = 4294967295
+        self.key_size = 16
+        # this pid match the ref_pid on the weak ref
         self.index_pid = 0
 
     def encode(self, data):
@@ -257,15 +269,21 @@ class SFStrongRefSet(SFStrongRefArray):
         self.index_pid = read_u16le(f)
         self.key_size = read_u8(f)
 
+        # print("!!", self.next_free_key, self.last_free_key, "%x" % self.index_pid, "%x" % self.pid)
+
         # f = StringIO(f.read())
 
         for i in range(count):
             local_key = read_u32le(f)
             ref_count = read_u32le(f)
 
+            # not sure if ref count is actually used
+            # doesn't apear to be
+            assert ref_count == 1
+
             key = f.read(self.key_size).encode("hex")
             ref = "%s{%x}" % (self.ref, local_key)
-            self.local_map[local_key] = ref
+            self.local_map[key] = local_key
             self.references[key] = ref
 
     def write_index(self):
@@ -275,24 +293,32 @@ class SFStrongRefSet(SFStrongRefArray):
         write_u32le(f, count)
         write_u32le(f, self.next_free_key)
         write_u32le(f, self.last_free_key)
+        self.index_pid = self.root.classdef.weakref_pid
         write_u16le(f, self.index_pid)
         write_u8(f, self.key_size)
 
-        i = 0
-
         for key, value in self.references.items():
-            write_u32le(f, i)
+            local_key = self.local_map[key]
+            write_u32le(f, local_key)
             write_u32le(f, 1)
             f.write(key.decode("hex"))
+
+    def get_object(self, key):
+        if key in self.objects:
+            return self.objects[key]
+
+        ref = self.references[key]
+
+        dir_entry = self.root.dir.get(ref)
+        obj = self.root.root.read_object(dir_entry)
+        self.objects[key] = obj
+        return obj
+
 
     def items(self):
 
         for key, ref in self.references.items():
-            if key in self.objects:
-                yield (key, self.objects[key])
-
-            dir_entry = self.root.dir.get(ref)
-            obj = self.root.root.read_object(dir_entry)
+            obj = self.get_object(key)
             self.objects[key] = obj
 
             yield (key, obj)
@@ -313,6 +339,12 @@ class SFStrongRefSet(SFStrongRefArray):
         typedef = self.typedef
         classdef = typedef.member_typedef.ref_classdef
 
+        if isinstance(value, list):
+            d = {}
+            for item in value:
+                d[uuid.uuid4().hex] = item
+            value = d
+
         for key, obj in value.items():
             if not classdef.isinstance(obj.classdef):
                 raise Exception()
@@ -324,34 +356,78 @@ class SFStrongRefSet(SFStrongRefArray):
             self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode(self.ref)
 
-        # for key, obj in value.items():
+        local_key = self.next_free_key
+        for key, obj in value.items():
+            ref = "%s{%x}" % (self.ref, local_key)
+            self.local_map[key] = local_key
+            self.references[key] = ref
+            local_key += 1
 
+        self.next_free_key = local_key
 
-        if not self.pid in self.root.property_entries:
-            self.root.property_entries[self.pid] = self
+        self.add_pid_entry()
+        self.attach()
 
     def attach(self):
-        pass
+        # print("set attach")
+        if not self.root.dir:
+            return
+
+        for key, ref in self.references.items():
+            obj = self.objects[key]
+            dir_entry = self.root.dir.get(ref)
+            if dir_entry is None:
+                dir_entry = self.root.dir.makedir(ref)
+            obj.attach(dir_entry)
+
 
     def __repr__(self):
         return "<%s to %s %d items>" % (self.__class__.__name__, str(self.ref), len(self.references))
 
 class SFWeakRef(SFObjectRef):
+    def __init__(self, root, pid, format, version=PROPERTY_VERSION):
+        super(SFWeakRef, self).__init__(root, pid, format, version)
+        self.ref_index = None
+        self.ref_pid = None
+        self.id_size = None
+        self.ref = None
+
     def decode(self, data):
+        self.data = data
 
         f = StringIO(data)
 
         self.ref_index = read_u16le(f)
         self.ref_pid = read_u16le(f)
-        self.id_size = id_size = read_u8(f)
+        self.id_size = read_u8(f)
         self.ref = f.read(self.id_size).encode("hex")
+
+    def encode(self):
+        f = StringIO()
+
+        ref = self.ref.decode('hex')
+        id_size = len(ref)
+
+        write_u16le(f, self.ref_index)
+        write_u16le(f, self.ref_pid)
+        write_u8(f, id_size)
+        f.write(ref)
+        return f.getvalue()
 
     def __repr__(self):
         return "<%s %s index %s %s>" % (self.name, self.__class__.__name__, self.ref_index, self.ref)
 
     @property
     def value(self):
+        # print("??", "%x" % self.pid, "%x" % self.ref_pid)
         return self.root.root.resovle_weakref(self.ref_index, self.ref_pid, self.ref)
+
+    @value.setter
+    def value(self, value):
+        (self.ref_index, self.ref_pid, self.ref)  = self.root.root.create_weakref(value)
+
+        self.data = self.encode()
+        self.add_pid_entry()
 
 class SFWeakRefArray(SFObjectRefArray):
     def decode(self, data):
@@ -386,6 +462,7 @@ class SFWeakRefArray(SFObjectRefArray):
             r = self.root.root.resovle_weakref(self.ref_index, self.ref_pid, ref)
             items.append(r)
         return items
+
 
 class SFWeakRefVector(SFWeakRefArray):
     pass

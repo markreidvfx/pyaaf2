@@ -28,8 +28,11 @@ class TypeDef(core.AAFObject):
         if auid:
             self.auid = UUID(auid)
 
-        # self.class_id = self.auid
         self.format = properties.SF_DATA
+
+    @property
+    def store_format(self):
+        return self.format
 
     def __repr__(self):
         return "<%s %s>" % (self.type_name, self.__class__.__name__)
@@ -39,12 +42,22 @@ class TypeDef(core.AAFObject):
         self.type_name = self['Name'].value
         self.auid = self['Identification'].value
 
+    def setup_defaults(self):
+        self['Name'].value = self.type_name
+        self['Identification'].value = self.auid
+
 class TypeDefInt(TypeDef):
     def __init__(self, root, name=None, auid=None, size=None, signed=None):
         super(TypeDefInt, self).__init__(root, name, auid)
         self.class_id = UUID("0d010101-0204-0000-060e-2b3402060101")
         self.size = size
         self.signed = signed
+
+    def setup_defaults(self):
+        super(TypeDefInt, self).setup_defaults()
+        self['Size'].value = self.size
+        self['IsSigned'].value = self.signed
+
     def read_properties(self):
         super(TypeDefInt, self).read_properties()
         self.size = self['Size'].value
@@ -76,6 +89,8 @@ class TypeDefInt(TypeDef):
         assert len(data) == self.size
         return unpack(self.pack_format(), data)[0]
 
+    def encode(self, value):
+        return pack(self.pack_format(), value)
 
 class TypeDefStrongRef(TypeDef):
     def __init__(self, root, name=None, auid=None, classdef=None):
@@ -107,16 +122,35 @@ class TypeDefEnum(TypeDef):
         super(TypeDefEnum, self).__init__(root, name, auid)
         self.class_id = UUID("0d010101-0207-0000-060e-2b3402060101")
         self.element_typedef_name = typedef
-        self.elements = elements
+        self._elements = elements
 
     @property
     def byte_size(self):
         return self.element_typedef.byte_size
 
+    @property
+    def elements(self):
+        if not self._elements:
+            names = list(iter_utf16_array(self['ElementNames'].data))
+            self._elements = dict(zip(self['ElementValues'].value, names))
+
+        return self._elements
+
+    def setup_defaults(self):
+        super(TypeDefEnum, self).setup_defaults()
+        names = []
+        values = []
+        for value, name in sorted(self.elements.items()):
+            names.append(name)
+            values.append(value)
+
+        self['ElementNames'].add_pid_entry()
+        self['ElementNames'].data = encode_utf16_array(names)
+        self['ElementValues'].value = values
+
     def read_properties(self):
         super(TypeDefEnum, self).read_properties()
-        names = list(iter_utf16_array(self['ElementNames'].data))
-        self.elements = dict(zip(self['ElementValues'].value, names))
+
 
     @property
     def element_typedef(self):
@@ -134,6 +168,18 @@ class TypeDefEnum(TypeDef):
         index = typedef.decode(data)
         return self.elements[index]
 
+    def encode(self, data):
+        # Boolean
+        if self.auid == UUID("01040100-0000-0000-060e-2b3401040101"):
+            return '\x01' if data else '\x00'
+
+        typedef = self.element_typedef
+        for index, value in self.elements.items():
+            if value == data:
+                return typedef.encode(data)
+
+        raise Exception("invalid enum")
+
 def iter_utf16_array(data):
     start = 0
     for i in range(0, len(data), 2):
@@ -141,12 +187,22 @@ def iter_utf16_array(data):
             yield data[start:i].decode("utf-16le")
             start = i+2
 
+def encode_utf16_array(data):
+    result = b""
+    for item in data:
+        result += item.encode("utf-16le") + "\x00" + "\x00"
+    return result
+
 class TypeDefFixedArray(TypeDef):
     def __init__(self, root, name=None, auid=None, typedef=None, size=None):
         super(TypeDefFixedArray, self).__init__(root, name, auid)
         self.class_id = UUID("0d010101-0208-0000-060e-2b3402060101")
         self.member_typedef_name = typedef
         self.size = size
+
+    def setup_defaults(self):
+        super(TypeDefFixedArray, self).setup_defaults()
+        self['ElementCount'].value = self.size
 
     @property
     def member_typedef(self):
@@ -188,6 +244,10 @@ class TypeDefVarArray(TypeDef):
         self.class_id = UUID("0d010101-0209-0000-060e-2b3402060101")
         self.member_typedef_name = typedef
 
+    def setup_defaults(self):
+        super(TypeDefVarArray, self).setup_defaults()
+        self['ElementType'].value = self.member_typedef
+
     @property
     def member_typedef(self):
         if not self.member_typedef_name:
@@ -195,10 +255,13 @@ class TypeDefVarArray(TypeDef):
         return self.root.metadict.lookup_typedef(self.member_typedef_name)
 
     def decode(self, data):
-        if self.member_typedef_name == "Character":
-            return list(iter_utf16_array(data))
 
         member_typedef = self.member_typedef
+
+        if member_typedef.type_name == "Character":
+            return list(iter_utf16_array(data))
+
+
         if isinstance(member_typedef, TypeDefInt):
             size = member_typedef.size
             elements = len(data)//size
@@ -214,6 +277,19 @@ class TypeDefVarArray(TypeDef):
             result.append(member_typedef.decode(data[start:end]))
             start = end
         return result
+
+    def encode(self, value):
+        if self.member_typedef_name == "Character":
+            return encode_utf16_array(value)
+
+        member_typedef = self.member_typedef
+        if isinstance(member_typedef, TypeDefInt):
+
+            elements = len(value)
+            fmt = member_typedef.pack_format(elements)
+            return pack(fmt, *value)
+
+        raise Exception()
 
     def read_properties(self):
         super(TypeDefVarArray, self).read_properties()
@@ -263,6 +339,9 @@ class TypeDefString(TypeDef):
     def decode(self, data):
         return data[:-2].decode("utf-16le")
 
+    def encode(self, data):
+        return data.encode("utf-16le") + '\x00' + '\x00'
+
 class TypeDefStream(TypeDef):
 
     def __init__(self, root, name=None, auid=None):
@@ -284,6 +363,10 @@ class TypeDefRecord(TypeDef):
         types = list(self['MemberTypes'].value)
 
         return zip(names, [t.type_name for t in types])
+
+    def setup_defaults(self):
+        super(TypeDefRecord, self).setup_defaults()
+
 
     @property
     def byte_size(self):
@@ -342,6 +425,13 @@ class TypeDefRecord(TypeDef):
             return r
 
         return result
+
+    def encode(self, data):
+        # AUID
+        if self.auid == UUID("01030100-0000-0000-060e-2b3401040101"):
+            return data.bytes_le
+
+        raise Exception()
 
     def read_properties(self):
         super(TypeDefRecord, self).read_properties()

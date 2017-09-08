@@ -1266,8 +1266,8 @@ class CompoundFileBinary(object):
                     pre = pre.right()
                     pre_count += 1
                     # in case of inifinite loop, not sure if this can happen
-                    if pre_count > max_dirs_entries:
-                        raise Exception("exceed max dir count")
+                    # if pre_count > max_dirs_entries:
+                    #     raise Exception("exceed max dir count %d %d" % (pre_count, max_dirs_entries))
 
                 # Make current as right child of its inorder predecessor
                 if pre.right() is None:
@@ -1281,8 +1281,8 @@ class CompoundFileBinary(object):
 
             count += 1
             # in case of inifinite loop, not sure if this can happen
-            if count > max_dirs_entries:
-                raise Exception("exceed max dir count")
+            # if count > max_dirs_entries:
+            #     raise Exception("exceed max dir count %d %d" % (count, max_dirs_entries))
 
         return result
 

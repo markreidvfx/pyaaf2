@@ -7,6 +7,7 @@ from __future__ import (
     )
 from StringIO import StringIO
 import traceback
+import os
 
 from .utils import (
     read_u8,
@@ -20,7 +21,7 @@ from .utils import (
 
 from .cfb import (CompoundFileBinary, DirEntry)
 from .core import AAFObject
-from .properties import SFStrongRef, SFStrongRefArray
+from .properties import SFStrongRef, SFStrongRefArray, SFStrongRefSet
 from .metadict import MetaDictionary
 
 
@@ -89,9 +90,8 @@ class AAFFile(object):
 
         self.root = self.create.Root()
         self.root.attach(self.cfb.find("/"))
-
         self.root['MetaDictionary'].value = self.metadict
-        self.metadict.setup_empty()
+        self.metadict.setup_defaults()
 
         self.header = self.create.Header()
         self.root['Header'].value = self.header
@@ -106,13 +106,15 @@ class AAFFile(object):
             dir_entry = path
             path = dir_entry.path()
             if path in self.path_cache:
-                # print(s"UsingCache", path)
                 return self.path_cache[path]
         else:
             if path in self.path_cache:
                 return self.path_cache[path]
 
             dir_entry = self.cfb.find(path)
+
+        if dir_entry is None:
+            raise Exception("cannot find path: %s" % path)
 
         obj_class = self.metadict.lookup_class(dir_entry.class_id)
 
@@ -127,39 +129,63 @@ class AAFFile(object):
 
     def resovle_weakref(self, index, ref_pid, ref):
         p = self.weakref_prop(index)
-
-        # print("resovle", p, p.pid, ref_pid, ref,)
-        # print(p.root.dir.path())
         v = p.value.get(ref)
-
-        # return v
-        # raise Exception()
-        # traceback.print_stack()
-        # ref = p.value[ref]
         return v
 
     def weakref_prop(self, index):
         path = self.weakref_table[index]
         root = self.root
 
-
         for pid in path[:-1]:
-            # print(root.dir.path())
-            if isinstance(root, MetaDictionary):
-                pass
-                # print(root.property_entries[pid])
-
-            # print (root.property_entries[pid])
-
             p = root.property_entries[pid]
-            # print(pid, root, p, p.typedef)
             root = p.value
 
-
-
-        # print("got", root)
         p = root.property_entries[path[-1]]
         return p
+
+    def create_weakref(self, obj):
+        if obj.dir is None:
+            raise Exception("weak ref needs to be to attach obj")
+
+        parent_obj = self.read_object(obj.dir.parent)
+
+        weakref_pid = parent_obj.classdef.weakref_pid
+
+        path = obj.dir.path()
+        path, local_key_str = path.split('{')
+
+        pid_path = []
+        for item in path.lstrip('/').split("/"):
+            pid_str = item.split('-')[-1]
+            pid_path.append(int(pid_str, 16))
+
+        local_key = int(local_key_str.rstrip('}'), 16)
+
+        p = parent_obj.property_entries[pid_path[-1]]
+        assert isinstance(p, SFStrongRefSet)
+
+        ref_key = None
+        for key, value in p.local_map.items():
+            if value == local_key:
+                ref_key = key
+                break
+
+        if ref_key is None:
+            raise Exception("can not find ref_key")
+
+        index = None
+        for i, p in enumerate(self.weakref_table):
+            if p == pid_path:
+                index = i
+                break
+
+        if index is None:
+            index = len(self.weakref_table)
+            self.weakref_table.append(pid_path)
+
+        return index, weakref_pid, ref_key
+
+
 
     def read_reference_properties(self):
         f = self.cfb.open("/referenced properties")
@@ -191,7 +217,7 @@ class AAFFile(object):
             pid_count += len(path)
             pid_count += 1 # null byte
 
-        write_u16le(f, byte_order)
+        write_u8(f, byte_order)
         write_u16le(f, path_count)
         write_u32le(f, pid_count)
         for path in self.weakref_table:

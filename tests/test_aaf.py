@@ -20,4 +20,9 @@ if __name__ == "__main__":
         # print test['MobID'].value
         # test = f.read_object("/Header-2/Content-3b03/Mobs-1901{27}/Slots-4403{1}/Segment-4803/Components-1001{0}")
         f.dump()
-        # print f.cfb.listdir(test.dir)
+        # for root, storage, stream in f.cfb.walk():
+        #     print root.path()
+
+        # for item in f.root.walk_references(topdown=True):
+        #     space = " " * len(item.dir.path().split("/"))
+        #     print space, item
