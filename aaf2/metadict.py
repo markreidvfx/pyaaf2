@@ -14,15 +14,17 @@ from .model import typedefs
 from .model import datadefs
 
 from . import core
-from .utils import read_u16le
+from .utils import (register_class, read_u16le, AAFClaseID_dict, AAFClassName_dict)
 
 import uuid
 from uuid import UUID
 
+@register_class
 class PropertyDef(core.AAFObject):
+    class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
     def __init__(self, root, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         super(PropertyDef, self).__init__(root)
-        self.class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
+
         self.property_name = name
         self.uuid = None
         if uuid:
@@ -73,10 +75,11 @@ class PropertyDef(core.AAFObject):
     def __repr__(self):
         return "<%s PropertyDef" % self.property_name
 
+@register_class
 class ClassDef(core.AAFObject):
+    class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
     def __init__(self, root=None, name=None, uuid=None, parent=None, concrete=None):
         super(ClassDef, self).__init__(root)
-        self.class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
         self.class_name = name
         self.uuid = None
         if uuid:
@@ -103,27 +106,28 @@ class ClassDef(core.AAFObject):
             self['ParentClass'].value = p
 
     def isinstance(self, other):
+
         for classdef in other.relatives():
             if classdef.uuid == self.uuid:
                 return True
         return False
 
-    @property
-    def weakref_pid(self):
-
-        # there are not many weakref types
-        MetaDefinition_Identification   = 0x0005
-        DefinitionObject_Identification = 0x1B01
-        Mob_MobID                       = 0x4401
-        EssenceData_MobID               = 0x2701
-
-        if self.class_name in ('MetaDictionary','ClassDefinition'):
-            return MetaDefinition_Identification
-        elif  self.class_name == 'DefinitionObject':
-            return DefinitionObject_Identification
-        else:
-            print(self.class_name)
-            raise Exception()
+    # @property
+    # def weakref_pid(self):
+    #
+    #     # there are not many weakref types
+    #     MetaDefinition_Identification   = 0x0005
+    #     DefinitionObject_Identification = 0x1B01
+    #     Mob_MobID                       = 0x4401
+    #     EssenceData_MobID               = 0x2701
+    #
+    #     if self.class_name in ('MetaDictionary','ClassDefinition',):
+    #         return MetaDefinition_Identification
+    #     elif  self.class_name == 'DefinitionObject':
+    #         return DefinitionObject_Identification
+    #     else:
+    #         print(self.class_name)
+    #         raise Exception()
 
     @property
     def name(self):
@@ -203,10 +207,11 @@ root_types = {
 "MetaDictionaryStrongReference"   : (None, "MetaDictionary"),
 }
 
+@register_class
 class MetaDictionary(core.AAFObject):
+    class_id = UUID("0d010101-0225-0000-060e-2b3402060101")
     def __init__(self, root):
         super(MetaDictionary, self).__init__(root)
-        self.class_id = UUID("0d010101-0225-0000-060e-2b3402060101")
         self.classdefs_by_name = {}
         self.classdefs_by_uuid = {}
         self.typedefs_by_name = {}
@@ -296,7 +301,8 @@ class MetaDictionary(core.AAFObject):
                 continue
 
             self.typedefs_by_uuid[typedef.auid] = typedef
-            self.typedefs_classes[typedef.class_id] = typedef.__class__
+            self.typedefs_classes[typedef.auid] = typedef.__class__
+
 
     def setup_defaults(self):
 
@@ -328,12 +334,11 @@ class MetaDictionary(core.AAFObject):
 
 
     def lookup_class(self, class_id):
+        if class_id in AAFClaseID_dict:
+            return AAFClaseID_dict[class_id]
 
-        if class_id == UUID("0d010101-0201-0000-060e-2b3402060101"):
-            return ClassDef
-
-        if class_id == UUID("0d010101-0202-0000-060e-2b3402060101"):
-            return PropertyDef
+        if class_id in AAFClassName_dict:
+            return AAFClassName_dict[class_id]
 
         if class_id in self.typedefs_classes:
             return self.typedefs_classes[class_id]
@@ -355,6 +360,36 @@ class MetaDictionary(core.AAFObject):
             return self.classdefs_by_uuid.get(t, None)
         return self.classdefs_by_name.get(t, None)
 
+
+    def weakref_pid(self, classdef, propertydef):
+
+        # there are not many weakrefable types
+        MetaDefinition_Identification   = 0x0005
+        DefinitionObject_Identification = 0x1B01
+        Mob_MobID                       = 0x4401
+        EssenceData_MobID               = 0x2701
+
+        c_name = classdef.class_name
+        p_name = propertydef.property_name
+        # print(c_name, p_name)
+
+        if c_name in ('MetaDictionary', 'ClassDefinition') and \
+           p_name in ('TypeDefinitions', 'ClassDefinitions', 'Properties'):
+           return MetaDefinition_Identification
+
+        elif c_name in ('Dictionary',) and \
+            p_name in ('DataDefinitions', 'ContainerDefinitions'):
+            return DefinitionObject_Identification
+
+        # if self.class_name in ('MetaDictionary','ClassDefinition',):
+        #     return MetaDefinition_Identification
+        # elif  self.class_name == 'DefinitionObject':
+        #     return DefinitionObject_Identification
+        # else:
+        #     print(self.class_name)
+
+        raise Exception()
+
     @property
     def classdef(self):
         return self.classdefs_by_name['MetaDictionary']
@@ -373,3 +408,81 @@ class MetaDictionary(core.AAFObject):
             uuid = classdef.uuid
             self.classdefs_by_name[name] = classdef
             self.classdefs_by_uuid[uuid] = classdef
+
+@register_class
+class DefinitionObject(core.AAFObject):
+    class_id = UUID("0d010101-0101-1a00-060e-2b3402060101")
+    def __init__(self, root, uuid=None, name=None, description=None):
+        super(DefinitionObject, self).__init__(root)
+        self.def_name = name
+        self.description = description
+        self.uuid = None
+        if uuid:
+            self.uuid = UUID(uuid)
+
+    def __repr__(self):
+        return "%s: %s" % (self.__class__.__name__, self.def_name)
+
+    def setup_defaults(self):
+        self['Name'].value = self.def_name
+        self['Identification'].value = self.uuid
+        self['Description'].value = self.description
+
+    def read_properties(self):
+        super(DefinitionObject, self).read_properties()
+        self.def_name = self['Name'].value
+        self.uuid = self['Identification'].value
+        self.description = self['Description'].value
+
+@register_class
+class DataDef(DefinitionObject):
+    class_id = UUID("0d010101-0101-1b00-060e-2b3402060101")
+
+@register_class
+class OperationDef(DefinitionObject):
+    class_id = UUID("0d010101-0101-1c00-060e-2b3402060101")
+
+@register_class
+class ParameterDef(DefinitionObject):
+    class_id = UUID("0d010101-0101-1d00-060e-2b3402060101")
+
+@register_class
+class PluginDef(DefinitionObject):
+    class_id = UUID("0d010101-0101-1e00-060e-2b3402060101")
+
+@register_class
+class CodecDef(DefinitionObject):
+    class_id = UUID("0d010101-0101-1f00-060e-2b3402060101")
+
+@register_class
+class ContainerDef(DefinitionObject):
+    class_id = UUID("0d010101-0101-2000-060e-2b3402060101")
+
+@register_class
+class InterpolationDef(DefinitionObject):
+    class_id = UUID("0d010101-0101-2100-060e-2b3402060101")
+
+@register_class
+class Dictionary(core.AAFObject):
+    class_id = UUID("0d010101-0101-2200-060e-2b3402060101")
+    def __init__(self, root):
+        super(Dictionary, self).__init__(root)
+
+        self.datadefs = []
+        for key, args in datadefs.DataDefs.items():
+            self.datadefs.append(DataDef(root, key, *args))
+
+        self.containerdefs = []
+        for key, args in datadefs.ContainerDefs.items():
+            self.containerdefs.append(ContainerDef(root, key, *args))
+
+    def setup_defaults(self):
+        for item in self.datadefs:
+            item.setup_defaults()
+
+        self['DataDefinitions'].value = self.datadefs
+
+        for item in self.containerdefs:
+            item.setup_defaults()
+
+        self['ContainerDefinitions'].value = self.containerdefs

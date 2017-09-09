@@ -8,6 +8,7 @@ from __future__ import (
 from StringIO import StringIO
 import traceback
 import os
+from uuid import UUID
 
 from .utils import (
     read_u8,
@@ -41,8 +42,12 @@ class AAFFactory(object):
         classdef = self.metadict.lookup_classdef(name)
         if classdef is None:
             raise Exception("no class found with name: %s" % name)
-        obj = AAFObject(self.root, *args, **kwargs)
-        obj.class_id = classdef.uuid
+
+        classobj = self.metadict.lookup_class(name)
+
+        obj = classobj(self.root, *args, **kwargs)
+        if isinstance(obj, AAFObject):
+            obj.class_id = classdef.uuid
 
         return obj
 
@@ -96,10 +101,13 @@ class AAFFile(object):
         self.header = self.create.Header()
         self.root['Header'].value = self.header
         self.storage = self.create.ContentStorage()
+        d = self.create.Dictionary()
+        self.header['Dictionary'].value = d
+        d.setup_defaults()
         self.header['Content'].value = self.storage
-
-
-
+        self.header['OperationalPattern'].value = UUID("0d011201-0100-0000-060e-2b3404010105")
+        self.header['ObjectModelVersion'].value = 1
+        self.header['Version'].value =  {u'major': 1, u'minor': 1}
 
     def read_object(self, path):
         if isinstance(path, DirEntry):
@@ -128,6 +136,7 @@ class AAFFile(object):
         return obj
 
     def resovle_weakref(self, index, ref_pid, ref):
+        # print(index, ref_pid, ref)
         p = self.weakref_prop(index)
         v = p.value.get(ref)
         return v
@@ -149,8 +158,6 @@ class AAFFile(object):
 
         parent_obj = self.read_object(obj.dir.parent)
 
-        weakref_pid = parent_obj.classdef.weakref_pid
-
         path = obj.dir.path()
         path, local_key_str = path.split('{')
 
@@ -163,6 +170,8 @@ class AAFFile(object):
 
         p = parent_obj.property_entries[pid_path[-1]]
         assert isinstance(p, SFStrongRefSet)
+
+        weakref_pid = self.metadict.weakref_pid(parent_obj.classdef, p.propertydef)
 
         ref_key = None
         for key, value in p.local_map.items():
@@ -182,6 +191,7 @@ class AAFFile(object):
         if index is None:
             index = len(self.weakref_table)
             self.weakref_table.append(pid_path)
+
 
         return index, weakref_pid, ref_key
 
@@ -238,6 +248,7 @@ class AAFFile(object):
         if self.mode in ("wb+", 'rb+'):
             self.write_reference_properties()
             for path, obj in self.path_cache.items():
+                # print(path, obj)
                 obj.write_properties()
 
         self.cfb.close()

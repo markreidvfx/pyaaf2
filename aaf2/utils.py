@@ -74,3 +74,11 @@ def mangle_name(name, pid, size):
     max_size = size - len(p) - 1 -1
     new_name = squeeze_name(name, max_size)
     return "%s-%s" % (new_name, p)
+
+AAFClaseID_dict = {}
+AAFClassName_dict = {}
+def register_class(classobj):
+    AAFClaseID_dict[classobj.class_id] = classobj
+    AAFClassName_dict[classobj.__name__] = classobj
+
+    return classobj

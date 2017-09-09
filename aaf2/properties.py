@@ -269,7 +269,7 @@ class SFStrongRefSet(SFStrongRefArray):
         self.index_pid = read_u16le(f)
         self.key_size = read_u8(f)
 
-        # print("!!", self.next_free_key, self.last_free_key, "%x" % self.index_pid, "%x" % self.pid)
+        # print("!!", self.propertydef.property_name,  "%x" % self.index_pid, self.next_free_key, self.last_free_key, "%x" % self.pid)
 
         # f = StringIO(f.read())
 
@@ -293,7 +293,11 @@ class SFStrongRefSet(SFStrongRefArray):
         write_u32le(f, count)
         write_u32le(f, self.next_free_key)
         write_u32le(f, self.last_free_key)
-        self.index_pid = self.root.classdef.weakref_pid
+
+        index_pid = self.root.root.metadict.weakref_pid(self.root.classdef, self.propertydef)
+        # print("index_pid", index_pid)
+        self.index_pid = index_pid
+        # self.index_pid = self.root.classdef.weakref_pid
         write_u16le(f, self.index_pid)
         write_u8(f, self.key_size)
 
@@ -346,6 +350,7 @@ class SFStrongRefSet(SFStrongRefArray):
             value = d
 
         for key, obj in value.items():
+
             if not classdef.isinstance(obj.classdef):
                 raise Exception()
 
@@ -419,7 +424,6 @@ class SFWeakRef(SFObjectRef):
 
     @property
     def value(self):
-        # print("??", "%x" % self.pid, "%x" % self.ref_pid)
         return self.root.root.resovle_weakref(self.ref_index, self.ref_pid, self.ref)
 
     @value.setter

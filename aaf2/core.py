@@ -21,11 +21,12 @@ from . import properties
 from .properties import property_formats
 
 class AAFObject(object):
+    class_id = None
     def __init__(self, root=None,):
         self.root = root
         self.dir = None
         self.property_entries = {}
-        self.class_id = None
+        self.class_id = self.class_id
 
     @property
     def classdef(self):
@@ -91,6 +92,7 @@ class AAFObject(object):
         # write index's
         for p in self.property_entries.values():
             if isinstance(p, properties.SFStrongRefSet):
+                # print('writing index', self, p)
                 p.write_index()
 
 
