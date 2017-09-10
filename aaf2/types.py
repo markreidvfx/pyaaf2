@@ -255,6 +255,12 @@ class TypeDefVarArray(TypeDef):
         self['ElementType'].value = self.member_typedef
 
     @property
+    def store_format(self):
+        if self.member_typedef.store_format == properties.SF_WEAK_OBJECT_REFERENCE:
+            return properties.SF_WEAK_OBJECT_REFERENCE_VECTOR
+        return super(TypeDefVarArray, self).store_format
+
+    @property
     def member_typedef(self):
         if not self.member_typedef_name:
             return self['ElementType'].value
@@ -285,15 +291,23 @@ class TypeDefVarArray(TypeDef):
         return result
 
     def encode(self, value):
-        if self.member_typedef_name == "Character":
-            return encode_utf16_array(value)
 
         member_typedef = self.member_typedef
+
+        if member_typedef.type_name == "Character":
+            return encode_utf16_array(value)
+
         if isinstance(member_typedef, TypeDefInt):
 
             elements = len(value)
             fmt = member_typedef.pack_format(elements)
             return pack(fmt, *value)
+
+        result = b''
+
+        for item in value:
+            print(member_typedef)
+            result += member_typedef.encode(item)
 
         raise Exception()
 
@@ -370,12 +384,20 @@ class TypeDefRecord(TypeDef):
             return self._fields
         names = list(iter_utf16_array(self['MemberNames'].data))
         types = list(self['MemberTypes'].value)
-
         return zip(names, [t.type_name for t in types])
 
     def setup_defaults(self):
         super(TypeDefRecord, self).setup_defaults()
+        member_names = []
+        member_types = []
+        for name, typedef_name in self.fields:
+            typedef = self.root.metadict.typedefs_by_name[typedef_name]
+            member_names.append(name)
+            member_types.append(typedef)
 
+        self['MemberNames'].add_pid_entry()
+        self['MemberNames'].data = encode_utf16_array(member_names)
+        self['MemberTypes'].value = member_types
 
     @property
     def byte_size(self):

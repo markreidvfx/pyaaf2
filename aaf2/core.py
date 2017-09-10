@@ -91,7 +91,7 @@ class AAFObject(object):
 
         # write index's
         for p in self.property_entries.values():
-            if isinstance(p, properties.SFStrongRefSet):
+            if isinstance(p, (properties.SFStrongRefSet, properties.SFWeakRefArray)):
                 # print('writing index', self, p)
                 p.write_index()
 

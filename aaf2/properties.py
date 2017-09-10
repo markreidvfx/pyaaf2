@@ -77,6 +77,7 @@ class PropertyItem(object):
             print(self)
             print(self.root.dir.path())
             print(self.root.classdef)
+            print(self.name, self.typedef, [self.data])
             raise
     @value.setter
     def value(self, value):
@@ -434,8 +435,20 @@ class SFWeakRef(SFObjectRef):
         self.add_pid_entry()
 
 class SFWeakRefArray(SFObjectRefArray):
-    def decode(self, data):
+    def __init__(self, root, pid, format, version=PROPERTY_VERSION):
+        super(SFWeakRefArray, self).__init__(root, pid, format, version)
         self.references = []
+        self.ref = None
+        self.ref_index = None
+        self.ref_pid = None
+        self.id_size = None
+        self.data = None
+
+    def decode(self, data):
+
+        self.data = data
+        self.references = []
+
         #null terminated
         self.ref = data[:-2].decode("utf-16le")
 
@@ -443,6 +456,8 @@ class SFWeakRefArray(SFObjectRefArray):
         index_dir = self.root.dir.get(index_name)
         if not index_dir:
             raise Exception()
+
+        print(index_dir.path())
 
         f = index_dir.open('r')
         count = read_u32le(f)
@@ -455,6 +470,20 @@ class SFWeakRefArray(SFObjectRefArray):
             # print("  ",self.ref_index, identification)
             self.references.append(identification)
 
+    def encode(self):
+        return self.ref.encode("utf-16le") + "\x00" + "\x00"
+
+    def write_index(self):
+        f = self.root.dir.touch(self.ref + " index").open(mode='w')
+        count = len(self.references)
+        write_u32le(f, count)
+        write_u16le(f, self.ref_index)
+        write_u16le(f, self.ref_pid)
+        write_u8(f, self.id_size)
+
+        for item in self.references:
+            f.write(item.decode('hex'))
+
     def __repr__(self):
         return "<%s %s to %d items>" % (self.name, self.__class__.__name__, len(self.references) )
 
@@ -466,6 +495,30 @@ class SFWeakRefArray(SFObjectRefArray):
             r = self.root.root.resovle_weakref(self.ref_index, self.ref_pid, ref)
             items.append(r)
         return items
+
+    @value.setter
+    def value(self, value):
+
+        if self.ref is None:
+            propdef = self.propertydef
+            self.ref = mangle_name(propdef.property_name, self.pid, 32)
+            self.data = self.encode()
+
+        for item in value:
+            (ref_index, ref_pid, ref)  = self.root.root.create_weakref(item)
+            if self.ref_index is None:
+                self.ref_index = ref_index
+            if self.ref_pid is None:
+                self.ref_pid = ref_pid
+            if self.id_size is None:
+                self.id_size = len(ref.decode('hex'))
+
+            self.references.append(ref)
+
+
+        self.add_pid_entry()
+
+        # raise Exception()
 
 
 class SFWeakRefVector(SFWeakRefArray):
