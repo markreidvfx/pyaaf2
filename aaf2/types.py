@@ -101,6 +101,10 @@ class TypeDefStrongRef(TypeDef):
         super(TypeDefStrongRef, self).__init__(root, name, auid)
         self.ref_classdef_name = classdef
 
+    def setup_defaults(self):
+        super(TypeDefStrongRef, self).setup_defaults()
+        self['ReferencedType'].value = self.ref_classdef
+
     @property
     def store_format(self):
         return properties.SF_STRONG_OBJECT_REFERENCE
@@ -117,9 +121,39 @@ class TypeDefWeakRef(TypeDef):
     class_id = UUID("0d010101-0206-0000-060e-2b3402060101")
     def __init__(self, root, name=None, auid=None, classdef=None, path=None):
         super(TypeDefWeakRef, self).__init__(root, name, auid)
-        self.ref_classdef = classdef
+        self.ref_classdef_name = classdef
         self.path = path
         self.format = properties.SF_WEAK_OBJECT_REFERENCE
+
+    def setup_defaults(self):
+        super(TypeDefWeakRef, self).setup_defaults()
+        self['TargetSet'].value = self.target_set_path
+        self['ReferencedType'].value = self.ref_classdef
+
+    @property
+    def ref_classdef(self):
+        if self.ref_classdef_name:
+            return self.root.metadict.lookup_classdef(self.ref_classdef_name)
+
+        raise Exception()
+
+    @property
+    def target_set_path(self):
+        if self.path:
+            result = []
+            # root = self.root.root
+            classdef = self.root.metadict.lookup_classdef("Root")
+
+            for p_name in self.path:
+                for p_def in classdef.propertydefs:
+                    if p_def.property_name == p_name:
+                        if p_def.uuid:
+                            result.append(p_def.uuid)
+                        classdef = p_def.typedef.ref_classdef
+                        break
+            return result
+
+        return self['TargetSet'].value
 
 @register_class
 class TypeDefEnum(TypeDef):
@@ -152,6 +186,7 @@ class TypeDefEnum(TypeDef):
         self['ElementNames'].add_pid_entry()
         self['ElementNames'].data = encode_utf16_array(names)
         self['ElementValues'].value = values
+        self['ElementType'].value = self.element_typedef
 
     def read_properties(self):
         super(TypeDefEnum, self).read_properties()
@@ -181,7 +216,7 @@ class TypeDefEnum(TypeDef):
         typedef = self.element_typedef
         for index, value in self.elements.items():
             if value == data:
-                return typedef.encode(data)
+                return typedef.encode(index)
 
         raise Exception("invalid enum")
 
@@ -209,32 +244,33 @@ class TypeDefFixedArray(TypeDef):
     def setup_defaults(self):
         super(TypeDefFixedArray, self).setup_defaults()
         self['ElementCount'].value = self.size
+        self['ElementType'].value = self.element_typedef
 
     @property
-    def member_typedef(self):
+    def element_typedef(self):
         if not self.member_typedef_name:
             return self['ElementType'].value
         return self.root.metadict.lookup_typedef(self.member_typedef_name)
 
     @property
     def byte_size(self):
-        return self.member_typedef.byte_size * self.size
+        return self.element_typedef.byte_size * self.size
 
     def decode(self, data):
-        member_typedef = self.member_typedef
+        element_typedef = self.element_typedef
 
-        if isinstance(member_typedef, TypeDefInt):
-            size = member_typedef.size
+        if isinstance(element_typedef, TypeDefInt):
+            size = element_typedef.size
             elements = len(data)//size
-            fmt = member_typedef.pack_format(elements)
+            fmt = element_typedef.pack_format(elements)
             return unpack(fmt, data)
 
         start = 0
-        byte_size = member_typedef.byte_size
+        byte_size = element_typedef.byte_size
         result = []
         for i in range(self.size):
             end = start + byte_size
-            result.append(member_typedef.decode(data[start:end]))
+            result.append(element_typedef.decode(data[start:end]))
             start = end
 
         return result
@@ -258,6 +294,9 @@ class TypeDefVarArray(TypeDef):
     def store_format(self):
         if self.member_typedef.store_format == properties.SF_WEAK_OBJECT_REFERENCE:
             return properties.SF_WEAK_OBJECT_REFERENCE_VECTOR
+        elif self.member_typedef.store_format == properties.SF_STRONG_OBJECT_REFERENCE:
+            return properties.SF_STRONG_OBJECT_REFERENCE_VECTOR
+
         return super(TypeDefVarArray, self).store_format
 
     @property
@@ -309,7 +348,8 @@ class TypeDefVarArray(TypeDef):
             print(member_typedef)
             result += member_typedef.encode(item)
 
-        raise Exception()
+        return result
+        # raise Exception()
 
     def read_properties(self):
         super(TypeDefVarArray, self).read_properties()
@@ -319,23 +359,32 @@ class TypeDefSet(TypeDef):
     class_id = UUID("0d010101-020a-0000-060e-2b3402060101")
     def __init__(self, root, name=None, auid=None, typedef=None):
         super(TypeDefSet, self).__init__(root, name, auid)
-        self.member_typedef_name = typedef
+        self.element_typedef_name = typedef
+
+    def setup_defaults(self):
+        super(TypeDefSet, self).setup_defaults()
+        self['ElementType'].value = self.element_typedef
 
     @property
-    def member_typedef(self):
-        if self.member_typedef_name:
-            return self.root.metadict.lookup_typedef(self.member_typedef_name)
+    def element_typedef(self):
+        if self.element_typedef_name:
+            return self.root.metadict.lookup_typedef(self.element_typedef_name)
 
         return self['ElementType'].value
 
     @property
+    def ref_classdef(self):
+        typedef = self.element_typedef
+        return typedef.ref_classdef
+
+    @property
     def store_format(self):
-        if self.member_typedef.store_format == properties.SF_STRONG_OBJECT_REFERENCE:
+        if self.element_typedef.store_format == properties.SF_STRONG_OBJECT_REFERENCE:
             return properties.SF_STRONG_OBJECT_REFERENCE_SET
 
     def decode(self, data):
 
-        typedef = self.member_typedef
+        typedef = self.element_typedef
         byte_size = typedef.byte_size
         count = len(data) // byte_size
         start = 0
@@ -356,7 +405,18 @@ class TypeDefString(TypeDef):
     class_id = UUID("0d010101-020b-0000-060e-2b3402060101")
     def __init__(self, root, name=None, auid=None, typedef=None):
         super(TypeDefString, self).__init__(root, name, auid)
-        self.member_typedef_name = typedef
+        self.element_typedef_name = typedef
+
+    def setup_defaults(self):
+        super(TypeDefString, self).setup_defaults()
+        self['ElementType'].value = self.element_typedef
+
+    @property
+    def element_typedef(self):
+        if self.element_typedef_name:
+            return self.root.metadict.lookup_typedef(self.element_typedef_name)
+        return self['ElementType'].value
+
 
     def decode(self, data):
         return data[:-2].decode("utf-16le")
@@ -463,6 +523,37 @@ class TypeDefRecord(TypeDef):
             return data.bytes_le
 
         result = b""
+        # TimeStamp
+        if self.auid == UUID("03010700-0000-0000-060e-2b3401040101"):
+            assert isinstance(data, datetime.datetime)
+            f = [self.root.metadict.lookup_typedef(t) for k, t in self.fields]
+            #date
+            result += f[0].encode(data.date())
+
+            #time
+            result += f[1].encode(data.time())
+            return result
+
+
+        # DateStruct
+        if self.auid == UUID("03010500-0000-0000-060e-2b3401040101"):
+            assert isinstance(data, datetime.date)
+            d = {'year' : data.year,
+                 'month' : data.month,
+                 'day': data.day}
+            # print (d)
+            data = d
+
+        # TimeStruct
+        if self.auid == UUID("03010600-0000-0000-060e-2b3401040101"):
+            assert isinstance(data, datetime.time)
+            t = {'hour' : data.hour,
+                 'minute' : data.minute,
+                 'second' : data.second,
+                 'fraction' : 0 }
+            # print(t)
+            data = t
+
         for key, typedef_name in self.fields:
             typedef = self.root.metadict.lookup_typedef(typedef_name)
             value = typedef.encode(data[key])
@@ -480,10 +571,14 @@ class TypeDefRename(TypeDef):
         super(TypeDefRename, self).__init__(root, name, auid)
         self.typedef_name = typedef
 
+    def setup_defaults(self):
+        super(TypeDefRename, self).setup_defaults()
+        self['RenamedType'].value = self.renamed_typedef
+
     @property
     def renamed_typedef(self):
         if self.typedef_name:
-            return  self.root.metadict.lookup_typedef(typedef_name)
+            return self.root.metadict.lookup_typedef(self.typedef_name)
         return self['RenamedType'].value
 
     def decode(self, data):
@@ -501,6 +596,21 @@ class TypeDefExtEnum(TypeDef):
         if elements:
             for key,value in elements.items():
                 self._elements[UUID(key)] = value
+
+    def setup_defaults(self):
+        super(TypeDefExtEnum, self).setup_defaults()
+
+        names = []
+        keys = []
+        for key, name in self.elements.items():
+            keys.append(key)
+            names.append(name)
+
+        self['ElementNames'].add_pid_entry()
+        self['ElementNames'].data = encode_utf16_array(names)
+        self['ElementValues'].value = keys
+
+
     @property
     def elements(self):
         if self._elements:

@@ -69,7 +69,34 @@ class AAFObject(object):
             p.decode(data)
             self.property_entries[pid] = p
 
+    def validate(self):
+        missing = []
+
+        for propertydef in self.classdef.all_propertydefs():
+
+            if not propertydef.mandatory:
+                continue
+
+            if propertydef.pid in self.property_entries:
+                continue
+
+            # stored on dir entry I guess...
+            if propertydef.property_name in ('ObjClass',):
+                continue
+
+            missing.append(propertydef)
+
+        if missing:
+            m = []
+            for p in missing:
+                m.append("%s %s" % (p.property_name, str(p.typedef)))
+            message = "%s missing the following required properties:\n    %s" % (str(self), "\n    ".join(m))
+            raise Exception(message)
+
     def write_properties(self):
+
+        self.validate()
+
         f = self.dir.touch("properties").open(mode='w')
         # print("writing", f.dir.path())
         byte_order = 0x4c
@@ -91,7 +118,9 @@ class AAFObject(object):
 
         # write index's
         for p in self.property_entries.values():
-            if isinstance(p, (properties.SFStrongRefSet, properties.SFWeakRefArray)):
+            if isinstance(p, (properties.SFStrongRefSet,
+                              properties.SFStrongRefVector,
+                              properties.SFWeakRefArray)):
                 # print('writing index', self, p)
                 p.write_index()
 
@@ -141,9 +170,6 @@ class AAFObject(object):
         if topdown:
             yield self
 
-
-
-
     def properties(self):
 
         for pid, p in self.property_entries.items():
@@ -167,6 +193,7 @@ class AAFObject(object):
         for propertydef in classdef.all_propertydefs():
             if propertydef.property_name == key:
                 fmt = propertydef.store_format
+                # print(fmt,propertydef.typedef)
                 p = property_formats[fmt](self, propertydef.pid, fmt)
                 return p
 

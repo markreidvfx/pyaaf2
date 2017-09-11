@@ -8,7 +8,9 @@ from __future__ import (
 from StringIO import StringIO
 import traceback
 import os
-from uuid import UUID
+from uuid import UUID, uuid4
+import sys
+import datetime
 
 from .utils import (
     read_u8,
@@ -92,7 +94,7 @@ class AAFFile(object):
             self.setup_empty()
 
     def setup_empty(self):
-
+        now = datetime.datetime.now()
         self.root = self.create.Root()
         self.root.attach(self.cfb.find("/"))
         self.root['MetaDictionary'].value = self.metadict
@@ -108,6 +110,29 @@ class AAFFile(object):
         self.header['OperationalPattern'].value = UUID("0d011201-0100-0000-060e-2b3404010105")
         self.header['ObjectModelVersion'].value = 1
         self.header['Version'].value =  {u'major': 1, u'minor': 1}
+
+        i = self.create.Identification()
+        i['ProductName'].value = "PyAAF"
+        i['CompanyName'].value = "CompanyName"
+        # i['ProductVersion'].value = "VersionUnknown"
+
+        i['ProductVersionString'].value = '2.0.0'
+        i['ProductID'].value = UUID("97e04c67-dbe6-4d11-bcd7-3a3a4253a2ef")
+        i['Date'].value = now
+        i['ProductVersion'].value = {u'major': 2, u'type': u'VersionReleased', u'tertiary': 0, u'minor': 0, u'patchLevel': 0}
+        i['ToolkitVersion'].value =  {u'major': 2, u'type': u'VersionReleased', u'tertiary': 0, u'minor': 0, u'patchLevel': 0}
+        i['Platform'].value = sys.platform
+        i['GenerationAUID'].value = uuid4()
+
+        self.header['IdentificationList'].value = [i]
+        self.header['LastModified'].value = now
+        self.header['ByteOrder'].value = 0x4949
+        # self.header['DescriptiveSchemes'].value = []
+        # self.header['EssenceContainers'].value = []
+
+        # self.storage['EssenceData'].value = []
+        self.storage['Mobs'].value = []
+
 
     def read_object(self, path):
         if isinstance(path, DirEntry):

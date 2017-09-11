@@ -183,9 +183,24 @@ class SFStrongRef(SFObjectRef):
 
 # abtract for referenece arrays
 class SFStrongRefArray(SFObjectRefArray):
-    pass
+    def encode(self, data):
+        return data.encode("utf-16le") + b"\x00" + b"\x00"
+
 
 class SFStrongRefVector(SFStrongRefArray):
+
+    def __init__(self, root, pid, format, version=PROPERTY_VERSION):
+        super(SFStrongRefVector, self).__init__(root, pid, format, version)
+        self.references = []
+        self.objects = []
+        self.ref = None
+        self.next_free_key = 0
+        self.last_free_key = 0xFFFFFFFF
+
+        # self.objects = {}
+        self.local_map = {}
+
+
     def decode(self, data):
         self.references = []
         self.ref = None
@@ -204,14 +219,30 @@ class SFStrongRefVector(SFStrongRefArray):
 
         f = index_dir.open('r')
         count = read_u32le(f)
-        next_free_key = read_u32le(f)
-        last_free_key = read_u32le(f)
+        self.next_free_key = read_u32le(f)
+        self.last_free_key = read_u32le(f)
 
         for i in range(count):
             local_key = read_u32le(f)
             ref = "%s{%x}" % (self.ref, local_key)
             # print(i, count, ref)
+            self.local_map[ref] = local_key
             self.references.append(ref)
+
+    def write_index(self):
+        f = self.root.dir.touch(self.ref + " index").open(mode='w')
+        count = len(self.references)
+        write_u32le(f, count)
+        write_u32le(f, self.next_free_key)
+        write_u32le(f, self.last_free_key)
+
+        for ref in self.references:
+            local_key = self.local_map[ref]
+            write_u32le(f, local_key)
+
+    @property
+    def ref_classdef(self):
+        return self.typedef.member_typedef.ref_classdef
 
     @property
     def value(self):
@@ -223,8 +254,48 @@ class SFStrongRefVector(SFStrongRefArray):
             dir_entry = self.root.dir.get(ref)
             item = self.root.root.read_object(dir_entry)
             references.append(item)
+
         self.objects = references
         return references
+
+    @value.setter
+    def value(self, value):
+
+        self.objects = []
+        ref_classdef = self.ref_classdef
+
+        for obj in value:
+            assert ref_classdef.isinstance(obj.classdef)
+
+        if self.ref is None:
+            propdef = self.propertydef
+            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
+            self.data = self.encode(self.ref)
+
+        for obj in value:
+            ref = "%s{%x}" % (self.ref, self.next_free_key)
+            self.local_map[ref] = self.next_free_key
+            self.references.append(ref)
+            self.objects.append(obj)
+            self.next_free_key += 1
+
+        self.add_pid_entry()
+        self.attach()
+
+    def attach(self):
+        # print("set attach")
+        if not self.root.dir:
+            return
+
+        for i, ref in enumerate(self.references):
+
+            obj = self.objects[i]
+            print(ref)
+            dir_entry = self.root.dir.get(ref)
+            if dir_entry is None:
+                dir_entry = self.root.dir.makedir(ref)
+            obj.attach(dir_entry)
+
 
     def __repr__(self):
         return "<%s %s to %s %d items>" % (self.name, self.__class__.__name__, str(self.ref), len(self.references))
@@ -238,13 +309,10 @@ class SFStrongRefSet(SFStrongRefArray):
         self.objects = {}
         self.local_map = {}
         self.next_free_key = 0
-        self.last_free_key = 4294967295
+        self.last_free_key = 0xFFFFFFFF
         self.key_size = 16
         # this pid match the ref_pid on the weak ref
         self.index_pid = 0
-
-    def encode(self, data):
-        return data.encode("utf-16le") + b"\x00" + b"\x00"
 
     def decode(self, data):
         self.data = data
@@ -342,7 +410,7 @@ class SFStrongRefSet(SFStrongRefArray):
     @value.setter
     def value(self, value):
         typedef = self.typedef
-        classdef = typedef.member_typedef.ref_classdef
+        classdef = typedef.ref_classdef
 
         if isinstance(value, list):
             d = {}
@@ -359,7 +427,7 @@ class SFStrongRefSet(SFStrongRefArray):
 
         if self.ref is None:
             propdef = self.propertydef
-            self.ref = mangle_name(propdef.property_name, self.pid, 32)
+            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
             self.data = self.encode(self.ref)
 
         local_key = self.next_free_key
@@ -456,8 +524,6 @@ class SFWeakRefArray(SFObjectRefArray):
         index_dir = self.root.dir.get(index_name)
         if not index_dir:
             raise Exception()
-
-        print(index_dir.path())
 
         f = index_dir.open('r')
         count = read_u32le(f)
