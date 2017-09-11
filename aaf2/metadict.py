@@ -192,8 +192,8 @@ class ClassDef(core.AAFObject):
 root_classes = {
 #Hack property ids are class ids
 'Root' : ('b3b398a5-1c90-11d4-8053-080036210804', None, True, {
-    "Header"              : (None, 0x0002, "HeaderStrongRefence", False, False),
-    "MetaDictionary"      : (None, 0x0001, "MetaDictionaryStrongReference", False, False),
+    "Header"              : ('0d010301-0102-0100-060e-2b3401010102', 0x0002, "HeaderStrongRefence", False, False),
+    "MetaDictionary"      : ('0d010301-0101-0100-060e-2b3401010102', 0x0001, "MetaDictionaryStrongReference", False, False),
 })
 }
 
@@ -201,6 +201,7 @@ root_types = {
 "HeaderStrongRefence"             : (None, "Header"),
 "MetaDictionaryStrongReference"   : (None, "MetaDictionary"),
 }
+# 0d010301-0101-0100-060e-2b3401010102
 
 @register_class
 class MetaDictionary(core.AAFObject):
@@ -498,15 +499,15 @@ class Dictionary(core.AAFObject):
                     'ParameterDefinitions' ,'TaggedValueDefinitions' ,
                     'KLVDataDefinitions' ,'OperationDefinitions' ,
                     'PluginDefinitions' ,'ContainerDefinitions' ,'DataDefinitions'):
-
-            self[key].value = []
+            pass
+            # self[key].value = []
 
         for item in self.datadefs:
             item.setup_defaults()
 
-        # self['DataDefinitions'].value = self.datadefs
+        self['DataDefinitions'].value = self.datadefs
 
         for item in self.containerdefs:
             item.setup_defaults()
 
-        # self['ContainerDefinitions'].value = self.containerdefs
+        self['ContainerDefinitions'].value = self.containerdefs

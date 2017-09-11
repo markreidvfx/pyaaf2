@@ -242,7 +242,7 @@ class SFStrongRefVector(SFStrongRefArray):
 
     @property
     def ref_classdef(self):
-        return self.typedef.member_typedef.ref_classdef
+        return self.typedef.element_typedef.ref_classdef
 
     @property
     def value(self):
@@ -290,7 +290,7 @@ class SFStrongRefVector(SFStrongRefArray):
         for i, ref in enumerate(self.references):
 
             obj = self.objects[i]
-            print(ref)
+            # print(ref)
             dir_entry = self.root.dir.get(ref)
             if dir_entry is None:
                 dir_entry = self.root.dir.makedir(ref)
@@ -497,7 +497,8 @@ class SFWeakRef(SFObjectRef):
 
     @value.setter
     def value(self, value):
-        (self.ref_index, self.ref_pid, self.ref)  = self.root.root.create_weakref(value)
+
+        (self.ref_index, self.ref_pid, self.ref)  = self.root.root.create_weakref(value, self.typedef.pid_path)
 
         self.data = self.encode()
         self.add_pid_entry()
@@ -565,13 +566,15 @@ class SFWeakRefArray(SFObjectRefArray):
     @value.setter
     def value(self, value):
 
+        pid_path = self.typedef.element_typedef.pid_path
+
         if self.ref is None:
             propdef = self.propertydef
             self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode()
 
         for item in value:
-            (ref_index, ref_pid, ref)  = self.root.root.create_weakref(item)
+            (ref_index, ref_pid, ref)  = self.root.root.create_weakref(item, pid_path)
             if self.ref_index is None:
                 self.ref_index = ref_index
             if self.ref_pid is None:

@@ -119,8 +119,6 @@ class AAFFile(object):
         i['ProductVersionString'].value = '2.0.0'
         i['ProductID'].value = UUID("97e04c67-dbe6-4d11-bcd7-3a3a4253a2ef")
         i['Date'].value = now
-        i['ProductVersion'].value = {u'major': 2, u'type': u'VersionReleased', u'tertiary': 0, u'minor': 0, u'patchLevel': 0}
-        i['ToolkitVersion'].value =  {u'major': 2, u'type': u'VersionReleased', u'tertiary': 0, u'minor': 0, u'patchLevel': 0}
         i['Platform'].value = sys.platform
         i['GenerationAUID'].value = uuid4()
 
@@ -162,7 +160,7 @@ class AAFFile(object):
 
     def resovle_weakref(self, index, ref_pid, ref):
         # print(index, ref_pid, ref)
-        p = self.weakref_prop(index)
+        parent, p = self.weakref_prop(index)
         v = p.value.get(ref)
         return v
 
@@ -175,52 +173,31 @@ class AAFFile(object):
             root = p.value
 
         p = root.property_entries[path[-1]]
-        return p
+        return root, p
 
-    def create_weakref(self, obj):
-        if obj.dir is None:
-            raise Exception("weak ref needs to be to attach obj")
+    def create_weakref(self, obj, pid_path):
+        
+        if pid_path in self.weakref_table:
+            index = self.weakref_table.index(pid_path)
+        else:
+            index = len(self.weakref_table)
+            self.weakref_table.append(pid_path)
 
-        parent_obj = self.read_object(obj.dir.parent)
-
-        path = obj.dir.path()
-        path, local_key_str = path.split('{')
-
-        pid_path = []
-        for item in path.lstrip('/').split("/"):
-            pid_str = item.split('-')[-1]
-            pid_path.append(int(pid_str, 16))
-
-        local_key = int(local_key_str.rstrip('}'), 16)
-
-        p = parent_obj.property_entries[pid_path[-1]]
+        parent_obj, p = self.weakref_prop(index)
         assert isinstance(p, SFStrongRefSet)
 
         weakref_pid = self.metadict.weakref_pid(parent_obj.classdef, p.propertydef)
 
         ref_key = None
-        for key, value in p.local_map.items():
-            if value == local_key:
+        for key, value in p.items():
+            if value is obj:
                 ref_key = key
                 break
 
         if ref_key is None:
             raise Exception("can not find ref_key")
 
-        index = None
-        for i, p in enumerate(self.weakref_table):
-            if p == pid_path:
-                index = i
-                break
-
-        if index is None:
-            index = len(self.weakref_table)
-            self.weakref_table.append(pid_path)
-
-
         return index, weakref_pid, ref_key
-
-
 
     def read_reference_properties(self):
         f = self.cfb.open("/referenced properties")

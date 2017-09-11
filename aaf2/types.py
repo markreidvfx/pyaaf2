@@ -122,7 +122,7 @@ class TypeDefWeakRef(TypeDef):
     def __init__(self, root, name=None, auid=None, classdef=None, path=None):
         super(TypeDefWeakRef, self).__init__(root, name, auid)
         self.ref_classdef_name = classdef
-        self.path = path
+        self._path = path
         self.format = properties.SF_WEAK_OBJECT_REFERENCE
 
     def setup_defaults(self):
@@ -139,21 +139,43 @@ class TypeDefWeakRef(TypeDef):
 
     @property
     def target_set_path(self):
-        if self.path:
+        if self._path:
             result = []
             # root = self.root.root
             classdef = self.root.metadict.lookup_classdef("Root")
 
-            for p_name in self.path:
+            for p_name in self._path:
+                found = False
                 for p_def in classdef.propertydefs:
                     if p_def.property_name == p_name:
                         if p_def.uuid:
                             result.append(p_def.uuid)
                         classdef = p_def.typedef.ref_classdef
+                        found = True
                         break
+                if not found:
+                    raise Exception()
             return result
 
         return self['TargetSet'].value
+
+    @property
+    def pid_path(self):
+        path = []
+        classdef = self.root.metadict.lookup_classdef("Root")
+        for auid in self.target_set_path:
+            found = False
+            for p in classdef.propertydefs:
+                # print(p, p.uuid)
+                if p.uuid == auid:
+                    path.append(p.pid)
+                    classdef = p.typedef.ref_classdef
+                    found = True
+                    break
+            if not found:
+                raise Exception()
+
+        return path
 
 @register_class
 class TypeDefEnum(TypeDef):
@@ -284,69 +306,69 @@ class TypeDefVarArray(TypeDef):
     class_id = UUID("0d010101-0209-0000-060e-2b3402060101")
     def __init__(self, root, name=None, auid=None, typedef=None):
         super(TypeDefVarArray, self).__init__(root, name, auid)
-        self.member_typedef_name = typedef
+        self.element_typedef_name = typedef
 
     def setup_defaults(self):
         super(TypeDefVarArray, self).setup_defaults()
-        self['ElementType'].value = self.member_typedef
+        self['ElementType'].value = self.element_typedef
 
     @property
     def store_format(self):
-        if self.member_typedef.store_format == properties.SF_WEAK_OBJECT_REFERENCE:
+        if self.element_typedef.store_format == properties.SF_WEAK_OBJECT_REFERENCE:
             return properties.SF_WEAK_OBJECT_REFERENCE_VECTOR
-        elif self.member_typedef.store_format == properties.SF_STRONG_OBJECT_REFERENCE:
+        elif self.element_typedef.store_format == properties.SF_STRONG_OBJECT_REFERENCE:
             return properties.SF_STRONG_OBJECT_REFERENCE_VECTOR
 
         return super(TypeDefVarArray, self).store_format
 
     @property
-    def member_typedef(self):
-        if not self.member_typedef_name:
+    def element_typedef(self):
+        if not self.element_typedef_name:
             return self['ElementType'].value
-        return self.root.metadict.lookup_typedef(self.member_typedef_name)
+        return self.root.metadict.lookup_typedef(self.element_typedef_name)
 
     def decode(self, data):
 
-        member_typedef = self.member_typedef
+        element_typedef = self.element_typedef
 
-        if member_typedef.type_name == "Character":
+        if element_typedef.type_name == "Character":
             return list(iter_utf16_array(data))
 
 
-        if isinstance(member_typedef, TypeDefInt):
-            size = member_typedef.size
+        if isinstance(element_typedef, TypeDefInt):
+            size = element_typedef.size
             elements = len(data)//size
-            fmt = member_typedef.pack_format(elements)
+            fmt = element_typedef.pack_format(elements)
             return unpack(fmt, data)
 
-        byte_size = member_typedef.byte_size
+        byte_size = element_typedef.byte_size
         elements = len(data)//byte_size
         start = 0
         result = []
         for i in range(elements):
             end = start + byte_size
-            result.append(member_typedef.decode(data[start:end]))
+            result.append(element_typedef.decode(data[start:end]))
             start = end
         return result
 
     def encode(self, value):
 
-        member_typedef = self.member_typedef
+        element_typedef = self.element_typedef
 
-        if member_typedef.type_name == "Character":
+        if element_typedef.type_name == "Character":
             return encode_utf16_array(value)
 
-        if isinstance(member_typedef, TypeDefInt):
+        if isinstance(element_typedef, TypeDefInt):
 
             elements = len(value)
-            fmt = member_typedef.pack_format(elements)
+            fmt = element_typedef.pack_format(elements)
             return pack(fmt, *value)
 
         result = b''
 
         for item in value:
-            print(member_typedef)
-            result += member_typedef.encode(item)
+            # print(member_typedef)
+            result += element_typedef.encode(item)
 
         return result
         # raise Exception()
