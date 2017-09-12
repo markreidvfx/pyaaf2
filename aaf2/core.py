@@ -74,7 +74,7 @@ class AAFObject(object):
 
         for propertydef in self.classdef.all_propertydefs():
 
-            if not propertydef.mandatory:
+            if propertydef.optional:
                 continue
 
             if propertydef.pid in self.property_entries:

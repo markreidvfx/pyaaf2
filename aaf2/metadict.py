@@ -22,7 +22,7 @@ from uuid import UUID
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
-    def __init__(self, root, name=None, uuid=None, pid=None, typedef=None, mandatory=None, unique=None):
+    def __init__(self, root, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         super(PropertyDef, self).__init__(root)
 
         self.property_name = name
@@ -31,7 +31,7 @@ class PropertyDef(core.AAFObject):
             self.uuid = UUID(uuid)
         self.pid = pid
         self.typedef_name = typedef
-        self.mandatory = mandatory
+        self.optional = optional
         self.unique = unique
 
     @property
@@ -46,9 +46,10 @@ class PropertyDef(core.AAFObject):
     def setup_defaults(self):
         self['Name'].value = self.property_name
         self['Identification'].value = self.uuid
+        print(self,self.typedef)
         self['Type'].value = self.typedef.auid
         self['LocalIdentification'].value = self.pid
-        self['IsOptional'].value = self.mandatory
+        self['IsOptional'].value = self.optional
 
         if not self.unique is None:
             self['IsUniqueIdentifier'].value = self.unique or False
@@ -61,7 +62,7 @@ class PropertyDef(core.AAFObject):
         pid_name = 6
         pid_uuid = 5
         pid_type = 11
-        pid_mandatory = 12
+        pid_optional = 12
         pid_pid = 13
         pid_unique = 14
 
@@ -69,7 +70,7 @@ class PropertyDef(core.AAFObject):
         self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
         self.typedef_name = UUID(bytes_le=self.property_entries[pid_type].data)
         self.pid = read_u16le(StringIO(self.property_entries[pid_pid].data))
-        self.mandatory = self.property_entries[pid_mandatory].data == "\x01"
+        self.optional = self.property_entries[pid_optional].data == "\x01"
         if pid_unique in self.property_entries:
             self.unique = self.property_entries[pid_unique].data == "\x01"
 
@@ -110,6 +111,7 @@ class ClassDef(core.AAFObject):
         # InterchangeObject parent is itself???
         if p is None:
             p = self
+        print(self, p)
         self['ParentClass'].value = p
 
     def isinstance(self, other):
@@ -146,6 +148,8 @@ class ClassDef(core.AAFObject):
         #     return None
         if parent == self.class_name:
             return None
+
+        # print(parent)
             # raise Exception("cyclic parent error: %s == %s" % (parent, self.class_name))
 
         return self.root.metadict.classdefs_by_name.get(parent, None)
@@ -250,11 +254,12 @@ class MetaDictionary(core.AAFObject):
             t = types.TypeDefRecord(self.root, name, *args)
             self.typedefs_by_name[name] = t
 
-        for name, args in typedefs.arrays.items():
-            if args[-1] is None:
-                t = types.TypeDefVarArray(self.root, name, *args[:-1])
-            else:
-                t =  types.TypeDefFixedArray(self.root, name, *args)
+        for name, args in typedefs.var_arrays.items():
+            t = types.TypeDefVarArray(self.root, name, *args)
+            self.typedefs_by_name[name] = t
+
+        for name, args in typedefs.fixed_arrays.items():
+            t =  types.TypeDefFixedArray(self.root, name, *args)
             self.typedefs_by_name[name] = t
 
         for name, args in typedefs.renames.items():
@@ -282,20 +287,20 @@ class MetaDictionary(core.AAFObject):
             self.typedefs_by_name[name] = types.TypeDefStrongRef(self.root, name, *args)
 
         # need to look more into these
-        for name, args in typedefs.strongref_sets.items():
-            self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
+        # for name, args in typedefs.strongref_sets.items():
+        #     self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
 
-        for name, args in typedefs.strongref_vectors.items():
-            self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
+        # for name, args in typedefs.strongref_vectors.items():
+        #     self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
 
         for name, args in typedefs.weakrefs.items():
             self.typedefs_by_name[name] = types.TypeDefWeakRef(self.root, name, *args)
 
-        for name, args in typedefs.weakref_sets.items():
-            self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
+        # for name, args in typedefs.weakref_sets.items():
+        #     self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
 
-        for name, args in typedefs.weakref_vectors.items():
-            self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
+        # for name, args in typedefs.weakref_vectors.items():
+        #     self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
 
         for name, auid in typedefs.streams.items():
             self.typedefs_by_name[name] = types.TypeDefStream(self.root, name, auid)
