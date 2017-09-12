@@ -49,7 +49,7 @@ class PropertyDef(core.AAFObject):
         self['Type'].value = self.typedef.auid
         self['LocalIdentification'].value = self.pid
         self['IsOptional'].value = self.mandatory
-        self['Description'].value = ""
+
         if not self.unique is None:
             self['IsUniqueIdentifier'].value = self.unique or False
 
@@ -129,17 +129,24 @@ class ClassDef(core.AAFObject):
 
     @property
     def parent(self):
-        if self.class_name in ('Root', 'InterchangeObject'):
+        if self.class_name in ('Root',):
+            return None
+
+        if self.class_name in ('InterchangeObject', ):
             return None
 
         parent = self.parent_name
+
         parent_pid = 8
         if parent is None and parent_pid in self.property_entries:
             p = self.property_entries[parent_pid].value
             parent = p.class_name
 
-        if parent in ('Root', 'InterchangeObject'):
+        # if parent in ('Root', 'InterchangeObject'):
+        #     return None
+        if parent == self.class_name:
             return None
+            # raise Exception("cyclic parent error: %s == %s" % (parent, self.class_name))
 
         return self.root.metadict.classdefs_by_name.get(parent, None)
 
@@ -151,18 +158,19 @@ class ClassDef(core.AAFObject):
     def relatives(self):
         root = self
         while root:
+
             yield root
             root = root.parent
 
-        root = self.root.metadict.lookup_classdef('InterchangeObject')
-        if root != self:
-            yield root
+        # root = self.root.metadict.lookup_classdef('InterchangeObject')
+        # if root is self:
+        #     yield root
 
     def all_propertydefs(self):
         for classdef in self.relatives():
 
             if not classdef:
-                continue
+                break
                 # raise Exception(self.class_name)
 
             for p in classdef.propertydefs:

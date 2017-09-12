@@ -1,5 +1,5 @@
 classdefs = {
-"InterchangeObject" : ("0d010101-0101-0100-060e-2b3402060101" ,"Root", False, {
+"InterchangeObject" : ("0d010101-0101-0100-060e-2b3402060101" ,"InterchangeObject", False, {
     "ObjClass"              : ("06010104-0101-0000-060e-2b3401010102", 0x0101, "ClassDefinitionWeakReference", True, False),
     "Generation"            : ("05200701-0800-0000-060e-2b3401010102", 0x0102, "AUID", False, False),
     }
@@ -530,7 +530,7 @@ classdefs = {
     "ProfileAndLevel"       : ("04010602-010a-0000-060e-2b3401010105", 0x0000, "UInt8", False, False),
     }
 ),
-"MetaDefinition" : ("0d010101-0224-0000-060e-2b3402060101" ,"Root", False, {
+"MetaDefinition" : ("0d010101-0224-0000-060e-2b3402060101" ,"InterchangeObject", False, {
     "Identification"        : ("06010107-1300-0000-060e-2b3401010102", 0x0005, "AUID", True, True),
     "Name"                  : ("03020401-0201-0000-060e-2b3401010102", 0x0006, "String", True, False),
     "Description"           : ("06010107-1401-0000-060e-2b3401010102", 0x0007, "String", False, False),
@@ -615,7 +615,7 @@ classdefs = {
 "TypeDefinitionCharacter" : ("0d010101-0223-0000-060e-2b3402060101" ,"TypeDefinition", True, {
     }
 ),
-"MetaDictionary" : ("0d010101-0225-0000-060e-2b3402060101" ,"Root", True, {
+"MetaDictionary" : ("0d010101-0225-0000-060e-2b3402060101" ,"InterchangeObject", True, {
     "ClassDefinitions"      : ("06010107-0700-0000-060e-2b3401010102", 0x0003, "ClassDefinitionStrongReferenceSet", False, False),
     "TypeDefinitions"       : ("06010107-0800-0000-060e-2b3401010102", 0x0004, "TypeDefinitionStrongReferenceSet", False, False),
     }

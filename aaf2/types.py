@@ -114,7 +114,7 @@ class TypeDefStrongRef(TypeDef):
         if self.ref_classdef_name:
             return self.root.metadict.lookup_classdef(self.ref_classdef_name)
 
-        raise Exception()
+        return self['ReferencedType'].value
 
 @register_class
 class TypeDefWeakRef(TypeDef):
@@ -158,6 +158,24 @@ class TypeDefWeakRef(TypeDef):
             return result
 
         return self['TargetSet'].value
+
+    @property
+    def path(self):
+        path = []
+        classdef = self.root.metadict.lookup_classdef("Root")
+        for auid in self.target_set_path:
+            found = False
+            for p in classdef.propertydefs:
+                # print(p, p.uuid)
+                if p.uuid == auid:
+                    path.append(p.property_name)
+                    classdef = p.typedef.ref_classdef
+                    found = True
+                    break
+            if not found:
+                raise Exception()
+
+        return path
 
     @property
     def pid_path(self):
