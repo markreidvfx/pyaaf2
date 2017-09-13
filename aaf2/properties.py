@@ -7,6 +7,7 @@ from __future__ import (
     )
 
 import uuid
+from uuid import UUID
 from StringIO import StringIO
 from .utils import (
     read_u8,
@@ -17,6 +18,7 @@ from .utils import (
     write_u32le,
     mangle_name,
     )
+from .mobid import MobID
 
 SF_DATA                                   = 0x82
 SF_DATA_STREAM                            = 0x42
@@ -337,10 +339,7 @@ class SFStrongRefSet(SFStrongRefArray):
         self.last_free_key = read_u32le(f)
         self.index_pid = read_u16le(f)
         self.key_size = read_u8(f)
-
-        # print("!!", self.propertydef.property_name,  "%x" % self.index_pid, self.next_free_key, self.last_free_key, "%x" % self.pid)
-
-        # f = StringIO(f.read())
+        assert self.key_size in (16, 32)
 
         for i in range(count):
             local_key = read_u32le(f)
@@ -349,8 +348,13 @@ class SFStrongRefSet(SFStrongRefArray):
             # not sure if ref count is actually used
             # doesn't apear to be
             assert ref_count == 1
+            # print(self.key_size, self)
 
-            key = f.read(self.key_size).encode("hex")
+            if self.key_size == 16:
+                key = UUID(bytes_le=f.read(self.key_size))
+            else:
+                key = MobID(bytes_le=f.read(self.key_size))
+
             ref = "%s{%x}" % (self.ref, local_key)
             self.local_map[key] = local_key
             self.references[key] = ref
@@ -363,10 +367,6 @@ class SFStrongRefSet(SFStrongRefArray):
         write_u32le(f, self.next_free_key)
         write_u32le(f, self.last_free_key)
 
-        index_pid = self.root.root.metadict.weakref_pid(self.root.classdef, self.propertydef)
-        # print("index_pid", index_pid)
-        self.index_pid = index_pid
-        # self.index_pid = self.root.classdef.weakref_pid
         write_u16le(f, self.index_pid)
         write_u8(f, self.key_size)
 
@@ -374,7 +374,7 @@ class SFStrongRefSet(SFStrongRefArray):
             local_key = self.local_map[key]
             write_u32le(f, local_key)
             write_u32le(f, 1)
-            f.write(key.decode("hex"))
+            f.write(key.bytes_le)
 
     def get_object(self, key):
         if key in self.objects:
@@ -412,10 +412,12 @@ class SFStrongRefSet(SFStrongRefArray):
         typedef = self.typedef
         classdef = typedef.ref_classdef
 
+        (self.index_pid, self.key_size) = self.root.root.metadict.weakref_pid(self.root.classdef, self.propertydef)
+
         if isinstance(value, list):
             d = {}
             for item in value:
-                d[uuid.uuid4().hex] = item
+                d[uuid.uuid4()] = item
             value = d
 
         for key, obj in value.items():
@@ -474,12 +476,16 @@ class SFWeakRef(SFObjectRef):
         self.ref_index = read_u16le(f)
         self.ref_pid = read_u16le(f)
         self.id_size = read_u8(f)
-        self.ref = f.read(self.id_size).encode("hex")
+        assert self.id_size in (16, 32)
+        if self.id_size == 16:
+            self.ref = UUID(bytes_le=f.read(self.id_size))
+        else:
+            self.ref = key = MobID(bytes_le=f.read(self.id_size))
 
     def encode(self):
         f = StringIO()
 
-        ref = self.ref.decode('hex')
+        ref = self.ref.bytes_le
         id_size = len(ref)
 
         write_u16le(f, self.ref_index)
@@ -531,9 +537,13 @@ class SFWeakRefArray(SFObjectRefArray):
         self.ref_index = read_u16le(f)
         self.ref_pid = read_u16le(f)
         self.id_size = read_u8(f)
+        assert self.id_size in (16, 32)
         # print(self.pid)
         for i in range(count):
-            identification = f.read(self.id_size).encode("hex")
+            if self.id_size == 16:
+                identification = UUID(bytes_le=f.read(self.id_size))
+            else:
+                identification = key = MobID(bytes_le=f.read(self.id_size))
             # print("  ",self.ref_index, identification)
             self.references.append(identification)
 
@@ -549,7 +559,7 @@ class SFWeakRefArray(SFObjectRefArray):
         write_u8(f, self.id_size)
 
         for item in self.references:
-            f.write(item.decode('hex'))
+            f.write(item.bytes_le)
 
     def __repr__(self):
         return "<%s %s to %d items>" % (self.name, self.__class__.__name__, len(self.references) )
@@ -580,7 +590,7 @@ class SFWeakRefArray(SFObjectRefArray):
             if self.ref_pid is None:
                 self.ref_pid = ref_pid
             if self.id_size is None:
-                self.id_size = len(ref.decode('hex'))
+                self.id_size = len(ref.bytes_le)
 
             self.references.append(ref)
 

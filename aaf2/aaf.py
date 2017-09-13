@@ -114,8 +114,6 @@ class AAFFile(object):
         i = self.create.Identification()
         i['ProductName'].value = "PyAAF"
         i['CompanyName'].value = "CompanyName"
-        # i['ProductVersion'].value = "VersionUnknown"
-
         i['ProductVersionString'].value = '2.0.0'
         i['ProductID'].value = UUID("97e04c67-dbe6-4d11-bcd7-3a3a4253a2ef")
         i['Date'].value = now
@@ -128,9 +126,7 @@ class AAFFile(object):
         # self.header['DescriptiveSchemes'].value = []
         # self.header['EssenceContainers'].value = []
 
-        # self.storage['EssenceData'].value = []
         self.storage['Mobs'].value = []
-
 
     def read_object(self, path):
         if isinstance(path, DirEntry):
@@ -176,7 +172,7 @@ class AAFFile(object):
         return root, p
 
     def create_weakref(self, obj, pid_path):
-        
+
         if pid_path in self.weakref_table:
             index = self.weakref_table.index(pid_path)
         else:
@@ -185,8 +181,7 @@ class AAFFile(object):
 
         parent_obj, p = self.weakref_prop(index)
         assert isinstance(p, SFStrongRefSet)
-
-        weakref_pid = self.metadict.weakref_pid(parent_obj.classdef, p.propertydef)
+        weakref_pid, key_size = self.metadict.weakref_pid(parent_obj.classdef, p.propertydef)
 
         ref_key = None
         for key, value in p.items():

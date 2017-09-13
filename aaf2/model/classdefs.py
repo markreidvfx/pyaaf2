@@ -1,5 +1,5 @@
 classdefs = {
-"InterchangeObject"  : ( "0d010101-0101-0100-060e-2b3402060101" , "Root" , False , {
+"InterchangeObject"  : ( "0d010101-0101-0100-060e-2b3402060101" , "InterchangeObject" , False , {
      "Generation" : ( "05200701-0800-0000-060e-2b3401010102" ,  0x0102 ,  "AUID" , True ,  False ),
      "ObjClass" : ( "06010104-0101-0000-060e-2b3401010102" ,  0x0101 ,  "ClassDefinitionWeakReference" , False ,  False ),
      }
@@ -576,13 +576,13 @@ classdefs = {
 "TypeDefinitionCharacter"  : ( "0d010101-0223-0000-060e-2b3402060101" , "TypeDefinition" , True , {
      }
 ),
-"MetaDefinition"  : ( "0d010101-0224-0000-060e-2b3402060101" , "Root" , False , {
+"MetaDefinition"  : ( "0d010101-0224-0000-060e-2b3402060101" , "InterchangeObject" , False , {
      "Identification" : ( "06010107-1300-0000-060e-2b3401010102" ,  0x0005 ,  "AUID" , False ,  True ),
      "Description" : ( "06010107-1401-0000-060e-2b3401010102" ,  0x0007 ,  "aafString" , True ,  False ),
      "Name" : ( "03020401-0201-0000-060e-2b3401010102" ,  0x0006 ,  "aafString" , False ,  False ),
      }
 ),
-"MetaDictionary"  : ( "0d010101-0225-0000-060e-2b3402060101" , "Root" , True , {
+"MetaDictionary"  : ( "0d010101-0225-0000-060e-2b3402060101" , "InterchangeObject" , True , {
      "ClassDefinitions" : ( "06010107-0700-0000-060e-2b3401010102" ,  0x0003 ,  "kAAFTypeID_ClassDefinitionStrongReferenceSet" , True ,  False ),
      "TypeDefinitions" : ( "06010107-0800-0000-060e-2b3401010102" ,  0x0004 ,  "kAAFTypeID_TypeDefinitionStrongReferenceSet" , True ,  False ),
      }

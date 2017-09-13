@@ -46,7 +46,6 @@ class PropertyDef(core.AAFObject):
     def setup_defaults(self):
         self['Name'].value = self.property_name
         self['Identification'].value = self.uuid
-        print(self,self.typedef)
         self['Type'].value = self.typedef.auid
         self['LocalIdentification'].value = self.pid
         self['IsOptional'].value = self.optional
@@ -111,7 +110,8 @@ class ClassDef(core.AAFObject):
         # InterchangeObject parent is itself???
         if p is None:
             p = self
-        print(self, p)
+
+        # print(self, p)
         self['ParentClass'].value = p
 
     def isinstance(self, other):
@@ -131,26 +131,18 @@ class ClassDef(core.AAFObject):
 
     @property
     def parent(self):
-        if self.class_name in ('Root',):
-            return None
-
-        if self.class_name in ('InterchangeObject', ):
-            return None
-
         parent = self.parent_name
 
         parent_pid = 8
         if parent is None and parent_pid in self.property_entries:
-            p = self.property_entries[parent_pid].value
+            ref = self.property_entries[parent_pid].ref
+            p = self.root.metadict.lookup_classdef(ref)
             parent = p.class_name
 
-        # if parent in ('Root', 'InterchangeObject'):
-        #     return None
-        if parent == self.class_name:
-            return None
 
-        # print(parent)
-            # raise Exception("cyclic parent error: %s == %s" % (parent, self.class_name))
+        if parent == self.class_name:
+            # print(parent)
+            return None
 
         return self.root.metadict.classdefs_by_name.get(parent, None)
 
@@ -162,13 +154,9 @@ class ClassDef(core.AAFObject):
     def relatives(self):
         root = self
         while root:
-
             yield root
             root = root.parent
 
-        # root = self.root.metadict.lookup_classdef('InterchangeObject')
-        # if root is self:
-        #     yield root
 
     def all_propertydefs(self):
         for classdef in self.relatives():
@@ -315,14 +303,14 @@ class MetaDictionary(core.AAFObject):
 
     def setup_defaults(self):
 
-        self['TypeDefinitions'].value = self.typedefs_by_uuid.values()
+        self['TypeDefinitions'].value = self.typedefs_by_uuid
 
 
-        classes = []
-        for c in self.classdefs_by_uuid.values():
+        classes = {}
+        for k, c in self.classdefs_by_uuid.items():
             if c.class_name == "Root":
                 continue
-            classes.append(c)
+            classes[k]= c
 
         self['ClassDefinitions'].value = classes
 
@@ -332,7 +320,7 @@ class MetaDictionary(core.AAFObject):
 
 
         done = set(["Root"])
-        for c in classes:
+        for c in classes.values():
             # print c.class_name
 
             for p in reversed(list(c.relatives())):
@@ -386,11 +374,11 @@ class MetaDictionary(core.AAFObject):
 
     def weakref_pid(self, classdef, propertydef):
 
-        # there are not many weakrefable types
-        MetaDefinition_Identification   = 0x0005
-        DefinitionObject_Identification = 0x1B01
-        Mob_MobID                       = 0x4401
-        EssenceData_MobID               = 0x2701
+        # there are not many weakrefable types and key_size
+        MetaDefinition_Identification   = (0x0005, 16)
+        DefinitionObject_Identification = (0x1B01, 16)
+        Mob_MobID                       = (0x4401, 32)
+        EssenceData_MobID               = (0x2701, 32)
 
         c_name = classdef.class_name
         p_name = propertydef.property_name
@@ -408,17 +396,16 @@ class MetaDictionary(core.AAFObject):
             return DefinitionObject_Identification
 
         elif c_name in ('ContentStorage') and \
-            p_name in ('EssenceData', 'Mobs'):
+            p_name in ('Mobs',):
+            return Mob_MobID
+
+        elif c_name in ('ContentStorage') and \
+            p_name in ('EssenceData',):
             return EssenceData_MobID
 
-        # if self.class_name in ('MetaDictionary','ClassDefinition',):
-        #     return MetaDefinition_Identification
-        # elif  self.class_name == 'DefinitionObject':
-        #     return DefinitionObject_Identification
-        # else:
-        #     print(self.class_name)
-        print (classdef, propertydef)
-        raise Exception()
+        else:
+            print (classdef, propertydef)
+            raise Exception()
 
     @property
     def classdef(self):
@@ -498,13 +485,16 @@ class Dictionary(core.AAFObject):
     def __init__(self, root):
         super(Dictionary, self).__init__(root)
 
-        self.datadefs = []
+        self.datadefs = {}
         for key, args in datadefs.DataDefs.items():
-            self.datadefs.append(DataDef(root, key, *args))
 
-        self.containerdefs = []
+            d = DataDef(root, key, *args)
+            self.datadefs[d.uuid] = d
+
+        self.containerdefs = {}
         for key, args in datadefs.ContainerDefs.items():
-            self.containerdefs.append(ContainerDef(root, key, *args))
+            d = ContainerDef(root, key, *args)
+            self.containerdefs[d.uuid] = d
 
     def setup_defaults(self):
 
@@ -515,12 +505,12 @@ class Dictionary(core.AAFObject):
             pass
             # self[key].value = []
 
-        for item in self.datadefs:
+        for item in self.datadefs.values():
             item.setup_defaults()
 
         self['DataDefinitions'].value = self.datadefs
 
-        for item in self.containerdefs:
+        for item in self.containerdefs.values():
             item.setup_defaults()
 
         self['ContainerDefinitions'].value = self.containerdefs
