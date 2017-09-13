@@ -38,6 +38,29 @@ class MobID(object):
 
         if mobid:
             self.urn = mobid
+
+    @staticmethod
+    def new():
+        m = MobID()
+        m.SMPTELabel = [0x06, 0x0a, 0x2b, 0x34, 0x01, 0x01, 0x01, 0x05, 0x01, 0x01, 0x0f, 0x00]
+        m.length = 0x13
+        m.instanceHigh = 0x00
+        m.instanceMid = 0x00
+        m.instanceLow = 0x00
+        m.material = uuid.uuid4()
+        return m
+
+    @property
+    def material(self):
+        return uuid.UUID(bytes_le=self.bytes_le[16:])
+
+    @material.setter
+    def material(self, value):
+        self.Data1 = value.time_low
+        self.Data2 = value.time_mid
+        self.Data3 = value.time_hi_version
+        self.Data4 = list(struct.unpack("8B", value.bytes[8:]))
+
     @property
     def bytes_le(self):
         return MOBID_STRUCT.pack(

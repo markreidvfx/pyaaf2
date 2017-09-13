@@ -558,6 +558,10 @@ class TypeDefRecord(TypeDef):
         return result
 
     def encode(self, data):
+        # MobID
+        if self.auid == UUID("01030200-0000-0000-060e-2b3401040101"):
+            return data.bytes_le
+
         # AUID
         if self.auid == UUID("01030100-0000-0000-060e-2b3401040101"):
             return data.bytes_le
