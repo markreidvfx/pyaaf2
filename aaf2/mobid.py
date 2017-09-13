@@ -167,6 +167,26 @@ class MobID(object):
                 'SMPTELabel': SMPTELabel
                 }
     @property
+    def int(self):
+        data = bytearray(self.bytes_le)
+        num = 0
+        for offset, byte in enumerate(data):
+            num += byte << (offset * 8)
+        return num
+
+    def __int__(self):
+        return self.int
+
+    def __eq__(self, other):
+        if isinstance(other, MobID):
+            return self.int == other.int
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self.int)
+
+
+    @property
     def urn(self):
 
         # handle case UMIDs where the material number is half swapped
