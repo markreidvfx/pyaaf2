@@ -375,7 +375,7 @@ class SFStrongRefSet(SFStrongRefArray):
             write_u32le(f, 1)
             f.write(key.bytes_le)
 
-    def get_object(self, key):
+    def read_object(self, key):
         if key in self.objects:
             return self.objects[key]
 
@@ -390,7 +390,7 @@ class SFStrongRefSet(SFStrongRefArray):
     def items(self):
 
         for key, ref in self.references.items():
-            obj = self.get_object(key)
+            obj = self.read_object(key)
             self.objects[key] = obj
 
             yield (key, obj)
@@ -406,12 +406,14 @@ class SFStrongRefSet(SFStrongRefArray):
         self.objects = d
         return d
 
-    def add(self, value):
+    def extend(self, values):
         typedef = self.typedef
         classdef = typedef.ref_classdef
 
-        if not classdef.isinstance(value.classdef):
-            raise TypeError("Invalid Value")
+        # check values are the correct type
+        for item in values:
+            if not classdef.isinstance(item.classdef):
+                raise TypeError("Invalid Value")
 
         (self.index_pid, self.key_size) = self.root.root.metadict.weakref_pid(self.root.classdef, self.propertydef)
 
@@ -421,37 +423,39 @@ class SFStrongRefSet(SFStrongRefArray):
             self.data = self.encode(self.ref)
 
         local_key = self.next_free_key
-        self.next_free_key += 1
 
-        ref = "%s{%x}" % (self.ref, local_key)
-        key = value.unique_key
-        self.local_map[key] = local_key
-        self.references[key] = ref
-        self.objects[key] = value
+        for item in values:
+            ref = "%s{%x}" % (self.ref, local_key)
+            key = item.unique_key
+            self.local_map[key] = local_key
+            self.references[key] = ref
+            self.objects[key] = item
+            local_key += 1
+
+        self.next_free_key = local_key
 
         self.add_pid_entry()
         self.attach()
 
+    def append(self, value):
+        self.extend([value])
+
+    def clear(self):
+        for item in self.objects.values():
+            item.detach()
+        self.references = {}
+        self.objects = {}
+        self.local_map = {}
+        self.next_free_key = 0
+
     @value.setter
     def value(self, value):
-        typedef = self.typedef
-        classdef = typedef.ref_classdef
 
-        (self.index_pid, self.key_size) = self.root.root.metadict.weakref_pid(self.root.classdef, self.propertydef)
+        self.clear()
+        if isinstance(value, dict):
+            value = value.values()
 
-        if isinstance(value, list):
-            d = {}
-            for item in value:
-                d[item.unique_key] = item
-            value = d
-
-        if value:
-            for key, obj in value.items():
-                self.add(obj)
-        else:
-            self.add_pid_entry()
-            self.attach()
-
+        self.extend(value)
         return
 
     def attach(self):
@@ -469,6 +473,18 @@ class SFStrongRefSet(SFStrongRefArray):
 
     def __repr__(self):
         return "<%s to %s %d items>" % (self.__class__.__name__, str(self.ref), len(self.references))
+
+def resolve_weakref(p, ref):
+    ref_class_id = p.ref_classdef.uuid
+
+    # classdef
+    if ref_class_id   == UUID("0d010101-0101-0100-060e-2b3402060101"):
+        return p.root.metadict.lookup_classdef(ref)
+    # typedef
+    elif ref_class_id == UUID("0d010101-0203-0000-060e-2b3402060101"):
+        return p.root.root.metadict.lookup_typedef(ref)
+    else:
+        return p.root.root.resovle_weakref(p.ref_index, p.ref_pid, p.ref)
 
 class SFWeakRef(SFObjectRef):
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
@@ -509,8 +525,12 @@ class SFWeakRef(SFObjectRef):
         return "<%s %s index %s %s>" % (self.name, self.__class__.__name__, self.ref_index, self.ref)
 
     @property
+    def ref_classdef(self):
+        return self.typedef.ref_classdef
+
+    @property
     def value(self):
-        return self.root.root.resovle_weakref(self.ref_index, self.ref_pid, self.ref)
+        return resolve_weakref(self, self.ref)
 
     @value.setter
     def value(self, value):
@@ -575,12 +595,15 @@ class SFWeakRefArray(SFObjectRefArray):
     def __repr__(self):
         return "<%s %s to %d items>" % (self.name, self.__class__.__name__, len(self.references) )
 
+    @property
+    def ref_classdef(self):
+        return self.typedef.element_typedef.ref_classdef
 
     @property
     def value(self):
         items = []
         for ref in self.references:
-            r = self.root.root.resovle_weakref(self.ref_index, self.ref_pid, ref)
+            r = resolve_weakref(self, ref)
             items.append(r)
         return items
 

@@ -139,7 +139,7 @@ class TypeDefWeakRef(TypeDef):
         if self.ref_classdef_name:
             return self.root.metadict.lookup_classdef(self.ref_classdef_name)
 
-        return self['ReferencedType'].value
+        return self.root.metadict.lookup_classdef(self['ReferencedType'].ref)
 
     @property
     def target_set_path(self):
