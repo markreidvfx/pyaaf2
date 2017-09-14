@@ -182,14 +182,7 @@ class AAFFile(object):
         assert isinstance(p, SFStrongRefSet)
         weakref_pid, key_size = self.metadict.weakref_pid(parent_obj.classdef, p.propertydef)
 
-        ref_key = None
-        for key, value in p.items():
-            if value is obj:
-                ref_key = key
-                break
-
-        if ref_key is None:
-            raise Exception("can not find ref_key")
+        ref_key = obj.unique_key
 
         return index, weakref_pid, ref_key
 

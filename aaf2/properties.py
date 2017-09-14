@@ -198,10 +198,7 @@ class SFStrongRefVector(SFStrongRefArray):
         self.ref = None
         self.next_free_key = 0
         self.last_free_key = 0xFFFFFFFF
-
-        # self.objects = {}
         self.local_map = {}
-
 
     def decode(self, data):
         self.references = []
@@ -210,7 +207,6 @@ class SFStrongRefVector(SFStrongRefArray):
         self.ref = data[:-2].decode("utf-16le")
         self.objects = []
 
-    # def read_index(self):
         if not self.ref:
             return
 
@@ -251,23 +247,32 @@ class SFStrongRefVector(SFStrongRefArray):
         if self.objects:
             return self.objects
 
-        references = []
+        objects = []
         for ref in self.references:
             dir_entry = self.root.dir.get(ref)
             item = self.root.root.read_object(dir_entry)
-            references.append(item)
+            objects.append(item)
 
-        self.objects = references
-        return references
+        self.objects = objects
+        return objects
+
+    def clear(self):
+        for obj in self.objects:
+            obj.detach()
+
+        self.next_free_key = 0
+        self.objects = []
+        self.references = []
+        self.local_map = {}
 
     @value.setter
     def value(self, value):
-
-        self.objects = []
         ref_classdef = self.ref_classdef
 
         for obj in value:
             assert ref_classdef.isinstance(obj.classdef)
+
+        self.clear()
 
         if self.ref is None:
             propdef = self.propertydef
@@ -386,6 +391,8 @@ class SFStrongRefSet(SFStrongRefArray):
         self.objects[key] = obj
         return obj
 
+    def __contains__(self, item):
+        return item in self.references
 
     def items(self):
 
@@ -459,7 +466,7 @@ class SFStrongRefSet(SFStrongRefArray):
         return
 
     def attach(self):
-        # print("set attach")
+
         if not self.root.dir:
             return
 
@@ -532,10 +539,17 @@ class SFWeakRef(SFObjectRef):
     def value(self):
         return resolve_weakref(self, self.ref)
 
+    @property
+    def pid_path(self):
+        return self.typedef.pid_path
+
     @value.setter
     def value(self, value):
 
-        (self.ref_index, self.ref_pid, self.ref)  = self.root.root.create_weakref(value, self.typedef.pid_path)
+        ref_classdef = self.ref_classdef
+        assert ref_classdef.isinstance(value.classdef)
+
+        (self.ref_index, self.ref_pid, self.ref)  = self.root.root.create_weakref(value, self.pid_path)
 
         self.data = self.encode()
         self.add_pid_entry()
@@ -600,6 +614,10 @@ class SFWeakRefArray(SFObjectRefArray):
         return self.typedef.element_typedef.ref_classdef
 
     @property
+    def pid_path(self):
+        return self.typedef.element_typedef.pid_path
+
+    @property
     def value(self):
         items = []
         for ref in self.references:
@@ -607,17 +625,22 @@ class SFWeakRefArray(SFObjectRefArray):
             items.append(r)
         return items
 
-    @value.setter
-    def value(self, value):
+    def extend(self, values):
+        ref_classdef = self.ref_classdef
 
-        pid_path = self.typedef.element_typedef.pid_path
+        # check values are the correct type
+        for item in values:
+            if not ref_classdef.isinstance(item.classdef):
+                raise TypeError("Invalid Value")
+
+        pid_path = self.pid_path
 
         if self.ref is None:
             propdef = self.propertydef
             self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode()
 
-        for item in value:
+        for item in values:
             (ref_index, ref_pid, ref)  = self.root.root.create_weakref(item, pid_path)
             if self.ref_index is None:
                 self.ref_index = ref_index
@@ -628,8 +651,18 @@ class SFWeakRefArray(SFObjectRefArray):
 
             self.references.append(ref)
 
-
         self.add_pid_entry()
+
+    def append(self, value):
+        self.extend([value])
+
+    def clear(self):
+        self.references = []
+
+    @value.setter
+    def value(self, value):
+        self.clear()
+        self.extend(value)
 
 
 class SFWeakRefVector(SFWeakRefArray):
