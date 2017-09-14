@@ -123,8 +123,6 @@ class AAFFile(object):
         self.header['IdentificationList'].value = [i]
         self.header['LastModified'].value = now
         self.header['ByteOrder'].value = 0x4949
-        # self.header['DescriptiveSchemes'].value = []
-        # self.header['EssenceContainers'].value = []
 
         self.storage['Mobs'].value = []
 
@@ -147,7 +145,8 @@ class AAFFile(object):
 
         obj = obj_class(self)
         obj.dir = dir_entry
-        obj.class_id = dir_entry.class_id
+        if obj_class is AAFObject:
+            obj.class_id = dir_entry.class_id
         obj.read_properties()
 
         self.path_cache[path] = obj

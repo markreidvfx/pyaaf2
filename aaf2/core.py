@@ -39,6 +39,10 @@ class AAFObject(object):
             return classdef.class_name
         return self.__class__.__name__
 
+    @property
+    def unique_key(self):
+        raise NotImplementedError()
+
     def read_properties(self):
 
         stream = self.dir.get('properties')

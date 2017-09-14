@@ -32,6 +32,10 @@ class TypeDef(core.AAFObject):
         self.format = properties.SF_DATA
 
     @property
+    def unique_key(self):
+        return self.auid
+
+    @property
     def store_format(self):
         return self.format
 
@@ -135,7 +139,7 @@ class TypeDefWeakRef(TypeDef):
         if self.ref_classdef_name:
             return self.root.metadict.lookup_classdef(self.ref_classdef_name)
 
-        raise Exception()
+        return self['ReferencedType'].value
 
     @property
     def target_set_path(self):

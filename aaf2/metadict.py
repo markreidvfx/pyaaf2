@@ -35,6 +35,10 @@ class PropertyDef(core.AAFObject):
         self.unique = unique
 
     @property
+    def unique_key(self):
+        return self.uuid
+
+    @property
     def typedef(self):
         return self.root.metadict.lookup_typedef(self.typedef_name)
         # else:
@@ -91,6 +95,10 @@ class ClassDef(core.AAFObject):
 
     def __eq__(self, other):
         self.uuid == other.uuid
+
+    @property
+    def unique_key(self):
+        return self.uuid
 
     def setup_defaults(self):
         self['Name'].value = self.class_name
@@ -303,14 +311,14 @@ class MetaDictionary(core.AAFObject):
 
     def setup_defaults(self):
 
-        self['TypeDefinitions'].value = self.typedefs_by_uuid
+        self['TypeDefinitions'].value = self.typedefs_by_uuid.values()
 
 
-        classes = {}
+        classes = []
         for k, c in self.classdefs_by_uuid.items():
             if c.class_name == "Root":
                 continue
-            classes[k]= c
+            classes.append(c)
 
         self['ClassDefinitions'].value = classes
 
@@ -320,7 +328,7 @@ class MetaDictionary(core.AAFObject):
 
 
         done = set(["Root"])
-        for c in classes.values():
+        for c in classes:
             # print c.class_name
 
             for p in reversed(list(c.relatives())):
@@ -444,6 +452,10 @@ class DefinitionObject(core.AAFObject):
         self['Name'].value = self.def_name
         self['Identification'].value = self.uuid
         self['Description'].value = self.description
+
+    @property
+    def unique_key(self):
+        return self.uuid
 
     def read_properties(self):
         super(DefinitionObject, self).read_properties()

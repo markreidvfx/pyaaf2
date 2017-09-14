@@ -348,7 +348,6 @@ class SFStrongRefSet(SFStrongRefArray):
             # not sure if ref count is actually used
             # doesn't apear to be
             assert ref_count == 1
-            # print(self.key_size, self)
 
             if self.key_size == 16:
                 key = UUID(bytes_le=f.read(self.key_size))
@@ -407,6 +406,32 @@ class SFStrongRefSet(SFStrongRefArray):
         self.objects = d
         return d
 
+    def add(self, value):
+        typedef = self.typedef
+        classdef = typedef.ref_classdef
+
+        if not classdef.isinstance(value.classdef):
+            raise TypeError("Invalid Value")
+
+        (self.index_pid, self.key_size) = self.root.root.metadict.weakref_pid(self.root.classdef, self.propertydef)
+
+        if self.ref is None:
+            propdef = self.propertydef
+            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
+            self.data = self.encode(self.ref)
+
+        local_key = self.next_free_key
+        self.next_free_key += 1
+
+        ref = "%s{%x}" % (self.ref, local_key)
+        key = value.unique_key
+        self.local_map[key] = local_key
+        self.references[key] = ref
+        self.objects[key] = value
+
+        self.add_pid_entry()
+        self.attach()
+
     @value.setter
     def value(self, value):
         typedef = self.typedef
@@ -417,32 +442,17 @@ class SFStrongRefSet(SFStrongRefArray):
         if isinstance(value, list):
             d = {}
             for item in value:
-                d[uuid.uuid4()] = item
+                d[item.unique_key] = item
             value = d
 
-        for key, obj in value.items():
+        if value:
+            for key, obj in value.items():
+                self.add(obj)
+        else:
+            self.add_pid_entry()
+            self.attach()
 
-            if not classdef.isinstance(obj.classdef):
-                raise Exception()
-
-        self.objects = value
-
-        if self.ref is None:
-            propdef = self.propertydef
-            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
-            self.data = self.encode(self.ref)
-
-        local_key = self.next_free_key
-        for key, obj in value.items():
-            ref = "%s{%x}" % (self.ref, local_key)
-            self.local_map[key] = local_key
-            self.references[key] = ref
-            local_key += 1
-
-        self.next_free_key = local_key
-
-        self.add_pid_entry()
-        self.attach()
+        return
 
     def attach(self):
         # print("set attach")
@@ -487,6 +497,7 @@ class SFWeakRef(SFObjectRef):
 
         ref = self.ref.bytes_le
         id_size = len(ref)
+        assert id_size in (16, 32)
 
         write_u16le(f, self.ref_index)
         write_u16le(f, self.ref_pid)
@@ -596,8 +607,6 @@ class SFWeakRefArray(SFObjectRefArray):
 
 
         self.add_pid_entry()
-
-        # raise Exception()
 
 
 class SFWeakRefVector(SFWeakRefArray):
