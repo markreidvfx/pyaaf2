@@ -312,39 +312,39 @@ class DirEntry(object):
         count = 0
 
         # avoids recursion
-        # while True:
-        #     if count > max_dirs_entries:
-        #         raise Exception("max dir entries limit reached")
-        #
-        #     if entry < root:
-        #         left = root.left()
-        #         if left:
-        #             root = left
-        #         else:
-        #             root.left_id = entry.dir_id
-        #             break
-        #     else:
-        #         right = root.right()
-        #         if right:
-        #             root = right
-        #         else:
-        #             root.right_id = entry.dir_id
-        #             break
-        #     count += 1
+        while True:
+            if count > max_dirs_entries:
+                raise Exception("max dir entries limit reached")
+
+            if entry < root:
+                left = root.left()
+                if left:
+                    root = left
+                else:
+                    root.left_id = entry.dir_id
+                    break
+            else:
+                right = root.right()
+                if right:
+                    root = right
+                else:
+                    root.right_id = entry.dir_id
+                    break
+            count += 1
 
         # resucive version
-        if entry < self:
-            left = self.left()
-            if left:
-                left.insert(entry)
-            else:
-                self.left_id = entry.dir_id
-        else:
-            right = self.right()
-            if right:
-                right.insert(entry)
-            else:
-                self.right_id = entry.dir_id
+        # if entry < self:
+        #     left = self.left()
+        #     if left:
+        #         left.insert(entry)
+        #     else:
+        #         self.left_id = entry.dir_id
+        # else:
+        #     right = self.right()
+        #     if right:
+        #         right.insert(entry)
+        #     else:
+        #         self.right_id = entry.dir_id
 
     def path(self):
         path = []
