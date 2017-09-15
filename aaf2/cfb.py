@@ -250,13 +250,14 @@ class DirEntry(object):
         self.storage = storage
         self.dir_id = dir_id
         self.parent = None
+        self._children_cache = None
 
     def __lt__(self, other):
         assert isinstance(other, DirEntry)
 
         if len(self.name) == len(other.name):
             # compare not case senstive
-            assert self.name.upper() != other.name.upper()
+            # assert self.name.upper() != other.name.upper()
 
             return self.name.upper() < other.name.upper()
         # shorter names are always less then
@@ -273,6 +274,7 @@ class DirEntry(object):
         return self.storage.read_dir_entry(self.child_id, self)
 
     def add_child(self, entry):
+        self._children_cache = None
 
         entry.parent = self
         child = self.child()
@@ -283,6 +285,7 @@ class DirEntry(object):
 
     def remove_child(self, entry):
         # NOTE: this is really ineffecient
+        self._children_cache = None
 
         children = []
         for item in self.storage.listdir(self):
@@ -300,7 +303,7 @@ class DirEntry(object):
             self.add_child(item)
 
     def insert(self, entry):
-
+        self._children_cache = None
         root = self
 
         dir_per_sector = self.storage.sector_size // 128
@@ -383,7 +386,7 @@ class DirEntry(object):
 
     def get(self, name, default=None):
         for item in self.listdir():
-            if item.name.upper() == name.upper():
+            if item.name == name:
                 return item
         return default
 
@@ -1211,6 +1214,7 @@ class CompoundFileBinary(object):
                 if item.dir_id in self.dir_cache:
                     del self.dir_cache[item.dir_id]
 
+            root._children_cache = None
             root.child_id = None
 
         # remove root item
@@ -1231,6 +1235,9 @@ class CompoundFileBinary(object):
 
         if not root.isdir():
             raise Exception("can only list storage types")
+
+        if not root._children_cache is None:
+            return root._children_cache
 
         child = root.child()
         if not child:
@@ -1274,7 +1281,7 @@ class CompoundFileBinary(object):
             # in case of inifinite loop, not sure if this can happen
             # if count > max_dirs_entries:
             #     raise Exception("exceed max dir count %d %d" % (count, max_dirs_entries))
-
+        root._children_cache = result
         return result
 
     def find(self, path):

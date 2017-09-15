@@ -488,7 +488,8 @@ class TypeDefRecord(TypeDef):
             return self._fields
         names = list(iter_utf16_array(self['MemberNames'].data))
         types = list(self['MemberTypes'].value)
-        return zip(names, [t.type_name for t in types])
+        self._fields = list(zip(names, [t.type_name for t in types]))
+        return self._fields
 
     def setup_defaults(self):
         super(TypeDefRecord, self).setup_defaults()

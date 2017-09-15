@@ -215,7 +215,10 @@ class SFStrongRefVector(SFStrongRefArray):
         if not index_dir:
             raise Exception()
 
-        f = index_dir.open('r')
+        s = index_dir.open('r')
+        # read the whole index
+        f = StringIO(s.read())
+
         count = read_u32le(f)
         self.next_free_key = read_u32le(f)
         self.last_free_key = read_u32le(f)
@@ -338,7 +341,10 @@ class SFStrongRefSet(SFStrongRefArray):
         if not index_dir:
             raise Exception()
 
-        f = index_dir.open('r')
+        s = index_dir.open('r')
+        # read the whole of the index
+        f = StringIO(s.read())
+
         count = read_u32le(f)
         self.next_free_key = read_u32le(f)
         self.last_free_key = read_u32le(f)
@@ -381,8 +387,10 @@ class SFStrongRefSet(SFStrongRefArray):
             f.write(key.bytes_le)
 
     def read_object(self, key):
-        if key in self.objects:
-            return self.objects[key]
+
+        obj = self.objects.get(key, None)
+        if not obj is None:
+            return obj
 
         ref = self.references[key]
 
@@ -398,8 +406,6 @@ class SFStrongRefSet(SFStrongRefArray):
 
         for key, ref in self.references.items():
             obj = self.read_object(key)
-            self.objects[key] = obj
-
             yield (key, obj)
 
     @property
@@ -577,13 +583,16 @@ class SFWeakRefArray(SFObjectRefArray):
         if not index_dir:
             raise Exception()
 
-        f = index_dir.open('r')
+        s = index_dir.open('r')
+        # read the whole index
+        f = StringIO(s.read())
+
         count = read_u32le(f)
         self.ref_index = read_u16le(f)
         self.ref_pid = read_u16le(f)
         self.id_size = read_u8(f)
         assert self.id_size in (16, 32)
-        # print(self.pid)
+
         for i in range(count):
             if self.id_size == 16:
                 identification = UUID(bytes_le=f.read(self.id_size))
