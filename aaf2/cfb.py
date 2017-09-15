@@ -11,6 +11,8 @@ import os
 import uuid
 import io
 import math
+from array import array
+from struct import Struct
 
 from .utils import (
     read_u8, read_u16le,
@@ -70,7 +72,7 @@ class Stream(object):
             raise ValueError('New position is before the start of the stream')
 
         if offset > self.dir.byte_size:
-            logging.debug("overseek %d bytes, padding with zeros" % (offset - self.dir.byte_size))
+            # logging.debug("overseek %d bytes, padding with zeros" % (offset - self.dir.byte_size))
             self.pos = self.dir.byte_size
             bytes_left = offset - self.dir.byte_size
             min_seek_size = self.storage.sector_size * 4
@@ -173,7 +175,7 @@ class Stream(object):
         f = self.storage.f
         pos = self.abs_pos()
         f.seek(pos)
-        logging.debug("write stream %d bytes at %d" % (byte_writeable, pos))
+        # logging.debug("write stream %d bytes at %d" % (byte_writeable, pos))
         f.write(data[:byte_writeable])
         self.pos += byte_writeable
 
@@ -199,7 +201,7 @@ class Stream(object):
         sector_count = int(math.ceil(byte_size / float(self.sector_size())))
 
         current_sects= len(self.storage.iter_fat_chain(self.dir.sector_id, minifat))
-        logging.debug("%d bytes requires %d sectors at %d has %d" % (byte_size, sector_count, self.sector_size(), current_sects))
+        # logging.debug("%d bytes requires %d sectors at %d has %d" % (byte_size, sector_count, self.sector_size(), current_sects))
 
         while len(self.storage.iter_fat_chain(self.dir.sector_id, minifat)) < sector_count:
             sid = self.storage.fat_chain_append(self.dir.sector_id, minifat)
@@ -481,8 +483,8 @@ class CompoundFileBinary(object):
         self.f = file_object
 
         self.difat = [[]]
-        self.fat = []
-        self.minifat = []
+        self.fat = array(b'I')
+        self.minifat = array(b'I')
 
         self.difat_chain = []
         self.minifat_chain = []
@@ -766,7 +768,7 @@ class CompoundFileBinary(object):
 
     def read_fat(self):
         f = self.f
-        self.fat = []
+        self.fat = array(b'I')
         sector_count = 0
         fat_sectors = []
         for t, i, sid in self.iter_difat():
@@ -783,20 +785,12 @@ class CompoundFileBinary(object):
             logging.warn("fat sector count missmatch difat: %d header: %d" % (len(fat_sectors), self.fat_sector_count))
             self.fat_sector_count = len(fat_sectors)
 
+        st = Struct('<%dI' % (self.sector_size // 4))
         for sid in fat_sectors:
 
             pos = (sid + 1) *  self.sector_size
-            # logging.debug("reading fat sid: %d pos: %d" % (sid, pos))
-            # assert sector_count < self.fat_sector_count
             f.seek(pos)
-            for j in range(self.sector_size // 4):
-                try:
-                    item = read_u32le(f)
-                except:
-                    sid
-                    raise
-                # item = fat_sector_types.get(item, item)
-                self.fat.append(item)
+            self.fat.extend(st.unpack(f.read(self.sector_size)))
             sector_count += 1
 
         logging.debug("read %d fat sectors ", sector_count)
@@ -833,16 +827,13 @@ class CompoundFileBinary(object):
     def read_minifat(self):
         f = self.f
         sector_count = 0
-
+        st = Struct('<%dI' % (self.sector_size // 4))
         for sid in self.iter_fat_chain(self.minifat_sector_start):
             self.minifat_chain.append(sid)
 
             f.seek((sid + 1) *  self.sector_size)
             sector_count += 1
-            for i in range(self.sector_size // 4):
-                item = read_u32le(f)
-                # item = fat_sector_types.get(item, item)
-                self.minifat.append(item)
+            self.minifat.extend(st.unpack(f.read(self.sector_size)))
         logging.debug("read %d mini fat sectors", sector_count)
 
     def write_minifat(self):
