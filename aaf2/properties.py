@@ -45,18 +45,23 @@ class PropertyItem(object):
         self.format = format
         self.version = version
         self.data = None
+        self._propertydef = None
 
     def format_name(self):
         return str(property_formats[self.format].__name__)
 
     @property
     def propertydef(self):
+        if self._propertydef:
+            return self._propertydef
+
         classdef = self.root.classdef
         if classdef is None:
             return
 
         for p in classdef.all_propertydefs():
             if p.pid == self.pid:
+                self._propertydef = p
                 return p
     @property
     def name(self):
