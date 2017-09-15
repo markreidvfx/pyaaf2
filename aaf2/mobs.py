@@ -18,14 +18,22 @@ class Mob(core.AAFObject):
 
     @property
     def unique_key(self):
-        return self.mob_id
+        return self.id
 
     @property
-    def mob_id(self):
+    def name(self):
+        return self['Name'].value
+
+    @name.setter
+    def name(self, value):
+        self['Name'].value = value
+
+    @property
+    def id(self):
         return self['MobID'].value
 
-    @mob_id.setter
-    def mob_id(self, value):
+    @id.setter
+    def id(self, value):
         self['MobID'].value = value
 
 @register_class
