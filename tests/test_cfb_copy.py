@@ -1,3 +1,9 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
 
 from aaf2.cfb import CompoundFileBinary
 import os
@@ -23,9 +29,8 @@ class CopyTests(unittest.TestCase):
         ss_a = CompoundFileBinary(file_a)
         ss_b = CompoundFileBinary(file_b)
 
-        print ss_a.class_id
-
-        print ss_a.root
+        print(ss_a.class_id)
+        print(ss_a.root)
 
         for root, storage, streams in ss_a.walk():
             for item in storage:
@@ -41,7 +46,7 @@ class CopyTests(unittest.TestCase):
 
         f = open(dst_path, 'r')
         ss = CompoundFileBinary(f)
-        print ss.root
+        print(ss.root)
         for root, storage, streams in ss.walk():
 
             assert ss_a.exists(root.path())
@@ -52,7 +57,6 @@ class CopyTests(unittest.TestCase):
                 s_a = ss_a.open(item.path(), 'r')
                 s_b = ss.open(item.path(), 'r')
                 assert s_a.read() == s_b.read()
-
 
 
 if __name__ == '__main__':
