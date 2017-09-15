@@ -109,7 +109,7 @@ class Stream(object):
         mini_sector_size = self.storage.mini_stream_sector_size
 
         if minifat:
-            minifat_chain = self.storage.iter_fat_chain(start_sid, True)
+            minifat_chain = self.storage.get_fat_chain(start_sid, True)
             mini_fat_index = self.pos // mini_sector_size
             sector_offset =  self.pos % mini_sector_size
             mini_stream_sid = minifat_chain[mini_fat_index]
@@ -121,7 +121,7 @@ class Stream(object):
             seek_pos = ((sid + 1) *  sector_size) + offset
             return seek_pos
         else:
-            fat_chain = self.storage.iter_fat_chain(start_sid, False)
+            fat_chain = self.storage.get_fat_chain(start_sid, False)
             index  = self.pos // sector_size
             offset = self.pos % sector_size
 
@@ -200,10 +200,10 @@ class Stream(object):
         self.dir.byte_size = byte_size
         sector_count = int(math.ceil(byte_size / float(self.sector_size())))
 
-        current_sects= len(self.storage.iter_fat_chain(self.dir.sector_id, minifat))
+        current_sects= len(self.storage.get_fat_chain(self.dir.sector_id, minifat))
         # logging.debug("%d bytes requires %d sectors at %d has %d" % (byte_size, sector_count, self.sector_size(), current_sects))
 
-        while len(self.storage.iter_fat_chain(self.dir.sector_id, minifat)) < sector_count:
+        while len(self.storage.get_fat_chain(self.dir.sector_id, minifat)) < sector_count:
             sid = self.storage.fat_chain_append(self.dir.sector_id, minifat)
             if self.dir.sector_id is None:
                 self.dir.sector_id = sid
@@ -510,7 +510,7 @@ class CompoundFileBinary(object):
             self.read_minifat()
 
             # create dir_fat_chain and read root dir entry
-            self.dir_fat_chain = self.iter_fat_chain(self.dir_sector_start)
+            self.dir_fat_chain = self.get_fat_chain(self.dir_sector_start)
 
             logging.debug("read %d dir sectors" % len(self.dir_fat_chain))
             self.root = self.read_dir_entry(0)
@@ -518,7 +518,7 @@ class CompoundFileBinary(object):
 
             # create mini stream fat chain
             if self.minifat_sector_count:
-                self.mini_stream_chain = self.iter_fat_chain(self.root.sector_id)
+                self.mini_stream_chain = self.get_fat_chain(self.root.sector_id)
         else:
             self.setup_empty()
             self.write_header()
@@ -828,7 +828,7 @@ class CompoundFileBinary(object):
         f = self.f
         sector_count = 0
         st = Struct('<%dI' % (self.sector_size // 4))
-        for sid in self.iter_fat_chain(self.minifat_sector_start):
+        for sid in self.get_fat_chain(self.minifat_sector_start):
             self.minifat_chain.append(sid)
 
             f.seek((sid + 1) *  self.sector_size)
@@ -839,7 +839,7 @@ class CompoundFileBinary(object):
     def write_minifat(self):
         f = self.f
         sector_count = 0
-        for i, sid in enumerate(self.iter_fat_chain(self.minifat_sector_start)):
+        for i, sid in enumerate(self.get_fat_chain(self.minifat_sector_start)):
             pos = (sid + 1) *  self.sector_size
             f.seek(pos)
             logging.debug("writing minifat to sid: %d at: %d" % (sid,pos))
@@ -1034,7 +1034,7 @@ class CompoundFileBinary(object):
             return True
         return False
 
-    def iter_fat_chain(self, start_sid, minifat=False):
+    def get_fat_chain(self, start_sid, minifat=False):
         fat = self.fat
         fat_name = "FAT"
         if minifat:
@@ -1110,7 +1110,7 @@ class CompoundFileBinary(object):
         if start_sid is None:
             fat[sect] = ENDOFCHAIN
         else:
-            fat_chain = self.iter_fat_chain(start_sid, minifat)
+            fat_chain = self.get_fat_chain(start_sid, minifat)
             fat[fat_chain[-1]] = sect
             fat[sect] = ENDOFCHAIN
 
@@ -1122,8 +1122,8 @@ class CompoundFileBinary(object):
         if minifat:
             fat = self.minifat
             fat_name = "minifat"
-        #  self.iter_fat_chain(start_sid, minifat)
-        for sid in self.iter_fat_chain(start_sid, minifat):
+        #  self.get_fat_chain(start_sid, minifat)
+        for sid in self.get_fat_chain(start_sid, minifat):
             logging.debug("marking %s sid: %d as FREESECT" % (fat_name, sid))
             fat[sid] = FREESECT
             if minifat:
