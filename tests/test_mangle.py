@@ -1,5 +1,9 @@
-
-
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
 
 from aaf2 import properties
 
@@ -11,7 +15,6 @@ def test_mangle():
                             ('TaggedValueAttributeList', 0xffd0, 32-10)):
 
         result = properties.mangle_name(item, pid, size)
-        print(result)
         assert len(result) <= size
 
 

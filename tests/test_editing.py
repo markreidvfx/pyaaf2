@@ -1,3 +1,10 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
+
 from aaf2.cfb import CompoundFileBinary
 from StringIO import StringIO
 
@@ -25,27 +32,17 @@ if __name__ == "__main__":
 
     ss = CompoundFileBinary(f)
 
-    # ss.remove_dir_entry("/MetaDictionary-1/ClassDefinitions-3{4e}/Properties-9{7}/properties")
-
     ss.rmtree("/MetaDictionary-1")
 
     ss.rmtree("/Header-2")
-    # for root, storage, streams in ss.walk():
-    #     print root.path()
-    #     for item in streams:
-    #         # data = item.data()
-    #         # print item
-    #         print item.path()
     ss.close()
-            # assert len(data) == item.byte_size
-
 
     f = open(test_file, 'rb')
     ss = CompoundFileBinary(f)
 
     for root, storage, streams in ss.walk():
-        print root.path()
+        print(root.path())
         for item in streams:
             # data = item.data()
             # print item
-            print item.path()
+            print(item.path())

@@ -1,7 +1,7 @@
 import os
 from aaf2.aaf import AAFFile
 from aaf2.cfb import CompoundFileBinary
-
+from aaf2.mobid import MobID
 base = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 test_dir = os.path.join(base, 'results')
 if not os.path.exists(test_dir):
@@ -9,15 +9,32 @@ if not os.path.exists(test_dir):
 
 test_files = os.path.join(base, 'test_files')
 
+import datetime
+
+
 if __name__ == "__main__":
     import logging
     # logging.basicConfig(level=logging.DEBUG)
 
     # test_file = os.path.join(test_files, "test_file_01.aaf")
     # test_file = os.path.join(test_files, "empty.aaf")
-    result_file = os.path.join(test_dir, 'empty.aaf')
+    result_file = os.path.join(test_dir, 'mobs.aaf')
     with AAFFile(result_file, 'w') as f:
-        print f.create.MasterMob()
+        now = datetime.datetime.now()
+
+        for i in xrange(100):
+            mob_id = MobID.new()
+            m = f.create.MasterMob()
+            m.name = "TestMob%d" %i
+            m.id = mob_id
+            m['LastModified'].value = now
+            m['CreationTime'].value = now
+            m['Slots'].value = []
+
+            f.storage['Mobs'].append(m)
+            print m.id
+
+
 
     f = CompoundFileBinary(open(result_file, 'rb'))
     for root, storage, stream in f.walk():
@@ -29,3 +46,9 @@ if __name__ == "__main__":
 
         for root, storage, streams in f.cfb.walk():
             print root.path()
+
+    import aaf
+
+    f = aaf.open(result_file)
+    for m in f.storage.mobs():
+        print m
