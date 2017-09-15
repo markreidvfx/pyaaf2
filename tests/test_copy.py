@@ -10,49 +10,53 @@ if not os.path.exists(test_dir):
 
 test_files = os.path.join(base, 'test_files')
 
-def test_copy():
-    src_path = os.path.join(test_files, "test_file_01.aaf")
-    dst_path = os.path.join(test_dir, "test_copy.aaf")
+import unittest
 
-    file_a = open(src_path, 'rb')
-    file_b = open(dst_path, 'wb+')
+class CopyTests(unittest.TestCase):
+    def test_copy(self):
+        src_path = os.path.join(test_files, "test_file_01.aaf")
+        dst_path = os.path.join(test_dir, "test_copy.aaf")
 
-    ss_a = CompoundFileBinary(file_a)
-    ss_b = CompoundFileBinary(file_b)
+        file_a = open(src_path, 'rb')
+        file_b = open(dst_path, 'wb+')
 
-    print ss_a.class_id
+        ss_a = CompoundFileBinary(file_a)
+        ss_b = CompoundFileBinary(file_b)
 
-    print ss_a.root
+        print ss_a.class_id
 
-    for root, storage, streams in ss_a.walk():
-        for item in storage:
-            entry = ss_b.makedir(item.path(), class_id=item.class_id)
+        print ss_a.root
 
-        for item in streams:
-            s_a = ss_a.open(item.path(), 'r')
-            s_b = ss_b.open(item.path(), 'w')
-            s_b.write(s_a.read())
+        for root, storage, streams in ss_a.walk():
+            for item in storage:
+                entry = ss_b.makedir(item.path(), class_id=item.class_id)
 
-    ss_b.close()
-    file_b.close()
+            for item in streams:
+                s_a = ss_a.open(item.path(), 'r')
+                s_b = ss_b.open(item.path(), 'w')
+                s_b.write(s_a.read())
 
-    f = open(dst_path, 'r')
-    ss = CompoundFileBinary(f)
-    print ss.root
-    for root, storage, streams in ss.walk():
+        ss_b.close()
+        file_b.close()
 
-        assert ss_a.exists(root.path())
-        for item in storage:
-            assert ss_a.exists(item.path())
+        f = open(dst_path, 'r')
+        ss = CompoundFileBinary(f)
+        print ss.root
+        for root, storage, streams in ss.walk():
 
-        for item in streams:
-            s_a = ss_a.open(item.path(), 'r')
-            s_b = ss.open(item.path(), 'r')
-            assert s_a.read() == s_b.read()
+            assert ss_a.exists(root.path())
+            for item in storage:
+                assert ss_a.exists(item.path())
+
+            for item in streams:
+                s_a = ss_a.open(item.path(), 'r')
+                s_b = ss.open(item.path(), 'r')
+                assert s_a.read() == s_b.read()
 
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+
     import logging
     # logging.basicConfig(level=logging.DEBUG)
-    test_copy()
+    unittest.main()
