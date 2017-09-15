@@ -1,3 +1,10 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
+
 import os
 from aaf2.aaf import AAFFile
 

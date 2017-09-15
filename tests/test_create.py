@@ -1,3 +1,9 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
 import os
 from aaf2.aaf import AAFFile
 from aaf2.cfb import CompoundFileBinary
@@ -32,23 +38,17 @@ if __name__ == "__main__":
             m['Slots'].value = []
 
             f.storage['Mobs'].append(m)
-            print m.id
+            print(m.id)
 
 
 
     f = CompoundFileBinary(open(result_file, 'rb'))
     for root, storage, stream in f.walk():
-        print root.path()
+        print(root.path())
         for s in stream:
-            print s.path()
+            print(s.path())
 
     with AAFFile(result_file, 'r') as f:
 
         for root, storage, streams in f.cfb.walk():
-            print root.path()
-
-    import aaf
-
-    f = aaf.open(result_file)
-    for m in f.storage.mobs():
-        print m
+            print(root.path())

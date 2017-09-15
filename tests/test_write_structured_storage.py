@@ -1,3 +1,10 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
+
 from aaf2.cfb import CompoundFileBinary
 from StringIO import StringIO
 
@@ -42,11 +49,11 @@ if __name__ == "__main__":
 
     f = open(test_file, 'rb')
     ss = CompoundFileBinary(f)
-    print ss
+
     for root, storage, streams in ss.walk():
         # print root.path()
         for item in storage:
-            print item.path()
+            print(item.path())
 
         # for item in streams:
         #     # data = item.data()

@@ -1,3 +1,10 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
+
 from aaf2.mobid import MobID
 from uuid import UUID
 
@@ -17,9 +24,6 @@ class MobIDTests(unittest.TestCase):
         assert m.int == m2.int
 
         assert m == MobID(m_str)
-
-
-
 
 
 if __name__ == "__main__":
