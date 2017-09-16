@@ -38,11 +38,12 @@ def write_sid(f, value):
     write_u32le(f, value)
 
 def read_uuid(f):
-    return uuid.UUID(bytes_le=f.read(16))
+    data = f.read(16)
+    return uuid.UUID(bytes_le=data)
 
 def write_uuid(f, value):
     if value is None:
-        f.write('\0' * 16)
+        f.write(b'\0' * 16)
     else:
         f.write(value.bytes_le)
 

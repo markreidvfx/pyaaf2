@@ -5,7 +5,6 @@ from __future__ import (
     division,
     )
 import traceback
-from StringIO import StringIO
 
 from . import core
 from . mobid import MobID

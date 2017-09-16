@@ -23,7 +23,7 @@ from .utils import (
     write_filetime, write_sid, write_uuid
 )
 
-from StringIO import StringIO
+from io import BytesIO
 
 dir_types = {0x00 : 'empty',
              0x01 : 'storage',
@@ -229,7 +229,6 @@ class Stream(object):
 
 class DirEntry(object):
     def __init__(self, storage, dir_id):
-        self.position = None
         self.name = None
         self.type = None
         self.color = 'black'
@@ -405,9 +404,6 @@ class DirEntry(object):
     def write(self):
         f = self.storage.f
         f.seek(self.storage.dir_entry_pos(self.dir_id))
-
-        self.position = f.tell()
-
         pos = f.tell()
 
         logging.debug("writing dir entry: %s id: %d type: %s at %d sid: %s bytes: %d" % (
@@ -452,7 +448,8 @@ class DirEntry(object):
     def read(self):
         f = self.storage.f
         f.seek(self.storage.dir_entry_pos(self.dir_id))
-        self.position = f.tell()
+        f = BytesIO(f.read(128))
+
         name_data = f.read(64)
         name_size = read_u16le(f)
         self.name  = name_data[:name_size-2].decode("utf-16le")
@@ -481,13 +478,13 @@ class DirEntry(object):
         return self.name
 
 class CompoundFileBinary(object):
-    def __init__(self, file_object):
+    def __init__(self, file_object, mode='rb'):
 
         self.f = file_object
 
         self.difat = [[]]
-        self.fat = array(b'I')
-        self.minifat = array(b'I')
+        self.fat = array('I')
+        self.minifat = array('I')
 
         self.difat_chain = []
         self.minifat_chain = []
@@ -500,11 +497,10 @@ class CompoundFileBinary(object):
 
         self.debug_grow = False
 
-        if isinstance(self.f, StringIO):
+        if isinstance(self.f, BytesIO):
             self.mode = 'wb+'
         else:
-            self.mode = self.f.mode
-
+            self.mode = mode
 
         if self.mode in ("r", "r+", "rb", 'rb+'):
 
@@ -771,7 +767,7 @@ class CompoundFileBinary(object):
 
     def read_fat(self):
         f = self.f
-        self.fat = array(b'I')
+        self.fat = array('I')
         sector_count = 0
         fat_sectors = []
         for t, i, sid in self.iter_difat():
@@ -978,9 +974,6 @@ class CompoundFileBinary(object):
             return self.dir_cache[dir_id]
 
         assert not dir_id in self.dir_free
-
-        seek_pos = self.dir_entry_pos(dir_id)
-        self.f.seek(seek_pos)
 
         entry = DirEntry(self, dir_id)
         entry.read()

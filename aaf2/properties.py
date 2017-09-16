@@ -8,7 +8,7 @@ from __future__ import (
 
 import uuid
 from uuid import UUID
-from StringIO import StringIO
+from io import BytesIO
 from .utils import (
     read_u8,
     read_u16le,
@@ -166,10 +166,10 @@ class SFStrongRef(SFObjectRef):
     def value(self, value):
 
         typedef = self.typedef
-        classdef = typedef.ref_classdef
+        ref_classdef = typedef.ref_classdef
 
-        if value.classdef != classdef:
-            raise Exception("must be instance of: %s" % classedef.class_name)
+        if not ref_classdef.isinstance(value.classdef):
+            raise TypeError("must be instance of: %s" % ref_classdef.class_name)
 
         if self.ref is None:
             propdef = self.propertydef
@@ -222,7 +222,7 @@ class SFStrongRefVector(SFStrongRefArray):
 
         s = index_dir.open('r')
         # read the whole index
-        f = StringIO(s.read())
+        f = BytesIO(s.read())
 
         count = read_u32le(f)
         self.next_free_key = read_u32le(f)
@@ -348,7 +348,7 @@ class SFStrongRefSet(SFStrongRefArray):
 
         s = index_dir.open('r')
         # read the whole of the index
-        f = StringIO(s.read())
+        f = BytesIO(s.read())
 
         count = read_u32le(f)
         self.next_free_key = read_u32le(f)
@@ -515,7 +515,7 @@ class SFWeakRef(SFObjectRef):
     def decode(self, data):
         self.data = data
 
-        f = StringIO(data)
+        f = BytesIO(data)
 
         self.ref_index = read_u16le(f)
         self.ref_pid = read_u16le(f)
@@ -527,7 +527,7 @@ class SFWeakRef(SFObjectRef):
             self.ref = key = MobID(bytes_le=f.read(self.id_size))
 
     def encode(self):
-        f = StringIO()
+        f = BytesIO()
 
         ref = self.ref.bytes_le
         id_size = len(ref)
@@ -590,7 +590,7 @@ class SFWeakRefArray(SFObjectRefArray):
 
         s = index_dir.open('r')
         # read the whole index
-        f = StringIO(s.read())
+        f = BytesIO(s.read())
 
         count = read_u32le(f)
         self.ref_index = read_u16le(f)
@@ -607,7 +607,7 @@ class SFWeakRefArray(SFObjectRefArray):
             self.references.append(identification)
 
     def encode(self):
-        return self.ref.encode("utf-16le") + "\x00" + "\x00"
+        return self.ref.encode("utf-16le") + b"\x00" + b"\x00"
 
     def write_index(self):
         f = self.root.dir.touch(self.ref + " index").open(mode='w')

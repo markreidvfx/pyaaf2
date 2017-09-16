@@ -6,7 +6,6 @@ from __future__ import (
     )
 
 from aaf2.cfb import CompoundFileBinary
-from StringIO import StringIO
 
 from struct import unpack
 import os

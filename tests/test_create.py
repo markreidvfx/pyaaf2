@@ -28,7 +28,7 @@ if __name__ == "__main__":
     with AAFFile(result_file, 'w') as f:
         now = datetime.datetime.now()
 
-        for i in xrange(100):
+        for i in range(100):
             mob_id = MobID.new()
             m = f.create.MasterMob()
             m.name = "TestMob%d" %i

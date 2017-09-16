@@ -23,7 +23,7 @@ MOBID_STRUCT = struct.Struct(''.join(( '<',
 class MobID(object):
     def __init__(self, mobid=None, bytes_le=None):
 
-        self.SMPTELabel = [0 for i in xrange(12)]
+        self.SMPTELabel = [0 for i in range(12)]
         self.length = 0
         self.instanceHigh = 0
         self.instanceMid = 0

@@ -5,7 +5,8 @@ from __future__ import (
     print_function,
     division,
     )
-from StringIO import StringIO
+from io import BytesIO
+import io
 import traceback
 import os
 from uuid import UUID, uuid4
@@ -71,10 +72,11 @@ class AAFFile(object):
         self.mode = mode
         if path is None:
             self.mode = 'wb+'
-            self.f = StringIO()
+            self.f = BytesIO()
         else:
-            self.f = open(path, mode)
-        self.cfb = CompoundFileBinary(self.f)
+            self.f = io.open(path, mode)
+
+        self.cfb = CompoundFileBinary(self.f, self.mode)
         self.weakref_table = []
         self.path_cache = {}
         self.metadict = MetaDictionary(self)

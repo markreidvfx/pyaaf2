@@ -6,7 +6,7 @@ from __future__ import (
     division,
     )
 import traceback
-from StringIO import StringIO
+from io import BytesIO
 from . import types
 
 from .model import classdefs
@@ -72,10 +72,10 @@ class PropertyDef(core.AAFObject):
         self.property_name = self.property_entries[pid_name].data[:-2].decode("utf-16le")
         self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
         self.typedef_name = UUID(bytes_le=self.property_entries[pid_type].data)
-        self.pid = read_u16le(StringIO(self.property_entries[pid_pid].data))
-        self.optional = self.property_entries[pid_optional].data == "\x01"
+        self.pid = read_u16le(BytesIO(self.property_entries[pid_pid].data))
+        self.optional = self.property_entries[pid_optional].data == b"\x01"
         if pid_unique in self.property_entries:
-            self.unique = self.property_entries[pid_unique].data == "\x01"
+            self.unique = self.property_entries[pid_unique].data == b"\x01"
 
     def __repr__(self):
         return "<%s PropertyDef" % self.property_name
@@ -123,6 +123,9 @@ class ClassDef(core.AAFObject):
         self['ParentClass'].value = p
 
     def isinstance(self, other):
+
+        if self.uuid == other.uuid:
+            return True
 
         for classdef in other.relatives():
             if classdef.uuid == self.uuid:
@@ -186,7 +189,7 @@ class ClassDef(core.AAFObject):
 
         self.class_name = self.property_entries[pid_name].data[:-2].decode('utf-16le')
         self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
-        self.abstract = self.property_entries[pid_abstract].data == '\x01'
+        self.abstract = self.property_entries[pid_abstract].data == b'\x01'
 
         if pid_properties in self.property_entries:
             for key,value in self.property_entries[pid_properties].items():

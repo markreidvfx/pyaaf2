@@ -6,7 +6,7 @@ from __future__ import (
     division,
     )
 
-from cStringIO import StringIO
+from io import BytesIO
 
 from .utils import (
     read_u8,
@@ -51,7 +51,7 @@ class AAFObject(object):
 
         s = stream.open()
         # read the whole stream
-        f = StringIO(s.read())
+        f = BytesIO(s.read())
 
         byte_order = read_u8(f)
         if byte_order != 0x4c:

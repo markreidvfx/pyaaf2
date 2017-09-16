@@ -246,7 +246,7 @@ class TypeDefEnum(TypeDef):
 
         # Boolean
         if self.auid == UUID("01040100-0000-0000-060e-2b3401040101"):
-            return data == '\x01'
+            return data == b'\x01'
 
         typedef = self.element_typedef
         index = typedef.decode(data)
@@ -255,7 +255,7 @@ class TypeDefEnum(TypeDef):
     def encode(self, data):
         # Boolean
         if self.auid == UUID("01040100-0000-0000-060e-2b3401040101"):
-            return '\x01' if data else '\x00'
+            return b'\x01' if data else b'\x00'
 
         typedef = self.element_typedef
         for index, value in self.elements.items():
@@ -266,15 +266,16 @@ class TypeDefEnum(TypeDef):
 
 def iter_utf16_array(data):
     start = 0
+    data = bytearray(data)
     for i in range(0, len(data), 2):
-        if data[i] == "\x00" and data[i+1] == "\x00":
+        if data[i] == 0x00 and data[i+1] == 0x00:
             yield data[start:i].decode("utf-16le")
             start = i+2
 
 def encode_utf16_array(data):
     result = b""
     for item in data:
-        result += item.encode("utf-16le") + "\x00" + "\x00"
+        result += item.encode("utf-16le") + b"\x00" + b"\x00"
     return result
 
 @register_class
@@ -466,7 +467,7 @@ class TypeDefString(TypeDef):
         return data[:-2].decode("utf-16le")
 
     def encode(self, data):
-        return data.encode("utf-16le") + '\x00' + '\x00'
+        return data.encode("utf-16le") + b'\x00' + b'\x00'
 
 @register_class
 class TypeDefStream(TypeDef):
@@ -506,11 +507,14 @@ class TypeDefRecord(TypeDef):
 
     @property
     def byte_size(self):
-
         size = 0
         for key, typedef_name in self.fields:
             typedef = self.root.metadict.typedefs_by_name[typedef_name]
             size += typedef.byte_size
+        if size == 0:
+            print("!!", self['MemberTypes'].value, list(iter_utf16_array(self['MemberNames'].data)))
+
+        assert size != 0
 
         return size
 
@@ -681,8 +685,8 @@ class TypeDefIndirect(TypeDef):
         super(TypeDefIndirect, self).__init__(root, name, auid)
 
     def decode(self, data):
-        byte_order = data[0]
-        assert byte_order == "\x4c" # little endian
+        byte_order = data[0:1]
+        assert byte_order == b'\x4c' # little endian
         type_uuid = UUID(bytes_le=data[1:17])
         typedef = self.root.metadict.lookup_typedef(type_uuid)
         result = typedef.decode(data[17:])
