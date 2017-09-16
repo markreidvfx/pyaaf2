@@ -44,7 +44,7 @@ class AAFFactory(object):
 
         classdef = self.metadict.lookup_classdef(name)
         if classdef is None:
-            raise Exception("no class found with name: %s" % name)
+            raise ValueError("no class found with name: %s" % name)
 
         classobj = self.metadict.lookup_class(name)
 
@@ -68,7 +68,7 @@ class AAFFile(object):
         elif mode in ('w', 'w+', 'wb+'):
             mode = 'wb+'
         else:
-            raise Exception("invalid mode: %s" % mode)
+            raise ValueError("invalid mode: %s" % mode)
         self.mode = mode
         if path is None:
             self.mode = 'wb+'
@@ -141,7 +141,7 @@ class AAFFile(object):
             dir_entry = self.cfb.find(path)
 
         if dir_entry is None:
-            raise Exception("cannot find path: %s" % path)
+            raise ValueError("cannot find path: %s" % path)
 
         obj_class = self.metadict.lookup_class(dir_entry.class_id)
 
@@ -193,7 +193,7 @@ class AAFFile(object):
 
         byte_order = read_u8(f)
         if byte_order != 0x4c:
-            raise Exception("be byteorder")
+            raise NotImplementedError("be byteorder")
 
         path_count = read_u16le(f)
         pid_count = read_u32le(f)

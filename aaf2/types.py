@@ -12,6 +12,7 @@ from . import core
 from . import properties
 from .mobid import MobID
 from .fractions import AAFFraction
+from .exceptions import AAFPropertyError
 
 import datetime
 
@@ -84,7 +85,7 @@ class TypeDefInt(TypeDef):
         elif self.size == 8:
             fmt = "<%dQ"
         else:
-            raise Exception("unkown size %d" % self.size)
+            raise AAFPropertyError("unknown integer size: %d" % self.size)
         fmt = fmt % elements
         if self.signed:
             fmt = fmt.lower()
@@ -158,7 +159,7 @@ class TypeDefWeakRef(TypeDef):
                         found = True
                         break
                 if not found:
-                    raise Exception()
+                    raise AAFPropertyError("unable to resolve property path")
             return result
 
         return self['TargetSet'].value
@@ -177,7 +178,7 @@ class TypeDefWeakRef(TypeDef):
                     found = True
                     break
             if not found:
-                raise Exception()
+                raise AAFPropertyError("unable to resolve property path")
 
         return path
 
@@ -195,7 +196,7 @@ class TypeDefWeakRef(TypeDef):
                     found = True
                     break
             if not found:
-                raise Exception()
+                raise  AAFPropertyError("unable to resolve property path")
 
         return path
 
@@ -262,7 +263,7 @@ class TypeDefEnum(TypeDef):
             if value == data:
                 return typedef.encode(index)
 
-        raise Exception("invalid enum")
+        raise AAFPropertyError("invalid enum: %s" % str(data))
 
 def iter_utf16_array(data):
     start = 0

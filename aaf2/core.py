@@ -17,6 +17,7 @@ from .utils import (
     write_u32le,
     )
 
+from .exceptions import AAFPropertyError
 from . import properties
 from .properties import property_formats
 
@@ -55,7 +56,7 @@ class AAFObject(object):
 
         byte_order = read_u8(f)
         if byte_order != 0x4c:
-            raise Exception("be byteorder")
+            raise NotImplementedError("be byteorder")
         version = read_u8(f)
         entry_count = read_u16le(f)
 
@@ -97,7 +98,7 @@ class AAFObject(object):
             for p in missing:
                 m.append("%s %s" % (p.property_name, str(p.typedef)))
             message = "%s missing the following required properties:\n    %s" % (str(self), "\n    ".join(m))
-            raise Exception(message)
+            raise AAFPropertyError(message)
 
     def write_properties(self):
 

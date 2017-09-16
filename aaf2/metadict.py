@@ -7,8 +7,8 @@ from __future__ import (
     )
 import traceback
 from io import BytesIO
+from .exceptions import AAFPropertyError
 from . import types
-
 from .model import classdefs
 from .model import typedefs
 from .model import datadefs
@@ -416,7 +416,7 @@ class MetaDictionary(core.AAFObject):
 
         else:
             print (classdef, propertydef)
-            raise Exception()
+            raise AAFPropertyError("unkown weak ref property id")
 
     @property
     def classdef(self):

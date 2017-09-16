@@ -22,6 +22,7 @@ from .utils import (
     write_u32le, write_u64le,
     write_filetime, write_sid, write_uuid
 )
+from .exceptions import CompoundFileBinaryError
 
 from io import BytesIO
 
@@ -58,7 +59,7 @@ class Stream(object):
         self.buf = ""
         self.pos = 0
         if not mode in ('r', 'w'):
-            raise Exception("invalid mode: %s" % mode)
+            raise ValueError("invalid mode: %s" % mode)
 
     def tell(self):
         return self.pos
@@ -332,7 +333,7 @@ class DirEntry(object):
         # avoids recursion
         while True:
             if count > max_dirs_entries:
-                raise Exception("max dir entries limit reached")
+                raise CompoundFileBinaryError("max dir entries limit reached")
 
             if entry < root:
                 left = root.left()
@@ -377,7 +378,7 @@ class DirEntry(object):
 
     def open(self, mode='r'):
         if self.type != 'stream':
-            raise Exception("can only open streams")
+            raise TypeError("can only open streams")
         return self.storage.open(self, mode)
 
     def isdir(self):
@@ -391,7 +392,7 @@ class DirEntry(object):
 
     def makedir(self, relative_path, class_id = None):
         if not self.isdir():
-            raise Exception()
+            raise TypeError("can only add a DirEntry to a storage type")
         sep = '/'
         if self.isroot():
             sep = ''
@@ -1072,7 +1073,7 @@ class CompoundFileBinary(object):
                 if a != ENDOFCHAIN:
                     a = fat[a]
                     if a == b:
-                        raise Exception('cyclic %s fat chain found starting at %d' % (fat_name, start_sid))
+                        raise CompoundFileBinaryError('cyclic %s fat chain found starting at %d' % (fat_name, start_sid))
 
         return sectors
 
@@ -1147,7 +1148,7 @@ class CompoundFileBinary(object):
     def create_dir_entry(self, path, dir_type='storage', class_id=None):
 
         if self.exists(path):
-            raise Exception("%s already exists" % path)
+            raise ValueError("%s already exists" % path)
 
         dirname = os.path.dirname(path)
         basename = os.path.basename(path)
@@ -1155,10 +1156,10 @@ class CompoundFileBinary(object):
         root = self.find(dirname)
 
         if root is None:
-            raise Exception("parent dirname does not exist: %s" % dirname)
+            raise ValueError("parent dirname does not exist: %s" % dirname)
 
         if not root.type in ('storage', 'root storage'):
-            raise Exception("can not add entry to non storage type")
+            raise ValueError("can not add entry to non storage type")
 
         dir_id = self.next_free_dir_id()
         logging.debug("next dir id %d" % dir_id)
@@ -1183,13 +1184,13 @@ class CompoundFileBinary(object):
         entry = self.find(path)
 
         if not entry:
-            raise Exception("%s does not exists" % path)
+            raise ValueError("%s does not exists" % path)
 
         if entry.type == 'root storage':
-            raise Exception("can no remove root entry")
+            raise ValueError("can no remove root entry")
 
         if entry.type == "storage" and not entry.child_id is None:
-            raise Exception("storage contains children")
+            raise ValueError("storage contains children")
         try:
             entry.parent.remove_child(entry)
         except:
@@ -1243,10 +1244,10 @@ class CompoundFileBinary(object):
 
         root = self.find(path)
         if root is None:
-            raise Exception("unable to find dir: %s" % str(path))
+            raise ValueError("unable to find dir: %s" % str(path))
 
         if not root.isdir():
-            raise Exception("can only list storage types")
+            raise ValueError("can only list storage types")
 
         if not root._children_cache is None:
             return root._children_cache
@@ -1332,7 +1333,7 @@ class CompoundFileBinary(object):
         root = self.find(path)
 
         if not root.isdir():
-            raise Exception("can only walk storage types")
+            raise ValueError("can only walk storage types")
 
         if not root.child_id:
             return
@@ -1386,12 +1387,12 @@ class CompoundFileBinary(object):
         entry = self.find(path)
         if entry is None:
             if mode == 'r':
-                raise Exception("stream does not exists: %s" % path)
+                raise ValueError("stream does not exists: %s" % path)
             entry = self.create_dir_entry(path, 'stream', None)
 
         else:
             if not entry.isfile():
-                raise Exception("can only open stream type DirEntry's")
+                raise ValueError("can only open stream type DirEntry's")
 
             if mode == 'w':
                 logging.debug("stream: %s exists, overwriting" % path)

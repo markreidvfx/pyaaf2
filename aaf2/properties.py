@@ -218,7 +218,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         index_name = self.ref + " index"
         index_dir = self.root.dir.get(index_name)
         if not index_dir:
-            raise Exception()
+            raise AAFPropertyError("cannot find index stream: %s" % index_name)
 
         s = index_dir.open('r')
         # read the whole index
@@ -344,7 +344,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         index_name = self.ref + " index"
         index_dir = self.root.dir.get(index_name)
         if not index_dir:
-            raise Exception()
+            raise AAFPropertyError("cannot find index stream: %s" % index_name)
 
         s = index_dir.open('r')
         # read the whole of the index
@@ -586,7 +586,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         index_name = self.ref + " index"
         index_dir = self.root.dir.get(index_name)
         if not index_dir:
-            raise Exception()
+            raise AAFPropertyError("cannot find index stream: %s" % index_name)
 
         s = index_dir.open('r')
         # read the whole index
