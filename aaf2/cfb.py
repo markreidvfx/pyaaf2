@@ -252,16 +252,35 @@ class DirEntry(object):
         self._children_cache = None
 
     def __lt__(self, other):
-        assert isinstance(other, DirEntry)
+        if isinstance(other, DirEntry):
+            other = other.name
 
-        if len(self.name) == len(other.name):
+        if len(self.name) == len(other):
             # compare not case senstive
-            # assert self.name.upper() != other.name.upper()
-
-            return self.name.upper() < other.name.upper()
-        # shorter names are always less then
+            return self.name.upper() < other.upper()
         else:
-            return len(self.name) < len(other.name)
+            # shorter names are always less then
+            return len(self.name) < len(other)
+
+    def __le__(self, other):
+        if self == other:
+            return True
+        return self < other
+
+    def __gt__(self, other):
+        return other < self
+
+    def __ge__(self, other):
+        if self == other:
+            return True
+        return self > other
+
+    def __eq__(self, other):
+        if isinstance(other, DirEntry):
+            other = other.name
+        if len(self.name) == len(other):
+            return self.name.upper() == other.upper()
+        return False
 
     def left(self):
         return self.storage.read_dir_entry(self.left_id, self.parent)
