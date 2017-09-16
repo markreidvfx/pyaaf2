@@ -124,9 +124,9 @@ class AAFObject(object):
 
         # write index's
         for p in self.property_entries.values():
-            if isinstance(p, (properties.SFStrongRefSet,
-                              properties.SFStrongRefVector,
-                              properties.SFWeakRefArray)):
+            if isinstance(p, (properties.StrongRefSetProperty,
+                              properties.StrongRefVectorProperty,
+                              properties.WeakRefArrayProperty)):
                 # print('writing index', self, p)
                 p.write_index()
 
@@ -143,9 +143,9 @@ class AAFObject(object):
         self.root.path_cache[dir_entry.path()] = self
 
         for pid, p in self.property_entries.items():
-            if isinstance(p, (properties.SFStrongRef,
-                              properties.SFStrongRefVector,
-                              properties.SFStrongRefSet)):
+            if isinstance(p, (properties.StrongRefProperty,
+                              properties.StrongRefVectorProperty,
+                              properties.StrongRefSetProperty)):
                 p.attach()
 
 
@@ -157,15 +157,15 @@ class AAFObject(object):
 
         refs = []
         for pid, p in self.property_entries.items():
-            if isinstance(p, properties.SFStrongRef):
+            if isinstance(p, properties.StrongRefProperty):
                 obj = p.value
                 if obj:
                     refs.append(obj)
 
-            if isinstance(p, properties.SFStrongRefVector):
+            if isinstance(p, properties.StrongRefVectorProperty):
                 refs.extend(p.value)
 
-            if isinstance(p, properties.SFStrongRefSet):
+            if isinstance(p, properties.StrongRefSetProperty):
                 refs.extend([obj for key, obj in p.items()])
 
         for obj in refs:
@@ -227,19 +227,19 @@ class AAFObject(object):
 
         for p in self.properties():
 
-            if isinstance(p, properties.SFStrongRef):
+            if isinstance(p, properties.StrongRefProperty):
                 print(space, p.name, p.typedef)
 
                 p.value.dump(space + indent)
 
-            if isinstance(p, properties.SFStrongRefVector):
+            if isinstance(p, properties.StrongRefVectorProperty):
                 print(space, p.name, p.typedef)
                 for obj in p.value:
                     print(space + indent, obj)
                     obj.dump(space + indent*2)
                 continue
 
-            if isinstance(p, properties.SFStrongRefSet):
+            if isinstance(p, properties.StrongRefSetProperty):
                 print(space, p.name, p.typedef)
                 for key, obj in p.items():
                     print(space + indent, obj)

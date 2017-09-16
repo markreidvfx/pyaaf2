@@ -25,7 +25,7 @@ from .utils import (
 
 from .cfb import (CompoundFileBinary, DirEntry)
 from .core import AAFObject
-from .properties import SFStrongRef, SFStrongRefArray, SFStrongRefSet
+from .properties import StrongRefProperty, StrongRefArrayProperty, StrongRefSetProperty
 from .metadict import MetaDictionary
 
 
@@ -181,7 +181,7 @@ class AAFFile(object):
             self.weakref_table.append(pid_path)
 
         parent_obj, p = self.weakref_prop(index)
-        assert isinstance(p, SFStrongRefSet)
+        assert isinstance(p, StrongRefSetProperty)
         weakref_pid, key_size = self.metadict.weakref_pid(parent_obj.classdef, p.propertydef)
 
         ref_key = obj.unique_key

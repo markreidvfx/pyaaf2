@@ -38,7 +38,7 @@ SF_DATA_SET                               = 0xDA
 
 PROPERTY_VERSION=32
 
-class PropertyItem(object):
+class BaseProperty(object):
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
         self.root = root
         self.pid = pid
@@ -100,7 +100,7 @@ class PropertyItem(object):
         return "0x%04X %s" % (self.pid, self.format_name())
 
 
-class SFData(PropertyItem):
+class Property(BaseProperty):
     def decode(self, data=None):
         self.data = data
 
@@ -111,7 +111,7 @@ class SFData(PropertyItem):
         else:
             return "<%s %d bytes>" % (self.__class__.__name__, len(self.data))
 
-class SFStream(SFData):
+class StreamProperty(Property):
     def decode(self, data=None):
         for i, c in enumerate(reversed(data)):
             if c != '\0':
@@ -128,16 +128,16 @@ class SFStream(SFData):
 
 
 # abtract for refereneces
-class SFObjectRef(SFData):
+class ObjectRefProperty(Property):
     pass
 
 # abtract for referenece arrays
-class SFObjectRefArray(SFObjectRef):
+class ObjectRefArrayProperty(ObjectRefProperty):
     pass
 
-class SFStrongRef(SFObjectRef):
+class StrongRefProperty(ObjectRefProperty):
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
-        super(SFStrongRef, self).__init__(root, pid, format, version)
+        super(StrongRefProperty, self).__init__(root, pid, format, version)
         self.ref = None
         self.object = None
 
@@ -189,15 +189,15 @@ class SFStrongRef(SFObjectRef):
             value.attach(dir_entry)
 
 # abtract for referenece arrays
-class SFStrongRefArray(SFObjectRefArray):
+class StrongRefArrayProperty(ObjectRefArrayProperty):
     def encode(self, data):
         return data.encode("utf-16le") + b"\x00" + b"\x00"
 
 
-class SFStrongRefVector(SFStrongRefArray):
+class StrongRefVectorProperty(StrongRefArrayProperty):
 
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
-        super(SFStrongRefVector, self).__init__(root, pid, format, version)
+        super(StrongRefVectorProperty, self).__init__(root, pid, format, version)
         self.references = []
         self.objects = []
         self.ref = None
@@ -316,9 +316,9 @@ class SFStrongRefVector(SFStrongRefArray):
         return "<%s %s to %s %d items>" % (self.name, self.__class__.__name__, str(self.ref), len(self.references))
 
 
-class SFStrongRefSet(SFStrongRefArray):
+class StrongRefSetProperty(StrongRefArrayProperty):
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
-        super(SFStrongRefSet, self).__init__(root, pid, format, version)
+        super(StrongRefSetProperty, self).__init__(root, pid, format, version)
         self.references = {}
         self.ref = None
         self.objects = {}
@@ -504,9 +504,9 @@ def resolve_weakref(p, ref):
     else:
         return p.root.root.resovle_weakref(p.ref_index, p.ref_pid, p.ref)
 
-class SFWeakRef(SFObjectRef):
+class WeakRefProperty(ObjectRefProperty):
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
-        super(SFWeakRef, self).__init__(root, pid, format, version)
+        super(WeakRefProperty, self).__init__(root, pid, format, version)
         self.ref_index = None
         self.ref_pid = None
         self.id_size = None
@@ -565,9 +565,9 @@ class SFWeakRef(SFObjectRef):
         self.data = self.encode()
         self.add_pid_entry()
 
-class SFWeakRefArray(SFObjectRefArray):
+class WeakRefArrayProperty(ObjectRefArrayProperty):
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
-        super(SFWeakRefArray, self).__init__(root, pid, format, version)
+        super(WeakRefArrayProperty, self).__init__(root, pid, format, version)
         self.references = []
         self.ref = None
         self.ref_index = None
@@ -679,32 +679,32 @@ class SFWeakRefArray(SFObjectRefArray):
         self.extend(value)
 
 
-class SFWeakRefVector(SFWeakRefArray):
+class WeakRefVectorProperty(WeakRefArrayProperty):
     pass
-class SFWeakRefSet(SFWeakRefArray):
+class WeakRefSetProperty(WeakRefArrayProperty):
     pass
 
 
 # haven't see aaf files that contain these yet
-class SFWeakRefId(SFWeakRef):
+class WeakRefPropertyId(WeakRefProperty):
     pass
 
-class SFUniqueId(SFData):
+class UniqueIdProperty(Property):
     pass
 
-class SFOpaqueStream(SFData):
+class OpaqueStreamProperty(Property):
     pass
 
 property_formats = {
-SF_DATA                                    : SFData,
-SF_DATA_STREAM                             : SFStream,
-SF_STRONG_OBJECT_REFERENCE                 : SFStrongRef,
-SF_STRONG_OBJECT_REFERENCE_VECTOR          : SFStrongRefVector,
-SF_STRONG_OBJECT_REFERENCE_SET             : SFStrongRefSet,
-SF_WEAK_OBJECT_REFERENCE                   : SFWeakRef,
-SF_WEAK_OBJECT_REFERENCE_VECTOR            : SFWeakRefVector,
-SF_WEAK_OBJECT_REFERENCE_SET               : SFWeakRefSet,
-SF_WEAK_OBJECT_REFERENCE_STORED_OBJECT_ID  : SFWeakRefId,
-SF_UNIQUE_OBJECT_ID                        : SFUniqueId,
-SF_OPAQUE_STREAM                           : SFOpaqueStream
+SF_DATA                                    : Property,
+SF_DATA_STREAM                             : StreamProperty,
+SF_STRONG_OBJECT_REFERENCE                 : StrongRefProperty,
+SF_STRONG_OBJECT_REFERENCE_VECTOR          : StrongRefVectorProperty,
+SF_STRONG_OBJECT_REFERENCE_SET             : StrongRefSetProperty,
+SF_WEAK_OBJECT_REFERENCE                   : WeakRefProperty,
+SF_WEAK_OBJECT_REFERENCE_VECTOR            : WeakRefVectorProperty,
+SF_WEAK_OBJECT_REFERENCE_SET               : WeakRefSetProperty,
+SF_WEAK_OBJECT_REFERENCE_STORED_OBJECT_ID  : WeakRefPropertyId,
+SF_UNIQUE_OBJECT_ID                        : UniqueIdProperty,
+SF_OPAQUE_STREAM                           : OpaqueStreamProperty
 }
