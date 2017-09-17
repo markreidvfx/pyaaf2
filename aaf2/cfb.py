@@ -853,6 +853,7 @@ class CompoundFileBinary(object):
             f.seek((sid + 1) *  self.sector_size)
             sector_count += 1
             self.minifat.extend(st.unpack(f.read(self.sector_size)))
+
         logging.debug("read %d mini fat sectors", sector_count)
 
     def write_minifat(self):
@@ -1015,21 +1016,22 @@ class CompoundFileBinary(object):
 
         f = self.f
 
-        for i, sid in enumerate(self.dir_fat_chain):
-            logging.debug("reading dir sector: %d" % sid)
-            sector_pos = (sid + 1) *  self.sector_size
-
-            sector_first_dir_id = i * (self.sector_size // 128)
-            for j in range(self.sector_size // 128):
-                dir_type_offset = 66
-                offset = j * 128
-
-                seek_pos = sector_pos + offset + dir_type_offset
-
-                f.seek(seek_pos)
-                dir_type = read_u8(f)
-                if dir_types.get(dir_type , "unknown") == 'empty':
-                    return sector_first_dir_id + j
+        # this is too slow just add a new sector
+        # for i, sid in enumerate(self.dir_fat_chain):
+        #     logging.debug("reading dir sector: %d" % sid)
+        #     sector_pos = (sid + 1) *  self.sector_size
+        #
+        #     sector_first_dir_id = i * (self.sector_size // 128)
+        #     for j in range(self.sector_size // 128):
+        #         dir_type_offset = 66
+        #         offset = j * 128
+        #
+        #         seek_pos = sector_pos + offset + dir_type_offset
+        #
+        #         f.seek(seek_pos)
+        #         dir_type = read_u8(f)
+        #         if dir_types.get(dir_type , "unknown") == 'empty':
+        #             return sector_first_dir_id + j
 
         # if here we need to add to dir sector
 

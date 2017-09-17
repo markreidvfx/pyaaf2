@@ -327,7 +327,8 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             self.references.append(ref)
 
     def write_index(self):
-        f = self.root.dir.touch(self.ref + " index").open(mode='w')
+        s = self.root.dir.touch(self.ref + " index").open(mode='w')
+        f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
         write_u32le(f, self.next_free_key)
@@ -336,6 +337,8 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         for ref in self.references:
             local_key = self.local_map[ref]
             write_u32le(f, local_key)
+
+        s.write(f.getvalue())
 
     @property
     def ref_classdef(self):
@@ -488,9 +491,9 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             self.references[key] = ref
 
     def write_index(self):
-        f = self.root.dir.touch(self.ref + " index").open(mode='w')
+        s = self.root.dir.touch(self.ref + " index").open(mode='w')
+        f = BytesIO()
         count = len(self.references)
-
         write_u32le(f, count)
         write_u32le(f, self.next_free_key)
         write_u32le(f, self.last_free_key)
@@ -503,6 +506,8 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             write_u32le(f, local_key)
             write_u32le(f, 1)
             f.write(key.bytes_le)
+
+        s.write(f.getvalue())
 
     def read_object(self, key):
 
@@ -740,7 +745,8 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         return self.ref.encode("utf-16le") + b"\x00" + b"\x00"
 
     def write_index(self):
-        f = self.root.dir.touch(self.ref + " index").open(mode='w')
+        s = self.root.dir.touch(self.ref + " index").open(mode='w')
+        f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
         write_u16le(f, self.ref_index)
@@ -749,6 +755,8 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
 
         for item in self.references:
             f.write(item.bytes_le)
+
+        s.write(f.getvalue())
 
     def __repr__(self):
         return "<%s %s to %d items>" % (self.name, self.__class__.__name__, len(self.references) )

@@ -104,7 +104,9 @@ class AAFObject(object):
 
         self.validate()
 
-        f = self.dir.touch("properties").open(mode='w')
+        s = self.dir.touch("properties").open(mode='w')
+
+        f = BytesIO()
         # print("writing", f.dir.path())
         byte_order = 0x4c
         entry_count = len(self.property_entries)
@@ -128,6 +130,8 @@ class AAFObject(object):
         # write the data
         for p in self.property_entries.values():
             f.write(p.data)
+
+        s.write(f.getvalue())
 
         # write index's
         for p in self.property_entries.values():
