@@ -88,12 +88,22 @@ class AAFFile(object):
             self.root = self.read_object("/")
             self.read_reference_properties()
             self.metadict.read_properties()
-            header_pid = 0x02
-            self.header = self.root.property_entries[header_pid].value
-            self.storage = self.header['Content'].value
 
         elif self.mode in ("wb+",):
             self.setup_empty()
+
+    @property
+    def header(self):
+        header_pid = 0x02
+        return self.root.property_entries[header_pid].value
+
+    @property
+    def content(self):
+        return self.header['Content'].value
+
+    @property
+    def dictionary(self):
+        return self.header['Dictionary'].value
 
     def setup_empty(self):
         now = datetime.datetime.now()
@@ -101,14 +111,12 @@ class AAFFile(object):
         self.root.attach(self.cfb.find("/"))
         self.root['MetaDictionary'].value = self.metadict
         self.metadict.setup_defaults()
+        self.root['Header'].value = self.create.Header()
 
-        self.header = self.create.Header()
-        self.root['Header'].value = self.header
-        self.storage = self.create.ContentStorage()
-        d = self.create.Dictionary()
-        self.header['Dictionary'].value = d
-        d.setup_defaults()
-        self.header['Content'].value = self.storage
+        self.header['Dictionary'].value = self.create.Dictionary()
+        self.dictionary.setup_defaults()
+
+        self.header['Content'].value = self.create.ContentStorage()
         self.header['OperationalPattern'].value = UUID("0d011201-0100-0000-060e-2b3404010105")
         self.header['ObjectModelVersion'].value = 1
         self.header['Version'].value =  {u'major': 1, u'minor': 1}
@@ -253,10 +261,6 @@ class AAFFile(object):
             metadict.detach()
             self.root.property_entries[metadict_pid].value = metadict
             self.path_cache['/MetaDictionary-1'] = self.metadict
-
-            header_pid = 0x02
-            self.header = self.root.property_entries[header_pid].value
-            self.storage = self.header['Content'].value
 
             for item, streams in self.root.walk_references():
                 self.path_cache[item.dir.path()] = item
