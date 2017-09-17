@@ -514,7 +514,7 @@ class CompoundFileBinary(object):
         self.mini_stream_chain = []
 
         self.dir_cache = {}
-        self.dir_free = set()
+        self.dir_freelist = array('I')
 
         self.debug_grow = False
 
@@ -878,7 +878,7 @@ class CompoundFileBinary(object):
         for dir_id, entry in self.dir_cache.items():
             entry.write()
 
-        for dir_id in self.dir_free:
+        for dir_id in self.dir_freelist:
             # clear DirEntry
             f = self.f
             f.seek(self.dir_entry_pos(dir_id))
@@ -1006,7 +1006,7 @@ class CompoundFileBinary(object):
         if dir_id in self.dir_cache:
             return self.dir_cache[dir_id]
 
-        assert not dir_id in self.dir_free
+        # assert not dir_id in self.dir_freelist
 
         entry = DirEntry(self, dir_id)
         entry.read()
@@ -1023,8 +1023,8 @@ class CompoundFileBinary(object):
     def next_free_dir_id(self):
 
         # use free list first
-        if self.dir_free:
-            return self.dir_free.pop()
+        if self.dir_freelist:
+            return self.dir_freelist.pop(0)
 
         f = self.f
 
@@ -1055,7 +1055,7 @@ class CompoundFileBinary(object):
         self.clear_sector(sect)
         first_dir_id = (len(self.dir_fat_chain) - 1) * self.sector_size // 128
         for i in range(self.sector_size // 128):
-            self.dir_free.add(first_dir_id + i)
+            self.dir_freelist.append(first_dir_id + i)
 
         return self.next_free_dir_id()
 
@@ -1218,7 +1218,7 @@ class CompoundFileBinary(object):
             self.free_fat_chain(entry.sector_id, entry.byte_size < self.min_stream_max_size)
 
         # add dir_id to free list
-        self.dir_free.add(entry.dir_id)
+        self.dir_freelist.append(entry.dir_id)
 
         # remove from dir cache
         if entry.dir_id in self.dir_cache:
@@ -1233,12 +1233,12 @@ class CompoundFileBinary(object):
 
             for item in streams:
                 self.free_fat_chain(item.sector_id, item.byte_size < self.min_stream_max_size)
-                self.dir_free.add(item.dir_id)
+                self.dir_freelist.append(item.dir_id)
                 if item.dir_id in self.dir_cache:
                     del self.dir_cache[item.dir_id]
 
             for item in storage:
-                self.dir_free.add(item.dir_id)
+                self.dir_freelist.append(item.dir_id)
                 if item.dir_id in self.dir_cache:
                     del self.dir_cache[item.dir_id]
 
