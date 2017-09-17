@@ -19,6 +19,7 @@ from .utils import (
     mangle_name,
     )
 from .mobid import MobID
+from .exceptions import AAFPropertyError
 
 SF_DATA                                   = 0x82
 SF_DATA_STREAM                            = 0x42
@@ -75,6 +76,11 @@ class BaseProperty(object):
         if propertydef:
             return propertydef.typedef
 
+    def copy(self, root):
+        p = self.__class__(root, self.pid, self.format, version=PROPERTY_VERSION)
+        p.data = bytes(self.data)
+        return p
+
     @property
     def value(self):
         try:
@@ -82,7 +88,8 @@ class BaseProperty(object):
         except:
             print("0x%x" % self.format, "0x%04dx" % self.pid)
             print(self)
-            print(self.root.dir.path())
+            if self.root.dir:
+                print(self.root.dir.path())
             print(self.root.classdef)
             print(self.name, self.typedef, [self.data])
             raise
@@ -94,7 +101,7 @@ class BaseProperty(object):
     def add_pid_entry(self):
         if not self.pid in self.root.property_entries:
             self.root.property_entries[self.pid] = self
-
+        return self
 
     def __repr__(self):
         return "0x%04X %s" % (self.pid, self.format_name())
@@ -112,15 +119,48 @@ class Property(BaseProperty):
             return "<%s %d bytes>" % (self.__class__.__name__, len(self.data))
 
 class StreamProperty(Property):
+    def __init__(self, root, pid, format, version=PROPERTY_VERSION):
+        super(StreamProperty, self).__init__(root, pid, format, version)
+        self.stream_name = None
+
+    def copy(self, root):
+        p = super(StreamProperty, self).copy(root)
+        p.stream_name = self.stream_name
+
+        a = self.open('r')
+        b = p.open("w")
+
+        byte_size = a.dir.byte_size
+        read_size = self.root.root.cfb.sector_size
+
+        # copy stream data
+        while byte_size > 0:
+            d = a.read(read_size)
+            b.write(d)
+            byte_size -= read_size
+
+        return p
+
     def decode(self, data=None):
+        self.data = data
         for i, c in enumerate(reversed(data)):
             if c != '\0':
                 break
 
-        self.stream_name = data[1:].decode("utf-16-le")
+        # first byte is endianess
+        self.stream_name = data[1:-2].decode("utf-16-le")
 
     def __repr__(self):
         return "<%s %s>" % (self.__class__.__name__, str(self.stream_name))
+
+    def open(self, mode='r'):
+        if mode == 'r':
+            stream = self.root.dir.get(self.stream_name)
+            if not stream:
+                raise AAFPropertyError("cannot find stream: %s" % index_name)
+            return stream.open(mode)
+        else:
+            return self.root.dir.touch(self.stream_name).open(mode)
 
     @property
     def value(self):
@@ -140,6 +180,17 @@ class StrongRefProperty(ObjectRefProperty):
         super(StrongRefProperty, self).__init__(root, pid, format, version)
         self.ref = None
         self.object = None
+
+    def copy(self, root):
+        p = super(StrongRefProperty, self).copy(root)
+        p.ref = self.ref
+
+        dir_entry = root.dir.get(p.ref)
+        if dir_entry is None:
+            dir_entry = root.dir.makedir(p.ref)
+
+        p.object = self.value.copy(dir_entry)
+        return p
 
     def decode(self, data):
         self.data = data
@@ -180,13 +231,21 @@ class StrongRefProperty(ObjectRefProperty):
         if not self.pid in self.root.property_entries:
             self.root.property_entries[self.pid] = self
 
-        # attach
-        if self.root.dir:
-            dir_entry = self.root.dir.get(self.ref)
-            if dir_entry is None:
-                dir_entry = self.root.dir.makedir(self.ref)
+        self.attach()
 
-            value.attach(dir_entry)
+    def attach(self):
+        if not self.object:
+            return
+
+        if not self.root.dir:
+            return
+
+        dir_entry = self.root.dir.get(self.ref)
+        if dir_entry is None:
+            dir_entry = self.root.dir.makedir(self.ref)
+
+        self.object.attach(dir_entry)
+
 
 # abtract for referenece arrays
 class StrongRefArrayProperty(ObjectRefArrayProperty):
@@ -199,13 +258,45 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def __init__(self, root, pid, format, version=PROPERTY_VERSION):
         super(StrongRefVectorProperty, self).__init__(root, pid, format, version)
         self.references = []
+        self._objects = []
         self.objects = []
         self.ref = None
         self.next_free_key = 0
         self.last_free_key = 0xFFFFFFFF
         self.local_map = {}
 
+    def copy(self, root):
+        p = super(StrongRefVectorProperty, self).copy(root)
+        p.references = list(self.references)
+        p.references = list(self.references)
+        p.local_map =  dict(self.local_map)
+
+        p.objects = []
+        p.ref = self.ref
+        p.next_free_key = self.next_free_key
+        p.last_free_key = self.last_free_key
+
+        for i, value in enumerate(self.iter_values()):
+            ref = self.references[i]
+            dir_entry = root.dir.get(ref)
+            if dir_entry is None:
+                dir_entry = root.dir.makedir(ref)
+            c = value.copy(dir_entry)
+            p.objects.append(c)
+
+        return p
+
+    @property
+    def objects(self):
+        return self._objects
+
+    @objects.setter
+    def objects(self, value):
+        assert isinstance(value, list)
+        self._objects = value
+
     def decode(self, data):
+        self.data = data
         self.references = []
         self.ref = None
         #null terminated
@@ -250,17 +341,18 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def ref_classdef(self):
         return self.typedef.element_typedef.ref_classdef
 
-    @property
-    def value(self):
-        if self.objects:
-            return self.objects
-
-        objects = []
-        for ref in self.references:
+    def iter_values(self):
+        for i, ref in enumerate(self.references):
             dir_entry = self.root.dir.get(ref)
             item = self.root.root.read_object(dir_entry)
-            objects.append(item)
+            yield item
 
+    @property
+    def value(self):
+        if len(self.objects) == len(self.references):
+            return self.objects
+
+        return [item for item in self.iter_values()]
         self.objects = objects
         return objects
 
@@ -327,7 +419,28 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         self.last_free_key = 0xFFFFFFFF
         self.key_size = 16
         # this pid match the ref_pid on the weak ref
-        self.index_pid = 0
+        self.index_pid = None
+
+    def copy(self, root):
+        p = super(StrongRefSetProperty, self).copy(root)
+
+        p.local_map = dict(self.local_map)
+        p.references = dict(self.references)
+        p.next_free_key = self.next_free_key
+        p.last_free_key = self.last_free_key
+        p.key_size = self.key_size
+        p.ref = self.ref
+        p.objects = {}
+        p.index_pid = self.index_pid
+
+        for key, value in self.items():
+            ref = self.references[key]
+            dir_entry = root.dir.get(ref)
+            if dir_entry is None:
+                dir_entry = root.dir.makedir(ref)
+            p.objects[ref] = value.copy(dir_entry)
+
+        return p
 
     def decode(self, data):
         self.data = data
@@ -512,6 +625,14 @@ class WeakRefProperty(ObjectRefProperty):
         self.id_size = None
         self.ref = None
 
+    def copy(self, root):
+        p = super(WeakRefProperty, self).copy(root)
+        p.ref_index = self.ref_index
+        p.ref_pid = self.pid
+        p.id_size = self.id_size
+        p.ref = self.id_size
+        return p
+
     def decode(self, data):
         self.data = data
 
@@ -574,6 +695,15 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         self.ref_pid = None
         self.id_size = None
         self.data = None
+
+    def copy(self, root):
+        p = super(WeakRefArrayProperty, self).copy(root)
+        p.references = list(self.references)
+        p.ref = self.ref
+        p.ref_index = self.ref_index
+        p.ref_pid = self.ref_pid
+        p.id_size = self.id_size
+        return p
 
     def decode(self, data):
 

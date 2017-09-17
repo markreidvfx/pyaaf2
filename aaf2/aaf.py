@@ -235,11 +235,35 @@ class AAFFile(object):
     def dump(self):
         self.root.dump()
 
-    def save(self):
+    def save(self, path = None):
+
+        if path:
+            mode = 'wb+'
+            f = io.open(path, mode)
+            cfb = CompoundFileBinary(f, mode)
+
+            self.root = self.root.copy(cfb.root)
+            self.cfb = cfb
+            self.f = f
+            self.mode = mode
+            self.path_cache = {}
+
+            metadict_pid = 0x01
+            metadict = self.metadict
+            metadict.detach()
+            self.root.property_entries[metadict_pid].value = metadict
+            self.path_cache['/MetaDictionary-1'] = self.metadict
+
+            header_pid = 0x02
+            self.header = self.root.property_entries[header_pid].value
+            self.storage = self.header['Content'].value
+
+            for item, streams in self.root.walk_references():
+                self.path_cache[item.dir.path()] = item
+
         if self.mode in ("wb+", 'rb+'):
             self.write_reference_properties()
             for path, obj in self.path_cache.items():
-                # print(path, obj)
                 obj.write_properties()
 
         self.cfb.close()

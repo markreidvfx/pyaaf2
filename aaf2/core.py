@@ -16,7 +16,7 @@ from .utils import (
     write_u16le,
     write_u32le,
     )
-
+from uuid import UUID
 from .exceptions import AAFPropertyError
 from . import properties
 from .properties import property_formats
@@ -117,6 +117,12 @@ class AAFObject(object):
         for p in self.property_entries.values():
             write_u16le(f, p.pid)
             write_u16le(f, p.format)
+            if p.data is None:
+                print("??", p)
+                print("!!", p.data)
+                print(p.value)
+                raise Exception()
+
             write_u16le(f, len(p.data))
 
         # write the data
@@ -133,7 +139,13 @@ class AAFObject(object):
 
 
     def detach(self):
-        pass
+        for item, streams in self.walk_references(topdown=True):
+            if item.dir:
+                # remove from path_cache
+                self.root.path_cache.pop(item.dir.path(), None)
+                item.dir = None
+        self.dir = None
+
 
     def attach(self, dir_entry):
         if self.dir:
@@ -142,40 +154,55 @@ class AAFObject(object):
         self.dir = dir_entry
         self.dir.class_id = self.class_id
         self.root.path_cache[dir_entry.path()] = self
-
+        # print("attach: %s" % self.dir.path(), self)
         for pid, p in self.property_entries.items():
             if isinstance(p, (properties.StrongRefProperty,
-                              properties.StrongRefVectorProperty,
-                              properties.StrongRefSetProperty)):
+                              properties.StrongRefArrayProperty)):
+
                 p.attach()
-
-
 
     def walk_references(self, topdown=False):
 
-        if not topdown:
-            yield self
-
         refs = []
-        for pid, p in self.property_entries.items():
+        streams = []
+        for p in self.properties():
             if isinstance(p, properties.StrongRefProperty):
                 obj = p.value
                 if obj:
                     refs.append(obj)
 
-            if isinstance(p, properties.StrongRefVectorProperty):
-                refs.extend(p.value)
+            elif isinstance(p, properties.StrongRefVectorProperty):
+                for v in p.value:
+                    refs.append(v)
 
-            if isinstance(p, properties.StrongRefSetProperty):
-                refs.extend([obj for key, obj in p.items()])
+            elif isinstance(p, properties.StrongRefSetProperty):
+
+                for key, obj in  p.value.items():
+                    refs.append(obj)
+
+            elif isinstance(p, properties.StreamProperty):
+                streams.append(p)
+
+        if not topdown:
+            yield self, streams
 
         for obj in refs:
-
-            for item in obj.walk_references(topdown):
-                yield item
+            for item, item_streams in obj.walk_references(topdown):
+                yield item, item_streams
 
         if topdown:
-            yield self
+            yield self, streams
+
+    def copy(self, new_dir=None):
+        new_obj = self.__class__(self.root)
+        new_obj.class_id = self.class_id
+        new_obj.dir = new_dir
+        new_obj.dir.class_id = self.class_id
+
+        for pid, p in self.property_entries.items():
+            new_obj.property_entries[pid] = p.copy(new_obj)
+
+        return new_obj
 
     def properties(self):
 
@@ -200,7 +227,11 @@ class AAFObject(object):
         for propertydef in classdef.all_propertydefs():
             if propertydef.property_name == key:
                 fmt = propertydef.store_format
-                # print(fmt,propertydef.typedef)
+
+                # OperationDef Parameters spec seems incorrect
+                if propertydef.uuid == UUID("06010104-060a-0000-060e-2b3401010102"):
+                    fmt = properties.SF_STRONG_OBJECT_REFERENCE_SET
+
                 p = property_formats[fmt](self, propertydef.pid, fmt)
                 return p
 
@@ -213,7 +244,7 @@ class AAFObject(object):
         return p.value
 
     def __getitem__(self, key):
-        result =self.get(key, default=None)
+        result = self.get(key, default=None)
         if result is None:
             raise KeyError(key)
         return result

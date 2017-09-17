@@ -363,7 +363,7 @@ class TypeDefVarArray(TypeDef):
             size = element_typedef.size
             elements = len(data)//size
             fmt = element_typedef.pack_format(elements)
-            return unpack(fmt, data)
+            return list(unpack(fmt, data))
 
         byte_size = element_typedef.byte_size
         elements = len(data)//byte_size
