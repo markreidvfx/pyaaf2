@@ -69,12 +69,17 @@ class AAFObject(object):
             props.append([pid, format, byte_size])
 
         for pid, format, byte_size in props:
-            # print(self.root.f.tell())
             data = f.read(byte_size)
-
             p = property_formats[format](self, pid, format, version)
-            p.decode(data)
+            p.data = data
             self.property_entries[pid] = p
+
+        for p in self.property_entries.values():
+            p.decode()
+            if isinstance(p, (properties.StrongRefSetProperty,
+                              properties.StrongRefVectorProperty,
+                              properties.WeakRefArrayProperty)):
+                p.read_index()
 
     def validate(self):
         missing = []

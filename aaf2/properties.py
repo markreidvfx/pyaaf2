@@ -45,11 +45,22 @@ class BaseProperty(object):
         self.pid = pid
         self.format = format
         self.version = version
-        self.data = None
+        self._data = None
         self._propertydef = None
 
     def format_name(self):
         return str(property_formats[self.format].__name__)
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data = data
+
+    def decode(self):
+        pass
 
     @property
     def propertydef(self):
@@ -83,16 +94,8 @@ class BaseProperty(object):
 
     @property
     def value(self):
-        try:
-            return self.typedef.decode(self.data)
-        except:
-            print("0x%x" % self.format, "0x%04dx" % self.pid)
-            print(self)
-            if self.parent.dir:
-                print(self.parent.dir.path())
-            print(self.parent.classdef)
-            print(self.name, self.typedef, [self.data])
-            raise
+        return self.typedef.decode(self.data)
+
     @value.setter
     def value(self, value):
         self.data = self.typedef.encode(value)
@@ -108,9 +111,6 @@ class BaseProperty(object):
 
 
 class Property(BaseProperty):
-    def decode(self, data=None):
-        self.data = data
-
     def __repr__(self):
         name = self.name
         if name:
@@ -141,14 +141,10 @@ class StreamProperty(Property):
 
         return p
 
-    def decode(self, data=None):
-        self.data = data
-        for i, c in enumerate(reversed(data)):
-            if c != '\0':
-                break
-
+    def decode(self):
         # first byte is endianess
-        self.stream_name = data[1:-2].decode("utf-16-le")
+        assert self.data[0:1] == '\x55' # unspecified
+        self.stream_name = self.data[1:-2].decode("utf-16-le")
 
     def __repr__(self):
         return "<%s %s>" % (self.__class__.__name__, str(self.stream_name))
@@ -192,10 +188,9 @@ class StrongRefProperty(ObjectRefProperty):
         p.object = self.value.copy(dir_entry)
         return p
 
-    def decode(self, data):
-        self.data = data
+    def decode(self):
         #null terminated
-        self.ref = data[:-2].decode("utf-16le")
+        self.ref = self.data[:-2].decode("utf-16le")
 
     def encode(self, data):
         return data.encode("utf-16le") + b"\x00" + b"\x00"
@@ -295,17 +290,17 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         assert isinstance(value, list)
         self._objects = value
 
-    def decode(self, data):
-        self.data = data
+    def decode(self):
         self.references = []
         self.ref = None
         #null terminated
-        self.ref = data[:-2].decode("utf-16le")
+        self.ref = self.data[:-2].decode("utf-16le")
         self.objects = []
 
         if not self.ref:
             return
 
+    def read_index(self):
         index_name = self.ref + " index"
         index_dir = self.parent.dir.get(index_name)
         if not index_dir:
@@ -445,18 +440,14 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
         return p
 
-    def decode(self, data):
-        self.data = data
+    def decode(self):
         self.references = {}
         self.ref = None
-        self.ref = data[:-2].decode("utf-16le")
+        self.ref = self.data[:-2].decode("utf-16le")
         self.objects = {}
         self.local_map = {}
 
-
-        if not self.ref:
-            return
-
+    def read_index(self):
         index_name = self.ref + " index"
         index_dir = self.parent.dir.get(index_name)
         if not index_dir:
@@ -531,17 +522,6 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             obj = self.read_object(key)
             yield (key, obj)
 
-    @property
-    def value(self):
-
-        if len(self.objects) == len(self.references):
-            return self.objects
-        d = {}
-        for key, ref in self.items():
-            d[key] = ref
-        self.objects = d
-        return d
-
     def extend(self, values):
         typedef = self.typedef
         classdef = typedef.ref_classdef
@@ -583,6 +563,17 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         self.objects = {}
         self.local_map = {}
         self.next_free_key = 0
+
+    @property
+    def value(self):
+
+        if len(self.objects) == len(self.references):
+            return self.objects
+        d = {}
+        for key, ref in self.items():
+            d[key] = ref
+        self.objects = d
+        return d
 
     @value.setter
     def value(self, value):
@@ -638,11 +629,8 @@ class WeakRefProperty(ObjectRefProperty):
         p.ref = self.id_size
         return p
 
-    def decode(self, data):
-        self.data = data
-
-        f = BytesIO(data)
-
+    def decode(self):
+        f = BytesIO(self.data)
         self.ref_index = read_u16le(f)
         self.ref_pid = read_u16le(f)
         self.id_size = read_u8(f)
@@ -654,7 +642,6 @@ class WeakRefProperty(ObjectRefProperty):
 
     def encode(self):
         f = BytesIO()
-
         ref = self.ref.bytes_le
         id_size = len(ref)
         assert id_size in (16, 32)
@@ -699,7 +686,6 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         self.ref_index = None
         self.ref_pid = None
         self.id_size = None
-        self.data = None
 
     def copy(self, parent):
         p = super(WeakRefArrayProperty, self).copy(parent)
@@ -710,14 +696,12 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         p.id_size = self.id_size
         return p
 
-    def decode(self, data):
-
-        self.data = data
+    def decode(self):
         self.references = []
-
         #null terminated
-        self.ref = data[:-2].decode("utf-16le")
+        self.ref = self.data[:-2].decode("utf-16le")
 
+    def read_index(self):
         index_name = self.ref + " index"
         index_dir = self.parent.dir.get(index_name)
         if not index_dir:
