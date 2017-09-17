@@ -505,6 +505,7 @@ class CompoundFileBinary(object):
         self.difat = [[]]
         self.fat = array('I')
         self.minifat = array('I')
+        self.minifat_freelist = array('I')
 
         self.difat_chain = []
         self.minifat_chain = []
@@ -853,6 +854,9 @@ class CompoundFileBinary(object):
             f.seek((sid + 1) *  self.sector_size)
             sector_count += 1
             self.minifat.extend(st.unpack(f.read(self.sector_size)))
+        for i,v in enumerate(self.minifat):
+            if v == FREESECT:
+                self.minifat_freelist.append(i)
 
         logging.debug("read %d mini fat sectors", sector_count)
 
@@ -887,13 +891,21 @@ class CompoundFileBinary(object):
         idx_per_sect = self.sector_size // self.mini_stream_sector_size
         stream_sects = len(self.mini_stream_chain) * idx_per_sect
 
-        for i, item in enumerate(self.minifat):
-            if item == FREESECT:
-                if i+1 > stream_sects:
-                    self.mini_stream_grow()
-                return i
+        if self.minifat_freelist:
+            i = self.minifat_freelist.pop(0)
+            # assert self.minifat[i] == FREESECT
+            if i+1 > stream_sects:
+                self.mini_stream_grow()
+            return i
+
+        # for i, item in enumerate(self.minifat):
+        #     if item == FREESECT:
+        #         if i+1 > stream_sects:
+        #             self.mini_stream_grow()
+        #         return i
+
         # if we got here need to add aditional fat
-        logging.debug("minifat full, growing")
+        logging.debug("minifat full, size: %d growing" % len(self.minifat_chain))
         self.minifat_grow()
         return self.next_free_minifat_sect()
 
@@ -1016,7 +1028,8 @@ class CompoundFileBinary(object):
 
         f = self.f
 
-        # this is too slow just add a new sector
+        # this is just too slow just add a new sector
+
         # for i, sid in enumerate(self.dir_fat_chain):
         #     logging.debug("reading dir sector: %d" % sid)
         #     sector_pos = (sid + 1) *  self.sector_size
@@ -1046,12 +1059,6 @@ class CompoundFileBinary(object):
 
         return self.next_free_dir_id()
 
-    def valid_sector(self, sid):
-        sector_type = fat_sector_types.get(sid, sid)
-        if isinstance(sector_type, int):
-            return True
-        return False
-
     def get_fat_chain(self, start_sid, minifat=False):
         fat = self.fat
         fat_name = "FAT"
@@ -1064,7 +1071,7 @@ class CompoundFileBinary(object):
         b = start_sid
         sectors = []
 
-        if not self.valid_sector(start_sid):
+        if start_sid in (None, ENDOFCHAIN, FREESECT, DIFSECT, FATSECT):
             return []
 
         while b != ENDOFCHAIN:
@@ -1098,8 +1105,11 @@ class CompoundFileBinary(object):
         sid = self.next_free_sect()
         logging.debug("growing minifat to sid %d" % sid)
 
+        idx_start = len(self.minifat)
+
         for i in range(self.sector_size // 4):
             self.minifat.append(FREESECT)
+            self.minifat_freelist.append(idx_start + i)
 
         if self.minifat_sector_count == 0:
             self.minifat_sector_count = 1
@@ -1129,6 +1139,7 @@ class CompoundFileBinary(object):
             fat[sect] = ENDOFCHAIN
         else:
             fat_chain = self.get_fat_chain(start_sid, minifat)
+            assert fat_chain
             fat[fat_chain[-1]] = sect
             fat[sect] = ENDOFCHAIN
 
@@ -1146,6 +1157,8 @@ class CompoundFileBinary(object):
             fat[sid] = FREESECT
             if minifat:
                 self.root.byte_size -= 64
+                self.minifat_freelist.insert(0, sid)
+
 
     def create_dir_entry(self, path, dir_type='storage', class_id=None):
 
