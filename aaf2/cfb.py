@@ -597,6 +597,8 @@ class CompoundFileBinary(object):
 
         for i in range(self.sector_size // 4):
             self.fat.append(FREESECT)
+            if i > 1:
+                self.fat_freelist.append(i)
 
         self.fat[0] = ENDOFCHAIN # end of dir chain
         self.fat[self.difat[0][0]] = FATSECT
