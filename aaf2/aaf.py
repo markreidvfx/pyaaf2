@@ -134,7 +134,7 @@ class AAFFile(object):
         self.header['LastModified'].value = now
         self.header['ByteOrder'].value = 0x4949
 
-        self.storage['Mobs'].value = []
+        self.content['Mobs'].value = []
 
     def read_object(self, path):
         if isinstance(path, DirEntry):

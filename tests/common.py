@@ -16,6 +16,9 @@ def sandbox():
 
     return dirname
 
+def get_test_file(name):
+    return os.path.join(sandbox(), name)
+
 def test_files_dir():
     return os.path.join(base, 'test_files')
 
