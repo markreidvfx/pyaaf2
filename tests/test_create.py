@@ -27,13 +27,24 @@ class CreatAAFTests(unittest.TestCase):
         with AAFFile(result_file, 'w') as f:
             pass
 
-        self.dump(result_file)
+
+        with AAFFile(result_file, 'r') as f:
+            assert f.metadict
+            assert f.content
+            assert f.header['ObjectModelVersion'].value == 1
+            assert f.header['Version'].value == {u'major': 1, u'minor': 1}
+
+
+        # self.dump(result_file)
 
     def test_mobs(self):
 
         result_file = common.get_test_file('mobs.aaf')
+
+        mobs  = {}
+        now = datetime.datetime.now()
+
         with AAFFile(result_file, 'w') as f:
-            now = datetime.datetime.now()
 
             for i in range(100):
                 mob_id = MobID.new()
@@ -46,7 +57,15 @@ class CreatAAFTests(unittest.TestCase):
 
                 f.content['Mobs'].append(m)
 
-        self.dump(result_file)
+                mobs[mob_id] = m.name
+
+        with AAFFile(result_file, 'r') as f:
+            file_mobs = f.content['Mobs'].value
+
+            for k, v in mobs.items():
+                assert k in file_mobs
+                assert file_mobs[k].name == v
+
 
 if __name__ == "__main__":
     import logging
