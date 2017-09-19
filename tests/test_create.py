@@ -43,10 +43,10 @@ class CreatAAFTests(unittest.TestCase):
 
         mobs  = {}
         now = datetime.datetime.now()
-
+        count = 100
         with AAFFile(result_file, 'w') as f:
 
-            for i in range(100):
+            for i in range(count):
                 mob_id = MobID.new()
                 m = f.create.MasterMob()
                 m.name = "TestMob%d" %i
@@ -60,11 +60,13 @@ class CreatAAFTests(unittest.TestCase):
                 mobs[mob_id] = m.name
 
         with AAFFile(result_file, 'r') as f:
-            file_mobs = f.content['Mobs'].value
+            # file_mobs = f.content['Mobs'].value
 
-            for k, v in mobs.items():
-                assert k in file_mobs
-                assert file_mobs[k].name == v
+            for mob in f.content.mobs():
+                assert mob.id in mobs
+                assert mob.name == mobs[mob.id]
+
+            assert len(list(f.content.mobs())) == count
 
 
 if __name__ == "__main__":

@@ -13,3 +13,7 @@ from .utils import register_class
 @register_class
 class ContentStorage(core.AAFObject):
     class_id = UUID("0d010101-0101-1800-060e-2b3402060101")
+
+    def mobs(self):
+        for key, mob in self["Mobs"].items():
+            yield mob
