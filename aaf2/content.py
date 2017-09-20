@@ -9,6 +9,7 @@ from uuid import UUID
 
 from . import core
 from .utils import register_class
+from . import mobs
 
 @register_class
 class ContentStorage(core.AAFObject):
@@ -17,3 +18,23 @@ class ContentStorage(core.AAFObject):
     def mobs(self):
         for key, mob in self["Mobs"].items():
             yield mob
+
+    def toplevel(self):
+        for mob in self.mobs():
+            if mob.usage == 'Usage_TopLevel':
+                yield mob
+
+    def mastermobs(self):
+        for mob in self.mobs():
+            if isinstance(mob, mobs.MasterMob):
+                yield mob
+
+    def compositionmobs(self):
+        for mob in self.mobs():
+            if isinstance(mob, mobs.CompositionMob):
+                yield mob
+
+    def sourcemobs(self):
+        for mob in self.mobs():
+            if isinstance(mob, mobs.SourceMob):
+                yield mob

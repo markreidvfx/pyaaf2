@@ -35,6 +35,13 @@ class Mob(core.AAFObject):
     def id(self, value):
         self['MobID'].value = value
 
+    @property
+    def usage(self):
+        return self['UsageCode'].value
+    @usage.setter
+    def usage(self, value):
+        self['UsageCode'].value = value
+
 @register_class
 class CompositionMob(Mob):
     class_id = UUID("0d010101-0101-3500-060e-2b3402060101")

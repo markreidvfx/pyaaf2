@@ -218,13 +218,19 @@ class AAFObject(object):
         for pid, p in self.property_entries.items():
             yield p
 
-    def keys(self):
+    def allkeys(self):
         keys = []
         classdef = self.classdef
         if not classdef:
             return keys
         for propertydef in classdef.all_propertydefs():
             keys.append(propertydef.property_name)
+        return keys
+
+    def keys(self):
+        keys = []
+        for pid, p in self.property_entries.items():
+            keys.append(p.name)
         return keys
 
     def get(self, key, default=None):
