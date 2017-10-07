@@ -503,11 +503,11 @@ class CompoundFileBinary(object):
         self.f = file_object
 
         self.difat = [[]]
-        self.fat = array('I')
-        self.fat_freelist = array('I')
+        self.fat = array(str('I'))
+        self.fat_freelist = array(str('I'))
 
-        self.minifat = array('I')
-        self.minifat_freelist = array('I')
+        self.minifat = array(str('I'))
+        self.minifat_freelist = array(str('I'))
 
         self.difat_chain = []
         self.minifat_chain = []
@@ -516,7 +516,7 @@ class CompoundFileBinary(object):
         self.mini_stream_chain = []
 
         self.dir_cache = {}
-        self.dir_freelist = array('I')
+        self.dir_freelist = array(str('I'))
 
         self.debug_grow = False
 
@@ -792,7 +792,7 @@ class CompoundFileBinary(object):
 
     def read_fat(self):
         f = self.f
-        self.fat = array('I')
+        self.fat = array(str('I'))
         sector_count = 0
         fat_sectors = []
         for t, i, sid in self.iter_difat():
