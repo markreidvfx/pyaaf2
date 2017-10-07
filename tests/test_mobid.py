@@ -7,7 +7,7 @@ from __future__ import (
 
 from aaf2.mobid import MobID
 from uuid import UUID
-
+import uuid
 import unittest
 
 class MobIDTests(unittest.TestCase):
@@ -24,6 +24,27 @@ class MobIDTests(unittest.TestCase):
         assert m.int == m2.int
 
         assert m == MobID(m_str)
+
+    def test_int(self):
+
+        for i in range(1000):
+            m = MobID()
+            m.int = i
+            assert m.int == i
+
+    def test_material_id(self):
+        for i in range(10000):
+            material = UUID(int=i)
+            m = MobID(int=i)
+            assert m.material == material
+
+        for i in range(100):
+            material = uuid.uuid4()
+            m = MobID.new()
+            m.material = material
+            assert m.material == material
+
+
 
 
 if __name__ == "__main__":

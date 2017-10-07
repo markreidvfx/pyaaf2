@@ -21,7 +21,7 @@ MOBID_STRUCT = struct.Struct(''.join(( '<',
  )))
 
 class MobID(object):
-    def __init__(self, mobid=None, bytes_le=None):
+    def __init__(self, mobid=None, bytes_le=None, int=None):
 
         self.SMPTELabel = [0 for i in range(12)]
         self.length = 0
@@ -33,11 +33,14 @@ class MobID(object):
         self.Data3 = 0
         self.Data4 = [0 for i in range(8)]
 
-        if bytes_le:
+        if not mobid is None:
+            self.urn = mobid
+
+        if not bytes_le is None:
             self.bytes_le = bytes_le
 
-        if mobid:
-            self.urn = mobid
+        if not int is None:
+            self.int = int
 
     @staticmethod
     def new():
@@ -170,9 +173,14 @@ class MobID(object):
     def int(self):
         data = bytearray(self.bytes_le)
         num = 0
-        for offset, byte in enumerate(data):
-            num += byte << (offset * 8)
+        for i, byte in enumerate(data):
+            num += byte << ((31-i) * 8)
         return num
+
+    @int.setter
+    def int(self, value):
+        v = bytearray((value >> (31-i)*8) & 0xff for i in range(32))
+        self.bytes_le = v
 
     def __int__(self):
         return self.int
@@ -190,13 +198,11 @@ class MobID(object):
     def urn(self):
 
         # handle case UMIDs where the material number is half swapped
-        if self.SMPTELabel[11] == 0x00 and \
-                 self.Data4[0] == 0x06 and \
-                 self.Data4[1] == 0x0E and \
-                 self.Data4[2] == 0x2B and \
-                 self.Data4[3] == 0x34 and \
-                 self.Data4[4] == 0x7F and \
-                 self.Data4[5] == 0x7F:
+        if (self.SMPTELabel[11] == 0x00 and
+                  self.Data4[0] == 0x06 and self.Data4[1] == 0x0E and
+                  self.Data4[2] == 0x2B and self.Data4[3] == 0x34 and
+                  self.Data4[4] == 0x7F and self.Data4[5] == 0x7F):
+
             # print("case 1")
             f = "urn:smpte:umid:%02x%02x%02x%02x.%02x%02x%02x%02x.%02x%02x%02x%02x." + \
              "%02x"  + \
@@ -257,13 +263,10 @@ class MobID(object):
             data[i] = int(v, 16)
             start = end
         # print(s[32:start])
-        if SMPTELabel[11] == 0x00 and \
-                  data[0] == 0x06 and \
-                  data[1] == 0x0E and \
-                  data[2] == 0x2B and \
-                  data[3] == 0x34 and \
-                  data[4] == 0x7F and \
-                  data[5] == 0x7F:
+        if (SMPTELabel[11] == 0x00 and
+                   data[0] == 0x06 and data[1] == 0x0E and
+                   data[2] == 0x2B and data[3] == 0x34 and
+                   data[4] == 0x7F and data[5] == 0x7F):
 
             start = 32
             data4 = [0 for i in range(8)]
