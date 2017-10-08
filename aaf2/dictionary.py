@@ -14,8 +14,8 @@ from .utils import register_class
 @register_class
 class DefinitionObject(core.AAFObject):
     class_id = UUID("0d010101-0101-1a00-060e-2b3402060101")
-    def __init__(self, root, uuid=None, name=None, description=None):
-        super(DefinitionObject, self).__init__(root)
+    def __init__(self, uuid=None, name=None, description=None):
+        super(DefinitionObject, self).__init__()
         self.def_name = name
         self.description = description
         self.uuid = None
@@ -71,8 +71,8 @@ class InterpolationDef(DefinitionObject):
 @register_class
 class Dictionary(core.AAFObject):
     class_id = UUID("0d010101-0101-2200-060e-2b3402060101")
-    def __init__(self, root):
-        super(Dictionary, self).__init__(root)
+    def __init__(self):
+        super(Dictionary, self).__init__()
 
         self.datadefs = {}
         for key, args in datadefs.DataDefs.items():

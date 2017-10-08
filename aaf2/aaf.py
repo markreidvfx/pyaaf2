@@ -51,7 +51,7 @@ class AAFFactory(object):
         # obj = classobj(None, *args, **kwargs)
         obj = classobj.__new__(classobj)
         obj.root = self.root
-        obj.__init__(None, *args, **kwargs)
+        obj.__init__(*args, **kwargs)
 
         if isinstance(obj, AAFObject):
             obj.class_id = classdef.uuid
@@ -158,6 +158,7 @@ class AAFFile(object):
 
         obj_class = self.metadict.lookup_class(dir_entry.class_id)
 
+        # NOTE: objects read from file do not run __init__
         obj = obj_class.__new__(obj_class)
         obj.root = self
         obj.dir = dir_entry

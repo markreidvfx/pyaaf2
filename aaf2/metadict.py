@@ -21,20 +21,10 @@ from uuid import UUID
 class PropertyDef(core.AAFObject):
     class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         self = super(PropertyDef, cls).__new__(cls)
-        self.property_name = None
-        self.uuid = None
-        self.pid = None
-        self.typedef_name = None
-        self.optional = None
-        self.unique = None
 
-        return self
-
-    def __init__(self, root, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
-        super(PropertyDef, self).__init__(root)
-
+        self.root = root
         self.property_name = name
         self.uuid = None
         if uuid:
@@ -43,6 +33,8 @@ class PropertyDef(core.AAFObject):
         self.typedef_name = typedef
         self.optional = optional
         self.unique = unique
+
+        return self
 
     @property
     def unique_key(self):
@@ -94,17 +86,9 @@ class PropertyDef(core.AAFObject):
 class ClassDef(core.AAFObject):
     class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, root=None, name=None, uuid=None, parent=None, concrete=None):
         self = super(ClassDef, cls).__new__(cls)
-        self.class_name = None
-        self.uuid = None
-        self.parent_name = None
-        self.concrete = None
-        self._propertydefs = []
-        return self
-
-    def __init__(self, root=None, name=None, uuid=None, parent=None, concrete=None):
-        super(ClassDef, self).__init__(root)
+        self.root = root
         self.class_name = name
         self.uuid = None
         if uuid:
@@ -112,6 +96,7 @@ class ClassDef(core.AAFObject):
         self.parent_name = parent
         self.concrete = concrete
         self._propertydefs = []
+        return self
 
     def __eq__(self, other):
         self.uuid == other.uuid

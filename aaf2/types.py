@@ -23,22 +23,14 @@ from .utils import register_class
 class TypeDef(core.AAFObject):
     class_id = UUID("0d010101-0203-0000-060e-2b3402060101")
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, root=None, name=None, auid=None, *args, **kwargs):
         self = super(TypeDef, cls).__new__(cls)
-        self.type_name = None
-        self.auid = None
-        self.format = properties.SF_DATA
-        return self
-
-    def __init__(self, root, name=None, auid=None):
-        super(TypeDef, self).__init__(root)
-        # self.root = root
+        self.root = root
         self.type_name = name
         self.auid = None
-
         if auid:
             self.auid = UUID(auid)
-        self.format = properties.SF_DATA
+        return self
 
     @property
     def unique_key(self):
@@ -46,7 +38,7 @@ class TypeDef(core.AAFObject):
 
     @property
     def store_format(self):
-        return self.format
+        return properties.SF_DATA
 
     def __repr__(self):
         return "<%s %s>" % (self.type_name, self.__class__.__name__)
@@ -63,16 +55,11 @@ class TypeDef(core.AAFObject):
 @register_class
 class TypeDefInt(TypeDef):
     class_id = UUID("0d010101-0204-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefInt, cls).__new__(cls)
-        self.size = None
-        self.signed = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, size=None, signed=None):
-        super(TypeDefInt, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, size=None, signed=None):
+        self = super(TypeDefInt, cls).__new__(cls, root, name, auid)
         self.size = size
         self.signed = signed
+        return self
 
     def setup_defaults(self):
         super(TypeDefInt, self).setup_defaults()
@@ -116,14 +103,10 @@ class TypeDefInt(TypeDef):
 @register_class
 class TypeDefStrongRef(TypeDef):
     class_id = UUID("0d010101-0205-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefStrongRef, cls).__new__(cls)
-        self.ref_classdef_name = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, classdef=None):
-        super(TypeDefStrongRef, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, classdef=None):
+        self = super(TypeDefStrongRef, cls).__new__(cls, root, name, auid)
         self.ref_classdef_name = classdef
+        return self
 
     def setup_defaults(self):
         super(TypeDefStrongRef, self).setup_defaults()
@@ -144,23 +127,20 @@ class TypeDefStrongRef(TypeDef):
 class TypeDefWeakRef(TypeDef):
     class_id = UUID("0d010101-0206-0000-060e-2b3402060101")
 
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefWeakRef, cls).__new__(cls)
-        self.ref_classdef_name = None
-        self._path = None
-        self.format = properties.SF_WEAK_OBJECT_REFERENCE
-        return self
-
-    def __init__(self, root, name=None, auid=None, classdef=None, path=None):
-        super(TypeDefWeakRef, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, classdef=None, path=None):
+        self = super(TypeDefWeakRef, cls).__new__(cls, root, name, auid)
         self.ref_classdef_name = classdef
         self._path = path
-        self.format = properties.SF_WEAK_OBJECT_REFERENCE
+        return self
 
     def setup_defaults(self):
         super(TypeDefWeakRef, self).setup_defaults()
         self['TargetSet'].value = self.target_set_path
         self['ReferencedType'].value = self.ref_classdef
+
+    @property
+    def store_format(self):
+        return properties.SF_WEAK_OBJECT_REFERENCE
 
     @property
     def ref_classdef(self):
@@ -230,16 +210,11 @@ class TypeDefWeakRef(TypeDef):
 @register_class
 class TypeDefEnum(TypeDef):
     class_id = UUID("0d010101-0207-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefEnum, cls).__new__(cls)
-        self.element_typedef_name = None
-        self._elements = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, typedef=None, elements=None):
-        super(TypeDefEnum, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, typedef=None, elements=None):
+        self = super(TypeDefEnum, cls).__new__(cls, root, name, auid)
         self.element_typedef_name = typedef
         self._elements = elements
+        return self
 
     @property
     def byte_size(self):
@@ -315,16 +290,11 @@ def encode_utf16_array(data):
 @register_class
 class TypeDefFixedArray(TypeDef):
     class_id = UUID("0d010101-0208-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefFixedArray, cls).__new__(cls)
-        self.member_typedef_name = None
-        self.size = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, typedef=None, size=None):
-        super(TypeDefFixedArray, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, typedef=None, size=None):
+        self = super(TypeDefFixedArray, cls).__new__(cls, root, name, auid)
         self.member_typedef_name = typedef
         self.size = size
+        return self
 
     def setup_defaults(self):
         super(TypeDefFixedArray, self).setup_defaults()
@@ -368,14 +338,10 @@ class TypeDefFixedArray(TypeDef):
 class TypeDefVarArray(TypeDef):
     class_id = UUID("0d010101-0209-0000-060e-2b3402060101")
 
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefVarArray, cls).__new__(cls)
-        self.element_typedef_name = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, typedef=None):
-        super(TypeDefVarArray, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, typedef=None):
+        self = super(TypeDefVarArray, cls).__new__(cls, root, name, auid)
         self.element_typedef_name = typedef
+        return self
 
     def setup_defaults(self):
         super(TypeDefVarArray, self).setup_defaults()
@@ -448,14 +414,10 @@ class TypeDefVarArray(TypeDef):
 @register_class
 class TypeDefSet(TypeDef):
     class_id = UUID("0d010101-020a-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefSet, cls).__new__(cls)
-        self.element_typedef_name = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, typedef=None):
-        super(TypeDefSet, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, typedef=None):
+        self = super(TypeDefSet, cls).__new__(cls, root, name, auid)
         self.element_typedef_name = typedef
+        return self
 
     def setup_defaults(self):
         super(TypeDefSet, self).setup_defaults()
@@ -499,9 +461,10 @@ class TypeDefSet(TypeDef):
 @register_class
 class TypeDefString(TypeDef):
     class_id = UUID("0d010101-020b-0000-060e-2b3402060101")
-    def __init__(self, root, name=None, auid=None, typedef=None):
-        super(TypeDefString, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, typedef=None):
+        self = super(TypeDefString, cls).__new__(cls, root, name, auid)
         self.element_typedef_name = typedef
+        return self
 
     def setup_defaults(self):
         super(TypeDefString, self).setup_defaults()
@@ -523,21 +486,18 @@ class TypeDefString(TypeDef):
 @register_class
 class TypeDefStream(TypeDef):
     class_id = UUID("0d010101-020c-0000-060e-2b3402060101")
-    def __init__(self, root, name=None, auid=None):
-        super(TypeDefStream, self).__init__(root, name, auid)
-        self.format = properties.SF_DATA_STREAM
+
+    @property
+    def store_format(self):
+        return properties.SF_DATA_STREAM
 
 @register_class
 class TypeDefRecord(TypeDef):
     class_id = UUID("0d010101-020d-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefRecord, cls).__new__(cls)
-        self._fields = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, fields=None):
-        super(TypeDefRecord, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, fields=None):
+        self = super(TypeDefRecord, cls).__new__(cls, root, name, auid)
         self._fields = fields
+        return self
 
     @property
     def fields(self):
@@ -676,14 +636,10 @@ class TypeDefRecord(TypeDef):
 @register_class
 class TypeDefRename(TypeDef):
     class_id = UUID("0d010101-020e-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefRename, cls).__new__(cls)
-        self.typedef_name = None
-        return self
-
-    def __init__(self, root, name=None, auid=None, typedef=None):
-        super(TypeDefRename, self).__init__(root, name, auid)
+    def __new__(cls,  root=None, name=None, auid=None, typedef=None):
+        self = super(TypeDefRename, cls).__new__(cls, root, name, auid)
         self.typedef_name = typedef
+        return self
 
     def setup_defaults(self):
         super(TypeDefRename, self).setup_defaults()
@@ -704,17 +660,13 @@ class TypeDefRename(TypeDef):
 @register_class
 class TypeDefExtEnum(TypeDef):
     class_id = UUID("0d010101-0220-0000-060e-2b3402060101")
-    def __new__(cls, *args, **kwargs):
-        self = super(TypeDefExtEnum, cls).__new__(cls)
-        self._elements = {}
-        return self
-
-    def __init__(self, root, name=None, auid=None, elements=None):
-        super(TypeDefExtEnum, self).__init__(root, name, auid)
+    def __new__(cls, root=None, name=None, auid=None, elements=None):
+        self = super(TypeDefExtEnum, cls).__new__(cls, root, name, auid)
         self._elements = {}
         if elements:
             for key,value in elements.items():
                 self._elements[UUID(key)] = value
+        return self
 
     def setup_defaults(self):
         super(TypeDefExtEnum, self).setup_defaults()
@@ -749,8 +701,6 @@ class TypeDefExtEnum(TypeDef):
 @register_class
 class TypeDefIndirect(TypeDef):
     class_id = UUID("0d010101-0221-0000-060e-2b3402060101")
-    def __init__(self, root, name=None, auid=None):
-        super(TypeDefIndirect, self).__init__(root, name, auid)
 
     def decode(self, data):
         byte_order = data[0:1]
@@ -764,11 +714,7 @@ class TypeDefIndirect(TypeDef):
 @register_class
 class TypeDefOpaque(TypeDefIndirect):
     class_id = UUID("0d010101-0222-0000-060e-2b3402060101")
-    def __init__(self, root, name=None, auid=None):
-        super(TypeDefOpaque, self).__init__(root, name, auid)
 
 @register_class
 class TypeDefCharacter(TypeDef):
     class_id = UUID("0d010101-0223-0000-060e-2b3402060101")
-    def __init__(self, root, name=None, auid=None):
-        super(TypeDefCharacter, self).__init__(root, name, auid)

@@ -29,12 +29,10 @@ class AAFObject(object):
         self.root = None
         self.dir = None
         self.property_entries = {}
-        # self.class_id = self.class_id
         return self
 
-    def __init__(self, root=None,):
-        if root:
-            self.root = root
+    def __init__(self, *args, **kwargs):
+        pass
 
     @property
     def classdef(self):
@@ -210,7 +208,9 @@ class AAFObject(object):
             yield self, streams
 
     def copy(self, new_dir=None):
-        new_obj = self.__class__(self.root)
+        # new_obj = self.__class__(self.root)
+        new_obj = self.__class__.__new__(self.__class__)
+        new_obj.root = self.root
         new_obj.class_id = self.class_id
         new_obj.dir = new_dir
         new_obj.dir.class_id = self.class_id
