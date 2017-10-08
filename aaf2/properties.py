@@ -146,10 +146,23 @@ class StreamProperty(Property):
         assert self.data[0:1] == b'\x55' # unspecified
         self.stream_name = self.data[1:-2].decode("utf-16-le")
 
+    def encode(self, data):
+        return  b'\x55' + data.encode("utf-16le") + b"\x00" + b"\x00"
+
     def __repr__(self):
         return "<%s %s>" % (self.__class__.__name__, str(self.stream_name))
 
+    def setup_stream(self):
+        if self.stream_name:
+            return
+
+        self.stream_name = mangle_name(self.propertydef.property_name, self.pid, 32)
+        self.data = self.encode(self.stream_name)
+        self.add_pid_entry()
+
     def open(self, mode='r'):
+        self.setup_stream()
+
         if mode == 'r':
             stream = self.parent.dir.get(self.stream_name)
             if not stream:

@@ -18,6 +18,8 @@ class ContentStorage(core.AAFObject):
     def mobs(self):
         for key, mob in self["Mobs"].items():
             yield mob
+    def add_mob(self, mob):
+        self['Mobs'].append(mob)
 
     def toplevel(self):
         for mob in self.mobs():
@@ -38,3 +40,10 @@ class ContentStorage(core.AAFObject):
         for mob in self.mobs():
             if isinstance(mob, mobs.SourceMob):
                 yield mob
+
+    def essencedata(self):
+        for key, essencedata in self["EssenceData"].items():
+            yield essencedata
+
+    def add_essencedata(self, essencedata):
+        self["EssenceData"].append(essencedata)
