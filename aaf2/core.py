@@ -23,11 +23,18 @@ from .properties import property_formats
 
 class AAFObject(object):
     class_id = None
-    def __init__(self, root=None,):
-        self.root = root
+
+    def __new__(cls, *args, **kwargs):
+        self = super(AAFObject, cls).__new__(cls)
+        self.root = None
         self.dir = None
         self.property_entries = {}
-        self.class_id = self.class_id
+        # self.class_id = self.class_id
+        return self
+
+    def __init__(self, root=None,):
+        if root:
+            self.root = root
 
     @property
     def classdef(self):

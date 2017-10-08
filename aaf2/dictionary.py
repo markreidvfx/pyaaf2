@@ -77,12 +77,13 @@ class Dictionary(core.AAFObject):
         self.datadefs = {}
         for key, args in datadefs.DataDefs.items():
 
-            d = DataDef(root, key, *args)
+            d = self.root.create.DataDef(key, *args)
+
             self.datadefs[d.uuid] = d
 
         self.containerdefs = {}
         for key, args in datadefs.ContainerDefs.items():
-            d = ContainerDef(root, key, *args)
+            d = self.root.create.ContainerDef(key, *args)
             self.containerdefs[d.uuid] = d
 
     def setup_defaults(self):

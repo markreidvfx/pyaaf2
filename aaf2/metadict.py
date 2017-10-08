@@ -20,6 +20,18 @@ from uuid import UUID
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
+
+    def __new__(cls, *args, **kwargs):
+        self = super(PropertyDef, cls).__new__(cls)
+        self.property_name = None
+        self.uuid = None
+        self.pid = None
+        self.typedef_name = None
+        self.optional = None
+        self.unique = None
+
+        return self
+
     def __init__(self, root, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         super(PropertyDef, self).__init__(root)
 
@@ -81,6 +93,16 @@ class PropertyDef(core.AAFObject):
 @register_class
 class ClassDef(core.AAFObject):
     class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
+
+    def __new__(cls, *args, **kwargs):
+        self = super(ClassDef, cls).__new__(cls)
+        self.class_name = None
+        self.uuid = None
+        self.parent_name = None
+        self.concrete = None
+        self._propertydefs = []
+        return self
+
     def __init__(self, root=None, name=None, uuid=None, parent=None, concrete=None):
         super(ClassDef, self).__init__(root)
         self.class_name = name
@@ -217,6 +239,7 @@ class MetaDictionary(core.AAFObject):
     class_id = UUID("0d010101-0225-0000-060e-2b3402060101")
     def __init__(self, root):
         super(MetaDictionary, self).__init__(root)
+        self.root = root
         self.classdefs_by_name = {}
         self.classdefs_by_uuid = {}
         self.typedefs_by_name = {}

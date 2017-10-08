@@ -48,7 +48,11 @@ class AAFFactory(object):
 
         classobj = self.metadict.lookup_class(name)
 
-        obj = classobj(self.root, *args, **kwargs)
+        # obj = classobj(None, *args, **kwargs)
+        obj = classobj.__new__(classobj)
+        obj.root = self.root
+        obj.__init__(None, *args, **kwargs)
+
         if isinstance(obj, AAFObject):
             obj.class_id = classdef.uuid
 
@@ -80,6 +84,7 @@ class AAFFile(object):
         self.weakref_table = []
         self.path_cache = {}
         self.metadict = MetaDictionary(self)
+        self.metadict.root = self
         self.create = AAFFactory(self)
 
         if self.mode in ("rb", "rb+"):
@@ -153,7 +158,8 @@ class AAFFile(object):
 
         obj_class = self.metadict.lookup_class(dir_entry.class_id)
 
-        obj = obj_class(self)
+        obj = obj_class.__new__(obj_class)
+        obj.root = self
         obj.dir = dir_entry
         if obj_class is AAFObject:
             obj.class_id = dir_entry.class_id
