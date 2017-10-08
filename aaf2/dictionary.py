@@ -16,29 +16,41 @@ class DefinitionObject(core.AAFObject):
     class_id = UUID("0d010101-0101-1a00-060e-2b3402060101")
     def __init__(self, uuid=None, name=None, description=None):
         super(DefinitionObject, self).__init__()
-        self.def_name = name
+        self.name = name
         self.description = description
-        self.uuid = None
         if uuid:
             self.uuid = UUID(uuid)
 
-    def __repr__(self):
-        return "%s: %s" % (self.__class__.__name__, self.def_name)
+    @property
+    def name(self):
+        return self['Name'].value
 
-    def setup_defaults(self):
-        self['Name'].value = self.def_name
-        self['Identification'].value = self.uuid
-        self['Description'].value = self.description
+    @name.setter
+    def name(self, value):
+        self['Name'].value = value
+
+    @property
+    def description(self):
+        return self['Description'].value
+
+    @description.setter
+    def description(self, value):
+        self['Description'].value =  value
+
+    @property
+    def uuid(self):
+        return self['Identification'].value
+
+    @uuid.setter
+    def uuid(self, value):
+        self['Identification'].value = value
+
+    def __repr__(self):
+        return "%s: %s" % (self.__class__.__name__, self.name)
 
     @property
     def unique_key(self):
         return self.uuid
-
-    def read_properties(self):
-        super(DefinitionObject, self).read_properties()
-        self.def_name = self['Name'].value
-        self.uuid = self['Identification'].value
-        self.description = self['Description'].value
 
 @register_class
 class DataDef(DefinitionObject):
@@ -76,9 +88,7 @@ class Dictionary(core.AAFObject):
 
         self.datadefs = {}
         for key, args in datadefs.DataDefs.items():
-
             d = self.root.create.DataDef(key, *args)
-
             self.datadefs[d.uuid] = d
 
         self.containerdefs = {}
@@ -86,21 +96,5 @@ class Dictionary(core.AAFObject):
             d = self.root.create.ContainerDef(key, *args)
             self.containerdefs[d.uuid] = d
 
-    def setup_defaults(self):
-
-        for key in ('CodecDefinitions' ,'InterpolationDefinitions' ,
-                    'ParameterDefinitions' ,'TaggedValueDefinitions' ,
-                    'KLVDataDefinitions' ,'OperationDefinitions' ,
-                    'PluginDefinitions' ,'ContainerDefinitions' ,'DataDefinitions'):
-            pass
-            # self[key].value = []
-
-        for item in self.datadefs.values():
-            item.setup_defaults()
-
         self['DataDefinitions'].value = self.datadefs
-
-        for item in self.containerdefs.values():
-            item.setup_defaults()
-
         self['ContainerDefinitions'].value = self.containerdefs

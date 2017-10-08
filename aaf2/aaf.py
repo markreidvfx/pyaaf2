@@ -119,7 +119,6 @@ class AAFFile(object):
         self.root['Header'].value = self.create.Header()
 
         self.header['Dictionary'].value = self.create.Dictionary()
-        self.dictionary.setup_defaults()
 
         self.header['Content'].value = self.create.ContentStorage()
         self.header['OperationalPattern'].value = UUID("0d011201-0100-0000-060e-2b3404010105")
