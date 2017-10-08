@@ -235,7 +235,8 @@ class AAFFile(object):
             write_u16le(f, 0) # null terminated
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.save()
+        if (exc_type is None and exc_value is None and traceback is None):
+            self.save()
 
     def __enter__(self):
         return self
