@@ -11,6 +11,11 @@ from .model import datadefs
 from . import core
 from .utils import register_class
 
+def short_name(name):
+    for s in ('DataDef_',):
+        name = name.replace(s, "")
+    return s
+
 @register_class
 class DefinitionObject(core.AAFObject):
     class_id = UUID("0d010101-0101-1a00-060e-2b3402060101")
@@ -28,6 +33,12 @@ class DefinitionObject(core.AAFObject):
     @name.setter
     def name(self, value):
         self['Name'].value = value
+
+    @property
+    def short_name(self):
+        name = self.name
+        if name:
+            return short_name(name)
 
     @property
     def description(self):
@@ -106,6 +117,14 @@ class Dictionary(core.AAFObject):
         self['ContainerDefinitions'].value = self.containerdefs
 
     def lookup_datadef(self, name):
+        if isinstance(name, DataDef):
+            return name
+
+        name = short_name(name)
         for key, value in self['DataDefinitions'].items():
-            if name == value.name.replace("DataDef_", "").lower():
+            if name.lower() == value.short_name.lower():
                 return value
+            if name == key:
+                return value
+
+        raise Exception("No datadef: %s" % str(name))

@@ -8,10 +8,15 @@ from __future__ import (
 from uuid import UUID
 
 from . import core
-from .utils import register_class
+from . utils import register_class
+from . mobid import MobID
+from . dictionary import DataDef
 
 class Component(core.AAFObject):
     class_id = UUID("0d010101-0101-0200-060e-2b3402060101")
+    def __init__(self, length=None, media_kind=None):
+        self.length = length or 0
+        self.media_kind = media_kind or 'picture'
 
     @property
     def length(self):
@@ -21,6 +26,23 @@ class Component(core.AAFObject):
     def length(self, value):
         self['Length'].value = value
 
+    @property
+    def datadef(self):
+        return self['DataDefinition'].value
+
+    @datadef.setter
+    def datadef(self, value):
+        self['DataDefinition'].value = value
+
+    @property
+    def media_kind(self):
+        datadef = self.datadef
+        if datadef:
+            return datadef.short_name
+
+    @media_kind.setter
+    def media_kind(self, value):
+        self.datadef = self.root.dictionary.lookup_datadef(value)
 
 class Segment(Component):
     class_id = UUID("0d010101-0101-0300-060e-2b3402060101")
@@ -78,6 +100,12 @@ class SourceReference(Segment):
 @register_class
 class SourceClip(SourceReference):
     class_id = UUID("0d010101-0101-1100-060e-2b3402060101")
+
+    def __init__(self, start=None, length=None, mob_id=None, slot_id=None, media_kind=None):
+        super(SourceClip, self).__init__(length, media_kind)
+        self.start = start or 0
+        self.mob_id = mob_id or MobID()
+        self.slot_id = slot_id or 0
 
     @property
     def start(self):

@@ -17,6 +17,8 @@ class MobSlot(core.AAFObject):
         super(MobSlot, self).__init__()
         self.id = slot_id
         self.name = name
+        if slot_id is not None and name is None:
+            self.name = "Track-%03d" % slot_id
         self.segment = segment
 
     @property
@@ -63,3 +65,22 @@ class EventMobSlot(MobSlot):
 @register_class
 class TimelineMobSlot(MobSlot):
     class_id = UUID("0d010101-0101-3b00-060e-2b3402060101")
+    def __init__(self, slot_id=None, name=None, segment=None, origin=None, edit_rate=None):
+        super(TimelineMobSlot, self).__init__(slot_id, name, segment)
+        self.origin = origin or 0
+        self.edit_rate = edit_rate or 25
+
+    @property
+    def origin(self):
+        return self['Origin'].value
+    @origin.setter
+    def origin(self, value):
+        self['Origin'].value = value
+
+    @property
+    def edit_rate(self):
+        return self['EditRate'].value
+
+    @edit_rate.setter
+    def edit_rate(self, value):
+        self['EditRate'].value = value

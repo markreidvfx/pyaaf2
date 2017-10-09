@@ -623,6 +623,11 @@ class TypeDefRecord(TypeDef):
             # print(t)
             data = t
 
+        # Rational
+        if self.auid == UUID("03010100-0000-0000-060e-2b3401040101"):
+            r = AAFFraction(data)
+            data = {'Numerator': r.numerator, 'Denominator':r.denominator }
+
         for key, typedef_name in self.fields:
             typedef = self.root.metadict.lookup_typedef(typedef_name)
             value = typedef.encode(data[key])
@@ -653,6 +658,9 @@ class TypeDefRename(TypeDef):
 
     def decode(self, data):
         return self.renamed_typedef.decode(data)
+
+    def encode(self, data):
+        return self.renamed_typedef.encode(data)
 
     def read_properties(self):
         super(TypeDefRename, self).read_properties()

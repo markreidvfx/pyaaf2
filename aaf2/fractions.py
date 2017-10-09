@@ -68,7 +68,7 @@ class AAFFraction(Fraction):
                     numerator = -numerator
 
             else:
-                raise TypeError("argument should be a string "
+                raise TypeError("argument should be a string " +
                                 "or a Rational instance")
 
         elif (isinstance(numerator, Rational) and
@@ -78,7 +78,7 @@ class AAFFraction(Fraction):
                 denominator.numerator * numerator.denominator
                 )
         else:
-            raise TypeError("both arguments should be "
+            raise TypeError("both arguments should be " +
                             "Rational instances")
 
         if denominator == 0:
