@@ -94,10 +94,17 @@ class BaseProperty(object):
 
     @property
     def value(self):
-        return self.typedef.decode(self.data)
+        d = self.data
+        if d is None:
+            return None
+        return self.typedef.decode(d)
 
     @value.setter
     def value(self, value):
+        if value is None:
+            self.remove_pid_entry()
+            return
+
         self.data = self.typedef.encode(value)
         self.add_pid_entry()
 
@@ -105,6 +112,10 @@ class BaseProperty(object):
         if not self.pid in self.parent.property_entries:
             self.parent.property_entries[self.pid] = self
         return self
+
+    def remove_pid_entry(self):
+        if self.pid in self.parent.property_entries:
+            del self.parent.property_entries[self.pid]
 
     def __repr__(self):
         return "0x%04X %s" % (self.pid, self.format_name())
@@ -223,6 +234,9 @@ class StrongRefProperty(ObjectRefProperty):
 
     @value.setter
     def value(self, value):
+        if value is None:
+            self.remove_pid_entry()
+            return
 
         typedef = self.typedef
         ref_classdef = typedef.ref_classdef
@@ -378,6 +392,10 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
     @value.setter
     def value(self, value):
+        if value is None:
+            self.remove_pid_entry()
+            return
+
         ref_classdef = self.ref_classdef
 
         for obj in value:
@@ -590,6 +608,9 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
     @value.setter
     def value(self, value):
+        if value is None:
+            self.remove_pid_entry()
+            return
 
         self.clear()
         if isinstance(value, dict):
@@ -682,6 +703,9 @@ class WeakRefProperty(ObjectRefProperty):
 
     @value.setter
     def value(self, value):
+        if value is None:
+            self.remove_pid_entry()
+            return
 
         ref_classdef = self.ref_classdef
         assert ref_classdef.isinstance(value.classdef)
@@ -810,6 +834,10 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
 
     @value.setter
     def value(self, value):
+        if value is None:
+            self.remove_pid_entry()
+            return
+
         self.clear()
         self.extend(value)
 

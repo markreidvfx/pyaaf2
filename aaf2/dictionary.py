@@ -98,3 +98,8 @@ class Dictionary(core.AAFObject):
 
         self['DataDefinitions'].value = self.datadefs
         self['ContainerDefinitions'].value = self.containerdefs
+
+    def lookup_datadef(self, name):
+        for key, value in self['DataDefinitions'].items():
+            if name == value.name.replace("DataDef_", "").lower():
+                return value

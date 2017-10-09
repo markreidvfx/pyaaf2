@@ -15,6 +15,10 @@ from .utils import register_class
 class Mob(core.AAFObject):
     class_id = UUID("0d010101-0101-3400-060e-2b3402060101")
 
+    def __init__(self, name=None):
+        self.name = name or ""
+        self.id = MobID.new()
+
     @property
     def unique_key(self):
         return self.id
@@ -41,6 +45,17 @@ class Mob(core.AAFObject):
     @usage.setter
     def usage(self, value):
         self['UsageCode'].value = value
+
+    @property
+    def slots(self):
+        return self['Slots']
+
+    def __repr__(self):
+        s = "%s.%s" % (self.__class__.__module__,
+                       self.__class__.__name__)
+        s += ' "%s" %s' % (self.name or "", str(self.id))
+
+        return '<%s at 0x%x>' % (s, id(self))
 
 @register_class
 class CompositionMob(Mob):

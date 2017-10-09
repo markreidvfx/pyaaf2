@@ -259,10 +259,13 @@ class AAFObject(object):
 
         return default
 
-    def get_value(self, key, default=None):
+    def getvalue(self, key, default=None):
+        if not key in self.keys():
+            return default
+
         p = self.get(key, None)
         if p is None:
-            return None
+            return default
         return p.value
 
     def __getitem__(self, key):
@@ -272,8 +275,13 @@ class AAFObject(object):
         return result
 
     def __repr__(self):
+        s = "%s.%s" % (self.__class__.__module__,
+                                self.__class__.__name__)
+        name = self.name
+        if name:
+            s += ' %s' % name
 
-        return "<%s>" % (self.name)
+        return '<%s at 0x%x>' % (s, id(self))
 
     def dump(self, space=""):
 

@@ -13,6 +13,12 @@ from .utils import register_class
 class MobSlot(core.AAFObject):
     class_id = UUID("0d010101-0101-3800-060e-2b3402060101")
 
+    def __init__(self, slot_id=None, name=None, segment=None):
+        super(MobSlot, self).__init__()
+        self.id = slot_id
+        self.name = name
+        self.segment = segment
+
     @property
     def segment(self):
         return self['Segment'].value
@@ -37,6 +43,18 @@ class MobSlot(core.AAFObject):
     def id(self, value):
         self['SlotID'].value = value
 
+    def __repr__(self):
+        name = self.name
+        slot_id = self.id
+        s = "%s.%s" % (self.__class__.__module__,
+                       self.__class__.__name__)
+
+        if slot_id is not None:
+            s += " %d" % slot_id
+        if name:
+            s += ' "%s"' % name
+
+        return '<%s at 0x%x>' % (s, id(self))
 
 @register_class
 class EventMobSlot(MobSlot):
