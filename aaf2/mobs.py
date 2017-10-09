@@ -63,6 +63,17 @@ class Mob(core.AAFObject):
                 return slot
         raise IndexError("No SlotID: %s" % str(slot_id))
 
+    def _next_slot_id(self):
+        slots = [slot.id for slot in self.slots]
+        slots.sort()
+        start = 1
+        if slots and slots[0] == 0:
+            start = 0
+
+        for i, e in enumerate(slots + [None], start):
+            if i != e:
+                return i
+
     def createclip(self, slot_id=None, media_kind=None):
         clip = self.root.create.SourceClip(media_kind=media_kind)
         clip.mob = self
@@ -84,28 +95,21 @@ class CompositionMob(Mob):
 class MasterMob(Mob):
     class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
 
-    def create_essence(self, media_kind, edit_rate, slot_id=None):
-        if not slot_id:
-            slot_id = max([s.id for s in self.slots] or [0]) + 1
+    def import_dnxhd_essence(self, path, edit_rate):
+        sample_rate = edit_rate
 
+        # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
-        null_slot = source_mob.add_null_slot(media_kind=media_kind, edit_rate=edit_rate)
+        essencedata, source_slot = source_mob.create_essence(edit_rate, 'picture')
 
-        slot = self.root.create.TimelineMobSlot(slot_id)
-        slot.segment = source_mob.createclip(null_slot.id, media_kind)
+        # create slot and clip that references source_mob slot
+        slot_id = self._next_slot_id()
+        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate)
+        slot.segment = source_mob.createclip(source_slot.id, 'picture')
         self.slots.append(slot)
 
-        essencedata = self.root.create.EssenceData()
-        essencedata.id = source_mob.id
-        self.root.content.essencedata.append(essencedata)
-
-        return source_mob, essencedata
-
-    def import_dnxhd_essence(self, path, frame_rate):
-        source_mob, essencedata = self.create_essence('picture', frame_rate)
-        sample_rate = frame_rate
-
+        # setup essence descriptor
         descriptor = self.root.create.CDCIDescriptor()
         source_mob.descriptor = descriptor
         descriptor['ComponentWidth'].value = 8
@@ -139,9 +143,20 @@ class SourceMob(Mob):
     def descriptor(self, value):
         self['EssenceDescription'].value = value
 
-    def add_null_slot(self, media_kind='picture', edit_rate=None, slot_id=None):
-        if not slot_id:
-            slot_id = max([s.id for s in self.slots] or [0]) + 1
+    def create_essence(self, edit_rate=None, media_kind='picture', slot_id=None):
+        if slot_id is None:
+            slot_id = self._next_slot_id()
+        # NOTE: not sure if SourceMob can only contain 1 essence
+        assert slot_id == 1
+        slot = self.create_null_slot(media_kind=media_kind, edit_rate=edit_rate, slot_id=slot_id)
+        essencedata = self.root.create.EssenceData()
+        essencedata.id = self.id
+        self.root.content.essencedata.append(essencedata)
+        return essencedata, slot
+
+    def create_null_slot(self, edit_rate=None, media_kind='picture', slot_id=None):
+        if slot_id is None:
+            slot_id = self._next_slot_id()
 
         slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
         self.slots.append(slot)
