@@ -21,12 +21,12 @@ class EssenceTests(unittest.TestCase):
         with aaf2.open(new_file, 'w') as f:
             e = f.create.EssenceData()
             e.id = mob_id
-            f.content.add_essencedata(e)
+            f.content.essencedata.append(e)
             stream = e.open("w")
             stream.write(test_data)
 
         with aaf2.open(new_file, 'r') as f:
-            e = next(f.content.essencedata())
+            e = next(f.content.essencedata.values())
             assert e.id == mob_id
             stream = e.open("r")
             assert stream.read() == test_data

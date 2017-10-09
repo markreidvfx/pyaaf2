@@ -55,18 +55,18 @@ class CreatAAFTests(unittest.TestCase):
                 m['CreationTime'].value = now
                 m['Slots'].value = []
 
-                f.content['Mobs'].append(m)
+                f.content.mobs.append(m)
 
                 mobs[mob_id] = m.name
 
         with AAFFile(result_file, 'r') as f:
             # file_mobs = f.content['Mobs'].value
 
-            for mob in f.content.mobs():
+            for mob in f.content.mobs:
                 assert mob.id in mobs
                 assert mob.name == mobs[mob.id]
 
-            assert len(list(f.content.mobs())) == count
+            assert len(list(f.content.mobs)) == count
 
 
 if __name__ == "__main__":

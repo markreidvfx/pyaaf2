@@ -89,7 +89,7 @@ class MasterMob(Mob):
             slot_id = max([s.id for s in self.slots] or [0]) + 1
 
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
-        self.root.content.add_mob(source_mob)
+        self.root.content.mobs.append(source_mob)
         null_slot = source_mob.add_null_slot(media_kind=media_kind, edit_rate=edit_rate)
 
         slot = self.root.create.TimelineMobSlot(slot_id)
@@ -98,7 +98,7 @@ class MasterMob(Mob):
 
         essencedata = self.root.create.EssenceData()
         essencedata.id = source_mob.id
-        self.root.content.add_essencedata(essencedata)
+        self.root.content.essencedata.append(essencedata)
 
         return source_mob, essencedata
 

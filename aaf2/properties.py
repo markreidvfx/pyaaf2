@@ -576,6 +576,13 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             obj = self.read_object(key)
             yield (key, obj)
 
+    def values(self):
+        for key, obj in self.items():
+            yield obj
+
+    def __iter__(self):
+        return self.values()
+
     def extend(self, values):
         typedef = self.typedef
         classdef = typedef.ref_classdef
