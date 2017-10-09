@@ -1,4 +1,3 @@
-
 from __future__ import (
     unicode_literals,
     absolute_import,
@@ -6,10 +5,14 @@ from __future__ import (
     division,
     )
 
+import sys
 from fractions import Fraction, _RATIONAL_FORMAT
 from decimal import Decimal
 import numbers
 Rational = numbers.Rational
+
+if sys.version_info.major >= 3:
+    unicode = str
 
 class AAFFraction(Fraction):
     """
@@ -40,7 +43,7 @@ class AAFFraction(Fraction):
                 self._denominator = value._denominator
                 return self
 
-            elif isinstance(numerator, str):
+            elif isinstance(numerator, (str, unicode)):
                 # Handle construction from strings.
                 m = _RATIONAL_FORMAT.match(numerator)
                 if m is None:

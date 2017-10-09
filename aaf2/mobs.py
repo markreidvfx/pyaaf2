@@ -148,7 +148,7 @@ class SourceMob(Mob):
             slot_id = self._next_slot_id()
         # NOTE: not sure if SourceMob can only contain 1 essence
         assert slot_id == 1
-        slot = self.create_null_slot(media_kind=media_kind, edit_rate=edit_rate, slot_id=slot_id)
+        slot = self.create_null_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=slot_id)
         essencedata = self.root.create.EssenceData()
         essencedata.id = self.id
         self.root.content.essencedata.append(essencedata)

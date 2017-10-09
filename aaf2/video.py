@@ -1,4 +1,12 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
+
 from struct import unpack
+from . utils import int_from_bytes
 
 dnx_profiles = {
 'dnx_1080p_175x_23.97' : { "size" : (1920, 1080), 'interlaced' : False, "bitrate" : 175,  "pix_fmt" : "yuv422p10", "frame_rate" : "24000/1001", },
@@ -46,18 +54,34 @@ dnx_profiles = {
 'dnxhr_hqx'            : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_hqx"},
 }
 
-def read_dnx_header(path):
+def valid_dnx_prefix(prefix):
+
+    # DNxHD prefix
+    dnxhd_header_prefix = 0x000002800100
+    if prefix == dnxhd_header_prefix:
+        return True
+
+    # DNxHR prefix
+    data_offset = prefix >> 16
+    print("data_offset:", data_offset)
+    if ((prefix & 0xFFFF0000FFFF) == 0x0300 and
+         data_offset >= 0x0280 and data_offset <= 0x2170 and
+         (data_offset & 3) == 0):
+        return True
+
+    return False
+
+def read_dnx_frame_header(path):
     f = open(path, 'rb')
     dnx_header = f.read(640)
     f.close()
 
     if len(dnx_header) != 640:
-        raise ValueError("Invalid DNxHD file: header to Short")
+        raise ValueError("Invalid DNxHD frame: header to Short")
 
-    header_prefix = (0x00, 0x00, 0x02, 0x80, 0x01)
-
-    if header_prefix != unpack(">BBBBB", dnx_header[:5]):
-        raise ValueError("Invalid DNxHD file: header magick number wrong")
+    prefix = int_from_bytes(bytearray(dnx_header[:6])) & 0xffffffffff00
+    if not valid_dnx_prefix(prefix):
+        raise ValueError("Invalid DNxHD frame: unknown prefix: 0x%012X" % prefix)
 
     width, height = unpack(">24xhh", dnx_header[:28])
     cid = unpack(">40xi", dnx_header[:44])[0]
