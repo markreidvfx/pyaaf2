@@ -46,7 +46,13 @@ class DefinitionObject(core.AAFObject):
         self['Identification'].value = value
 
     def __repr__(self):
-        return "%s: %s" % (self.__class__.__name__, self.name)
+        s = "%s.%s" % (self.__class__.__module__,
+                       self.__class__.__name__)
+        name = self.name
+        if name:
+            s += " %s" % name
+
+        return '<%s at 0x%x>' % (s, id(self))
 
     @property
     def unique_key(self):

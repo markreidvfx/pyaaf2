@@ -4,20 +4,27 @@ from __future__ import (
     print_function,
     division,
     )
-import traceback
+
+from uuid import UUID
+from datetime import datetime
 
 from . import core
 from . mobid import MobID
-from uuid import UUID
-from .utils import register_class
+from . utils import register_class
 
 @register_class
 class Mob(core.AAFObject):
     class_id = UUID("0d010101-0101-3400-060e-2b3402060101")
 
     def __init__(self, name=None):
-        self.name = name or ""
+        self.name = name or "Mob"
         self.id = MobID.new()
+
+        now = datetime.now()
+        self['CreationTime'].value = now
+        self['LastModified'].value = now
+
+        self['Slots'].value = []
 
     @property
     def unique_key(self):
@@ -50,6 +57,12 @@ class Mob(core.AAFObject):
     def slots(self):
         return self['Slots']
 
+    def createclip(self, slot_id):
+        clip = self.root.create.SourceClip()
+        clip.mob = self
+        clip.slot_id = slot_id
+        return clip
+
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,
                        self.__class__.__name__)
@@ -64,6 +77,20 @@ class CompositionMob(Mob):
 @register_class
 class MasterMob(Mob):
     class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
+
+    def create_essence(self, slot_id, media_kind, codec, edit_rate, sample_rate):
+        datadef = self.root.dictionary.lookup_datadef(media_kind)
+        slot = self.root.create.TimelineMobSlot(slot_id, "Track-%03d" % slot_id)
+        mob = self.root.create.SourceMob("%s.PHYS" % self.name)
+
+        slot.segment = mob.createclip(0)
+
+        print(slot.segment)
+        print(mob)
+
+    def import_dnxhd_essence(self, path, frame_rate):
+        slot = 1
+        essence = self.create_essence(slot, 'picture', 'DNxHD', frame_rate, frame_rate)
 
 @register_class
 class SourceMob(Mob):

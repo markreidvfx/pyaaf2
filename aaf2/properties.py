@@ -298,7 +298,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         p.next_free_key = self.next_free_key
         p.last_free_key = self.last_free_key
 
-        for i, value in enumerate(self.iter_values()):
+        for i, value in enumerate(self):
             ref = self.references[i]
             dir_entry = parent.dir.get(ref)
             if dir_entry is None:
@@ -366,20 +366,11 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def ref_classdef(self):
         return self.typedef.element_typedef.ref_classdef
 
-    def iter_values(self):
+    def __iter__(self):
         for i, ref in enumerate(self.references):
             dir_entry = self.parent.dir.get(ref)
             item = self.parent.root.read_object(dir_entry)
             yield item
-
-    @property
-    def value(self):
-        if len(self.objects) == len(self.references):
-            return self.objects
-
-        return [item for item in self.iter_values()]
-        self.objects = objects
-        return objects
 
     def clear(self):
         for obj in self.objects:
@@ -390,18 +381,30 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         self.references = []
         self.local_map = {}
 
-    @value.setter
-    def value(self, value):
-        if value is None:
-            self.remove_pid_entry()
-            return
+
+    def insert(self, index, value):
+        # read all the objects inserting extending
+        if len(self.objects) != len(self.references):
+            self.objects = [item for item in self]
+
+        ref_classdef = self.ref_classdef
+        assert ref_classdef.isinstance(value.classdef)
+
+        ref = "%s{%x}" % (self.ref, self.next_free_key)
+        self.local_map[ref] = self.next_free_key
+        self.references.insert(index, ref)
+        self.objects.insert(index, value)
+        self.next_free_key += 1
+
+    def extend(self, value):
+        # read all the objects before extending
+        if len(self.objects) != len(self.references):
+            self.objects = [item for item in self]
 
         ref_classdef = self.ref_classdef
 
         for obj in value:
             assert ref_classdef.isinstance(obj.classdef)
-
-        self.clear()
 
         if self.ref is None:
             propdef = self.propertydef
@@ -417,6 +420,26 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
         self.add_pid_entry()
         self.attach()
+
+    def append(self, value):
+        self.extend([value])
+
+    @property
+    def value(self):
+        if len(self.objects) == len(self.references):
+            return self.objects
+
+        self.objects = [item for item in self]
+        return self.objects
+
+    @value.setter
+    def value(self, value):
+        if value is None:
+            self.remove_pid_entry()
+            return
+
+        self.clear()
+        self.extend(value)
 
     def attach(self):
         # print("set attach")

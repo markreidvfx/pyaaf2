@@ -21,6 +21,12 @@ class ContentStorage(core.AAFObject):
     def add_mob(self, mob):
         self['Mobs'].append(mob)
 
+    def lookup_mob(self, mob_id):
+        # should replace this
+        for key, mob in self["Mobs"].items():
+            if key == mob_id:
+                return mob
+
     def toplevel(self):
         for mob in self.mobs():
             if mob.usage == 'Usage_TopLevel':
