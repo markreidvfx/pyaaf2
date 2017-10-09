@@ -95,7 +95,7 @@ class CompositionMob(Mob):
 class MasterMob(Mob):
     class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
 
-    def import_dnxhd_essence(self, path, edit_rate):
+    def embbed_dnxhd_essence(self, path, edit_rate):
         sample_rate = edit_rate
 
         # create sourceMob and essencedata
