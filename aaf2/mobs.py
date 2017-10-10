@@ -114,7 +114,7 @@ class MasterMob(Mob):
         # setup essence descriptor
         descriptor = self.root.create.CDCIDescriptor()
         source_mob.descriptor = descriptor
-        descriptor['ComponentWidth'].value = 8
+
         descriptor['HorizontalSubsampling'].value = 2
         descriptor['SampleRate'].value = sample_rate
         descriptor['VideoLineMap'].value = [42, 0] #???
@@ -123,21 +123,21 @@ class MasterMob(Mob):
         f = io.open(path, 'rb')
 
         cid = None
-        width = None
-        height = None
-        interlaced = None
 
         for i, packet in enumerate(video.iter_dnx_stream(f)):
             if cid is None:
-                (cid, width, height, interlaced) = video.read_dnx_frame_header(packet)
+                (cid, width, height, bitdepth, interlaced) = video.read_dnx_frame_header(packet)
                 descriptor['StoredWidth'].value = width
                 descriptor['StoredHeight'].value = height
+                descriptor['ComponentWidth'].value = bitdepth
                 descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
                 descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
 
             stream.write(packet)
 
         descriptor['Length'].value = i
+        slot.segment.length = i
+        source_slot.segment.length = i
 
 @register_class
 class SourceMob(Mob):

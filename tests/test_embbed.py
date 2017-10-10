@@ -42,13 +42,12 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
 
     cmd.extend([outfile])
 
-    print(subprocess.list2cmdline(cmd))
+    # print(subprocess.list2cmdline(cmd))
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
 
     stdout,stderr = p.communicate()
-    print(stderr)
     if p.returncode < 0:
-
+        print(stderr)
         return Exception("error encoding footage")
     return outfile
 
@@ -99,13 +98,22 @@ class EmbbedTests(unittest.TestCase):
         profile_name = 'dnx_1080p_36_23.97'
         sample = generate_dnxhd(profile_name, "dnx_iter01.dnxhd", 10)
         for i, packet in enumerate(video.iter_dnx_stream(open(sample, 'rb'))):
-            pass
+            cid, width, height, bitdepth, interlaced = video.read_dnx_frame_header(packet)
+            assert not interlaced
+            assert bitdepth == 8
+
+            assert (width, height) == (1920, 1080)
+
         assert i+1 == 10
 
         profile_name = 'dnx_1080i_120_25'
         sample = generate_dnxhd(profile_name, "dnx_iter02.dnxhd", 10)
         for i, packet in enumerate(video.iter_dnx_stream(open(sample, 'rb'))):
-            pass
+            cid, width, height, bitdepth, interlaced = video.read_dnx_frame_header(packet)
+            assert interlaced
+            assert bitdepth == 8
+            assert (width, height) == (1920, 540)
+
         assert i+1 == 10
 
         frame_rate = '23.97'
@@ -113,7 +121,11 @@ class EmbbedTests(unittest.TestCase):
         uhd2160 = (3840, 2160)
         sample = generate_dnxhd(profile_name, "dnx_iter03.dnxhd", 10, size=uhd2160, frame_rate=frame_rate)
         for i, packet in enumerate(video.iter_dnx_stream(open(sample, 'rb'))):
-            pass
+            cid, width, height, bitdepth, interlaced = video.read_dnx_frame_header(packet)
+            assert not interlaced
+            assert (width, height) == uhd2160
+            assert bitdepth == 8
+
         assert i+1 == 10
 
     def test_dnxhd(self):
