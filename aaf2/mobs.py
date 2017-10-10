@@ -107,20 +107,33 @@ class MasterMob(Mob):
 
         # create slot and clip that references source_mob slot
         slot_id = self._next_slot_id()
-        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate)
+        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
         slot.segment = source_mob.createclip(source_slot.id, 'picture')
         self.slots.append(slot)
 
-        # setup essence descriptor
+        # setup essence descriptor, ugh..
         descriptor = self.root.create.CDCIDescriptor()
         source_mob.descriptor = descriptor
 
         descriptor['HorizontalSubsampling'].value = 2
+        descriptor['VerticalSubsampling'].value = 1
         descriptor['SampleRate'].value = sample_rate
+        descriptor['BlackReferenceLevel'].value = 16
+        descriptor['WhiteReferenceLevel'].value = 235
+        descriptor['ColorRange'].value = 255
+        descriptor['PaddingBits'].value = 0
+        descriptor['DisplayXOffset'].value = 0
+        descriptor['DisplayYOffset'].value = 0
+        descriptor['SampledXOffset'].value = 0
+        descriptor['SampledYOffset'].value = 0
         descriptor['VideoLineMap'].value = [42, 0] #???
+        descriptor['AlphaTransparency'].value = 'MinValueTransparent'
+        descriptor['ImageAlignmentFactor'].value = 0
+
         descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
         descriptor['Compression'].value = UUID("04010202-7113-0000-060e-2b340401010a")
-
+        dnxhd_codec_uuid = UUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
+        descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_uuid)
         stream = essencedata.open('w')
         f = io.open(path, 'rb')
 
@@ -131,6 +144,10 @@ class MasterMob(Mob):
                 (cid, width, height, bitdepth, interlaced) = video.read_dnx_frame_header(packet)
                 descriptor['StoredWidth'].value = width
                 descriptor['StoredHeight'].value = height
+                descriptor['DisplayWidth'].value = width
+                descriptor['DisplayHeight'].value = height
+                descriptor['SampledWidth'].value = width
+                descriptor['SampledHeight'].value = height
                 descriptor['ComponentWidth'].value = bitdepth
                 descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
                 descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
@@ -171,7 +188,7 @@ class SourceMob(Mob):
         slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
         self.slots.append(slot)
 
-        clip = self.createclip(slot_id, media_kind)
+        clip = self.root.create.SourceClip(media_kind=media_kind)
         slot.segment = clip
 
         return slot

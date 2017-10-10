@@ -157,3 +157,18 @@ class Dictionary(core.AAFObject):
                 return value
 
         raise Exception("No ContainerDef: %s" % str(name))
+
+    def lookup_codecdef(self, name):
+        if isinstance(name, CodecDef):
+            return name
+        if not isinstance(name, UUID):
+            name = short_name(name).lower()
+
+        for key, value in self['CodecDefinitions'].items():
+
+            if name == value.short_name.lower():
+                return value
+            if name == key:
+                return value
+
+        raise Exception("No CodecDef: %s" % str(name))
