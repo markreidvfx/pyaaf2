@@ -170,10 +170,8 @@ class AAFFile(object):
         return obj
 
     def resovle_weakref(self, index, ref_pid, ref):
-        # print(index, ref_pid, ref)
         parent, p = self.weakref_prop(index)
-        v = p.value.get(ref)
-        return v
+        return p[ref]
 
     def weakref_prop(self, index):
         path = self.weakref_table[index]

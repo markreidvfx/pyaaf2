@@ -583,6 +583,17 @@ class StrongRefSetProperty(StrongRefArrayProperty):
     def __iter__(self):
         return self.values()
 
+    def get(self, key, default=None):
+        if key not in self:
+            return default
+        return self.read_object(key)
+
+    def __getitem__(self, key):
+        result = self.get(key, default=None)
+        if result is None:
+            raise KeyError(key)
+        return result
+
     def extend(self, values):
         typedef = self.typedef
         classdef = typedef.ref_classdef
@@ -675,7 +686,7 @@ def resolve_weakref(p, ref):
     elif ref_class_id == UUID("0d010101-0203-0000-060e-2b3402060101"):
         return p.parent.root.metadict.lookup_typedef(ref)
     else:
-        return p.parent.root.resovle_weakref(p.ref_index, p.ref_pid, p.ref)
+        return p.parent.root.resovle_weakref(p.ref_index, p.ref_pid, ref)
 
 class WeakRefProperty(ObjectRefProperty):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
