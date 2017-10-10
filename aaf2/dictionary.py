@@ -88,6 +88,13 @@ class PluginDef(DefinitionObject):
 @register_class
 class CodecDef(DefinitionObject):
     class_id = UUID("0d010101-0101-1f00-060e-2b3402060101")
+    def __init__(self, dictionary, uuid=None, name=None, description=None, classdef=None, datadef_names=None):
+        super(CodecDef, self).__init__(uuid, name, description)
+        if classdef:
+            self['FileDescriptorClass'].value = self.root.metadict.lookup_classdef(classdef)
+
+        for d in datadef_names or []:
+            self['DataDefinitions'].append(dictionary.lookup_datadef(d))
 
 @register_class
 class ContainerDef(DefinitionObject):
@@ -116,6 +123,15 @@ class Dictionary(core.AAFObject):
         self['DataDefinitions'].value = self.datadefs
         self['ContainerDefinitions'].value = self.containerdefs
 
+    def setup_defaults(self):
+        self.codecdefs = {}
+        for key, args in datadefs.CodecDefs.items():
+            if len(args) > 2:
+                d = self.root.create.CodecDef(self, key, *args)
+                self.codecdefs[d.uuid] = d
+
+        self['CodecDefinitions'].value = self.codecdefs
+
     def lookup_datadef(self, name):
         if isinstance(name, DataDef):
             return name
@@ -128,3 +144,16 @@ class Dictionary(core.AAFObject):
                 return value
 
         raise Exception("No datadef: %s" % str(name))
+
+    def lookup_containerdef(self, name):
+        if isinstance(name, ContainerDef):
+            return name
+
+        name = short_name(name)
+        for key, value in self['ContainerDefinitions'].items():
+            if name.lower() == value.short_name.lower():
+                return value
+            if name == key:
+                return value
+
+        raise Exception("No ContainerDef: %s" % str(name))

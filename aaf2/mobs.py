@@ -118,6 +118,8 @@ class MasterMob(Mob):
         descriptor['HorizontalSubsampling'].value = 2
         descriptor['SampleRate'].value = sample_rate
         descriptor['VideoLineMap'].value = [42, 0] #???
+        descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
+        descriptor['Compression'].value = UUID("04010202-7113-0000-060e-2b340401010a")
 
         stream = essencedata.open('w')
         f = io.open(path, 'rb')
@@ -132,6 +134,7 @@ class MasterMob(Mob):
                 descriptor['ComponentWidth'].value = bitdepth
                 descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
                 descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
+                descriptor['FrameSampleSize'].value = len(packet)
 
             stream.write(packet)
 

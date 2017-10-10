@@ -245,7 +245,7 @@ CodecDefs = {
 "4e84045e-0f29-11d4-a359-009027dfca6a" : ("CodecDef_CDCI", ""),
 "4e84045f-0f29-11d4-a359-009027dfca6a" : ("CodecDef_RGBA", ""),
 "6c2a61c2-e7a2-46ee-8d90-6a1d06e15f41" : ("CodecDef_VC3", ""),
-"8ef593f6-9521-4344-9ede-b84e8cfdc7da" : ("CodecDef_DNxHD", ""),
+"8ef593f6-9521-4344-9ede-b84e8cfdc7da" : ("CodecDef_DNxHD", "", "CDCIDescriptor", ("DataDef_Picture", "DataDef_LegacyPicture")),
 "1b31f3b1-9450-11d2-8089-006008143e6f" : ("CodecFlavour_None", ""),
 "af4de587-23d7-4c8a-b37b-c1c13870e711" : ("CodecFlavour_DV_Based_100Mbps_1080x50I", ""),
 "af4de587-23d7-4c8b-b37b-c1c13870e711" : ("CodecFlavour_DV_Based_100Mbps_1080x5994I", ""),
