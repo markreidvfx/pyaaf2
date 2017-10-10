@@ -111,7 +111,7 @@ def valid_dnx_prefix(prefix):
     return False
 
 def read_dnx_frame_header(dnx_header):
-    if len(dnx_header) != 640:
+    if len(dnx_header) < 640:
         raise ValueError("Invalid DNxHD frame: header to Short")
 
     prefix = int_from_bytes(bytearray(dnx_header[:6])) & 0xffffffffff00
@@ -121,15 +121,19 @@ def read_dnx_frame_header(dnx_header):
     width, height = unpack(">24xhh", dnx_header[:28])
     cid = unpack(">40xi", dnx_header[:44])[0]
 
-    return cid, width, height
+    interlaced =  unpack('B', dnx_header[5])[0] & 2 != 0
+
+    return cid, width, height, interlaced
 
 def iter_dnx_stream(f):
     while True:
         dnx_header = f.read(640)
         if not dnx_header or len(dnx_header) != 640:
             break
-        cid, width, height = read_dnx_frame_header(dnx_header)
+        cid, width, height, interlaced = read_dnx_frame_header(dnx_header)
         frame_size = dnx_frame_size(cid, width, height)
-        data = BytesIO(dnx_header)
-        data.write(f.read(frame_size-640))
+
+        data = BytesIO()
+        data.write(dnx_header)
+        data.write(f.read(frame_size - 640))
         yield data.getvalue()

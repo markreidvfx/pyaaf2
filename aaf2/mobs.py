@@ -7,10 +7,12 @@ from __future__ import (
 
 from uuid import UUID
 from datetime import datetime
+import io
 
 from . import core
 from . mobid import MobID
 from . utils import register_class
+from . import video
 
 @register_class
 class Mob(core.AAFObject):
@@ -113,24 +115,29 @@ class MasterMob(Mob):
         descriptor = self.root.create.CDCIDescriptor()
         source_mob.descriptor = descriptor
         descriptor['ComponentWidth'].value = 8
-        descriptor['ImageAspectRatio'].value = str('16/9')
         descriptor['HorizontalSubsampling'].value = 2
-        descriptor['StoredWidth'].value = 1920
-        descriptor['StoredHeight'].value = 1080
         descriptor['SampleRate'].value = sample_rate
-        descriptor['Length'].value = 0
-        descriptor['FrameLayout'].value = "FullFrame"
         descriptor['VideoLineMap'].value = [42, 0] #???
 
-        f = open(path, 'rb')
         stream = essencedata.open('w')
-        read_size = self.root.cfb.sector_size * 2
-        while True:
-            data = f.read(read_size)
-            if data:
-                stream.write(data)
-            else:
-                break
+        f = io.open(path, 'rb')
+
+        cid = None
+        width = None
+        height = None
+        interlaced = None
+
+        for i, packet in enumerate(video.iter_dnx_stream(f)):
+            if cid is None:
+                (cid, width, height, interlaced) = video.read_dnx_frame_header(packet)
+                descriptor['StoredWidth'].value = width
+                descriptor['StoredHeight'].value = height
+                descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
+                descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
+
+            stream.write(packet)
+
+        descriptor['Length'].value = i
 
 @register_class
 class SourceMob(Mob):

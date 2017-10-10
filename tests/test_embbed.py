@@ -102,10 +102,16 @@ class EmbbedTests(unittest.TestCase):
             pass
         assert i+1 == 10
 
+        profile_name = 'dnx_1080i_120_25'
+        sample = generate_dnxhd(profile_name, "dnx_iter02.dnxhd", 10)
+        for i, packet in enumerate(video.iter_dnx_stream(open(sample, 'rb'))):
+            pass
+        assert i+1 == 10
+
         frame_rate = '23.97'
         profile_name = 'dnxhr_lb'
         uhd2160 = (3840, 2160)
-        sample = generate_dnxhd(profile_name, "dnx_iter02.dnxhd", 10, size=uhd2160, frame_rate=frame_rate)
+        sample = generate_dnxhd(profile_name, "dnx_iter03.dnxhd", 10, size=uhd2160, frame_rate=frame_rate)
         for i, packet in enumerate(video.iter_dnx_stream(open(sample, 'rb'))):
             pass
         assert i+1 == 10
