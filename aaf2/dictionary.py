@@ -12,9 +12,9 @@ from . import core
 from .utils import register_class
 
 def short_name(name):
-    for s in ('DataDef_',):
+    for s in ('DataDef_', 'ContainerDef_'):
         name = name.replace(s, "")
-    return s
+    return name
 
 @register_class
 class DefinitionObject(core.AAFObject):
