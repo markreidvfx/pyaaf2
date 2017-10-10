@@ -18,11 +18,11 @@ sample_dir = os.path.join(common.sandbox(), 'samples')
 if not os.path.exists(sample_dir):
     os.makedirs(sample_dir)
 
-def generate_dnxhd(profile_name, name, frames,  size=None, frame_rate=None):
+def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_rate=None):
 
     profile = video.dnx_profiles.get(profile_name)
     bitrate = profile.get('bitrate')
-    pix_fmt = profile.get('pix_fmt')
+    pix_fmt = profile.get('pix_fmt') or pix_fmt
     size = profile.get('size') or size
     interlaced = profile.get("interlaced")
     frame_rate = profile.get('frame_rate') or frame_rate
@@ -94,6 +94,21 @@ def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2):
     return outfile
 
 class EmbbedTests(unittest.TestCase):
+
+    def test_dnx_iter(self):
+        profile_name = 'dnx_1080p_36_23.97'
+        sample = generate_dnxhd(profile_name, "dnx_iter01.dnxhd", 10)
+        for i, packet in enumerate(video.iter_dnx_stream(open(sample, 'rb'))):
+            pass
+        assert i+1 == 10
+
+        frame_rate = '23.97'
+        profile_name = 'dnxhr_lb'
+        uhd2160 = (3840, 2160)
+        sample = generate_dnxhd(profile_name, "dnx_iter02.dnxhd", 10, size=uhd2160, frame_rate=frame_rate)
+        for i, packet in enumerate(video.iter_dnx_stream(open(sample, 'rb'))):
+            pass
+        assert i+1 == 10
 
     def test_dnxhd(self):
         new_file = os.path.join(common.sandbox(), 'dnxhd36_embbed_essence.aaf')

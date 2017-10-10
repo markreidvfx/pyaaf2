@@ -7,6 +7,7 @@ from __future__ import (
 
 from struct import unpack
 from . utils import int_from_bytes
+from io import BytesIO
 
 dnx_profiles = {
 'dnx_1080p_175x_23.97' : { "size" : (1920, 1080), 'interlaced' : False, "bitrate" : 175,  "pix_fmt" : "yuv422p10", "frame_rate" : "24000/1001", },
@@ -48,11 +49,50 @@ dnx_profiles = {
 'dnx_1080p_45_29.97'   : { "size" : (1920, 1080), 'interlaced' : False, "bitrate" : 45,   "pix_fmt" : "yuv422p",   "frame_rate" : "30000/1001", },
 'dnx_1080p_75_50'      : { "size" : (1920, 1080), 'interlaced' : False, "bitrate" : 75,   "pix_fmt" : "yuv422p",   "frame_rate" : "50/1",       },
 'dnx_1080p_90_59.94'   : { "size" : (1920, 1080), 'interlaced' : False, "bitrate" : 90,   "pix_fmt" : "yuv422p",   "frame_rate" : "60000/1001", },
-'dnxhr_lb'             : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_lb"},
-'dnxhr_sq'             : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_sq"},
-'dnxhr_hq'             : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_hq"},
-'dnxhr_hqx'            : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_hqx"},
+'dnxhr_lb'             : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_lb", },
+'dnxhr_sq'             : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_sq", },
+'dnxhr_hq'             : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_hq", },
+'dnxhr_hqx'            : { "size" : None,         'interlaced' : False, "bitrate" : None, "pix_fmt" : "yuv422p",   "frame_rate" : None, "video_profile": "dnxhr_hqx",},
 }
+
+dnxhd_frame_sizes = {
+1235 : 917504,
+1237 : 606208,
+1238 : 917504,
+1241 : 917504,
+1242 : 606208,
+1243 : 917504,
+1244 : 606208,
+1250 : 458752,
+1251 : 458752,
+1252 : 303104,
+1253 : 188416,
+1256 : 1835008,
+1258 : 212992,
+1259 : 417792,
+1260 : 835584,
+}
+
+dnxhr_compression_ratio = {
+1270 : (57344, 255),
+1271 : (28672, 255),
+1272 : (28672, 255),
+1273 : (18944, 255),
+1274 : (5888, 255),
+}
+
+def dnx_frame_size(cid, width=None, height=None):
+    size = dnxhd_frame_sizes.get(cid, None)
+    if size:
+        return size
+
+    # DNxHR frame size caclulation
+    ratio = dnxhr_compression_ratio[cid]
+    size = ((height + 15) // 16) * ((width + 15) // 16) * ratio[0] // ratio[1]
+    size = (size + 2048) // 4096 * 4096;
+
+    return max(size, 8192);
+
 
 def valid_dnx_prefix(prefix):
 
@@ -63,7 +103,6 @@ def valid_dnx_prefix(prefix):
 
     # DNxHR prefix
     data_offset = prefix >> 16
-    print("data_offset:", data_offset)
     if ((prefix & 0xFFFF0000FFFF) == 0x0300 and
          data_offset >= 0x0280 and data_offset <= 0x2170 and
          (data_offset & 3) == 0):
@@ -71,11 +110,7 @@ def valid_dnx_prefix(prefix):
 
     return False
 
-def read_dnx_frame_header(path):
-    f = open(path, 'rb')
-    dnx_header = f.read(640)
-    f.close()
-
+def read_dnx_frame_header(dnx_header):
     if len(dnx_header) != 640:
         raise ValueError("Invalid DNxHD frame: header to Short")
 
@@ -86,4 +121,15 @@ def read_dnx_frame_header(path):
     width, height = unpack(">24xhh", dnx_header[:28])
     cid = unpack(">40xi", dnx_header[:44])[0]
 
-    return width, height, cid
+    return cid, width, height
+
+def iter_dnx_stream(f):
+    while True:
+        dnx_header = f.read(640)
+        if not dnx_header or len(dnx_header) != 640:
+            break
+        cid, width, height = read_dnx_frame_header(dnx_header)
+        frame_size = dnx_frame_size(cid, width, height)
+        data = BytesIO(dnx_header)
+        data.write(f.read(frame_size-640))
+        yield data.getvalue()
