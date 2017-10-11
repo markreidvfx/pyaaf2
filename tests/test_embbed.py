@@ -53,14 +53,12 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
     return outfile
 
 
-def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, format='pcm'):
+def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
 
     outfile = os.path.join(sample_dir, '%s.%s' % (name, format))
+
     cmd = [FFMPEG_EXEC,'-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)::s=%d:d=%f' % (sample_rate, duration)]
-
-    if format == 'pcm':
-
-        cmd.extend([ '-f','s16le', '-acodec', 'pcm_s16le'])
+    cmd.extend([ '-acodec', 'pcm_%s' % sample_fmt])
 
     cmd.extend([outfile])
 
@@ -156,7 +154,7 @@ class EmbbedTests(unittest.TestCase):
                 mob = next(f.content.sourcemobs())
                 stream = mob.essence.open('r')
                 dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.dnxhd' % profile_name)
-                with open(dump_path, 'w') as out:
+                with open(dump_path, 'wb') as out:
                     out.write(stream.read())
 
                 assert compare_files(dump_path, sample)
@@ -180,12 +178,14 @@ class EmbbedTests(unittest.TestCase):
                 mob = next(f.content.sourcemobs())
                 stream = mob.essence.open('r')
                 dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.dnxhd' % profile_name)
-                with open(dump_path, 'w') as out:
+                with open(dump_path, 'wb') as out:
                     out.write(stream.read())
 
                 assert compare_files(dump_path, sample)
 
-
+    def test_wav(self):
+        # name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
+        sample = generate_pcm_audio_mono('test', sample_fmt='s24le')
 
 if __name__ == "__main__":
     import logging
