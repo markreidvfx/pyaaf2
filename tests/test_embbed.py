@@ -129,16 +129,31 @@ class EmbbedTests(unittest.TestCase):
         assert i+1 == 10
 
     def test_dnxhd(self):
-        new_file = os.path.join(common.sandbox(), 'dnxhd36_embbed_essence.aaf')
-        profile_name = 'dnx_1080p_36_23.97'
-        with aaf2.open(new_file, 'w') as f:
-            profile = video.dnx_profiles.get(profile_name)
-            sample = generate_dnxhd(profile_name, profile_name, 3)
 
-            mob = f.create.MasterMob(profile_name)
-            f.content.mobs.append(mob)
-            mob.embbed_dnxhd_essence(sample, profile['frame_rate'])
+        for profile_name in ['dnx_1080p_36_23.97', 'dnx_720p_90x_25', 'dnx_1080i_120_25']:
+            new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
+            with aaf2.open(new_file, 'w') as f:
+                profile = video.dnx_profiles.get(profile_name)
+                sample = generate_dnxhd(profile_name, '%s-embbed.dnxhd' % profile_name, 3)
 
+                mob = f.create.MasterMob(profile_name)
+                f.content.mobs.append(mob)
+                mob.embbed_dnxhd_essence(sample, profile['frame_rate'])
+
+    def test_dnxhr(self):
+
+        frame_rate = '23.97'
+        uhd2160 = (3840, 2160)
+
+        for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
+            new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
+            with aaf2.open(new_file, 'w') as f:
+                profile = video.dnx_profiles.get(profile_name)
+                sample = generate_dnxhd(profile_name, "%s-embbed.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
+
+                mob = f.create.MasterMob(profile_name)
+                f.content.mobs.append(mob)
+                mob.embbed_dnxhd_essence(sample, frame_rate)
 
 
 

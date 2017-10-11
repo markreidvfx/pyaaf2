@@ -38,6 +38,13 @@ class EssenceDescriptor(core.AAFObject):
 class FileDescriptor(EssenceDescriptor):
     class_id = UUID("0d010101-0101-2500-060e-2b3402060101")
 
+    @property
+    def length(self):
+        return self['Length'].value
+    @length.setter
+    def length(self, value):
+        self['Length'].value = value
+
 @register_class
 class DigitalImageDescriptor(FileDescriptor):
     class_id = UUID("0d010101-0101-2700-060e-2b3402060101")

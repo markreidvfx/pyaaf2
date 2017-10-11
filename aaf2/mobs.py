@@ -111,23 +111,24 @@ class MasterMob(Mob):
         slot.segment = source_mob.createclip(source_slot.id, 'picture')
         self.slots.append(slot)
 
-        # setup essence descriptor, ugh..
+        # create essence descriptor
         descriptor = self.root.create.CDCIDescriptor()
         source_mob.descriptor = descriptor
 
-        descriptor['HorizontalSubsampling'].value = 2
         descriptor['SampleRate'].value = sample_rate
-        descriptor['VideoLineMap'].value = [42, 0] #???
+        descriptor['VideoLineMap'].value = [42, 0] # ???
 
         descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
-        descriptor['Compression'].value = UUID("04010202-7113-0000-060e-2b340401010a")
         dnxhd_codec_uuid = UUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
         descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_uuid)
+
+        # open essence stream
         stream = essencedata.open('w')
+
+        # open input file
         f = io.open(path, 'rb')
 
         cid = None
-
         for i, packet in enumerate(video.iter_dnx_stream(f)):
             if cid is None:
                 (cid, width, height, bitdepth, interlaced) = video.read_dnx_frame_header(packet)
@@ -137,10 +138,13 @@ class MasterMob(Mob):
                 descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
                 descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
                 descriptor['FrameSampleSize'].value = len(packet)
+                descriptor['Compression'].value = video.dnx_compression_uuids[cid]
+                descriptor['HorizontalSubsampling'].value = 2
 
             stream.write(packet)
 
-        descriptor['Length'].value = i
+        # set descriptor and component lengths
+        descriptor.length = i
         slot.segment.length = i
         source_slot.segment.length = i
 
