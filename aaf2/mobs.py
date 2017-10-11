@@ -181,3 +181,7 @@ class SourceMob(Mob):
         slot.segment = clip
 
         return slot
+
+    @property
+    def essence(self):
+        return self.root.content.essencedata.get(self.id, None)

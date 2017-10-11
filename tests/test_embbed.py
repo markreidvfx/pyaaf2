@@ -7,6 +7,7 @@ from __future__ import (
 import os
 import subprocess
 import unittest
+import hashlib
 
 FFMPEG_EXEC='ffmpeg'
 
@@ -92,6 +93,16 @@ def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2):
         return Exception("error encoding footage")
     return outfile
 
+def md5(path):
+    hash_md5 = hashlib.md5()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+def compare_files(a, b):
+    return md5(a) == md5(b)
+
 class EmbbedTests(unittest.TestCase):
 
     def test_dnx_iter(self):
@@ -130,15 +141,25 @@ class EmbbedTests(unittest.TestCase):
 
     def test_dnxhd(self):
 
-        for profile_name in ['dnx_1080p_36_23.97', 'dnx_720p_90x_25', 'dnx_1080i_120_25']:
+        for profile_name in ['dnx_1080p_36_23.97', 'dnx_720p_90x_25', 'dnx_1080i_120_25', 'dnx_1080p_175x_23.97']:
             new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
+            sample = generate_dnxhd(profile_name, '%s-embbed.dnxhd' % profile_name, 3)
+
             with aaf2.open(new_file, 'w') as f:
                 profile = video.dnx_profiles.get(profile_name)
-                sample = generate_dnxhd(profile_name, '%s-embbed.dnxhd' % profile_name, 3)
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
                 mob.embbed_dnxhd_essence(sample, profile['frame_rate'])
+
+            with aaf2.open(new_file, 'r') as f:
+                mob = next(f.content.sourcemobs())
+                stream = mob.essence.open('r')
+                dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.dnxhd' % profile_name)
+                with open(dump_path, 'w') as out:
+                    out.write(stream.read())
+
+                assert compare_files(dump_path, sample)
 
     def test_dnxhr(self):
 
@@ -155,7 +176,14 @@ class EmbbedTests(unittest.TestCase):
                 f.content.mobs.append(mob)
                 mob.embbed_dnxhd_essence(sample, frame_rate)
 
+            with aaf2.open(new_file, 'r') as f:
+                mob = next(f.content.sourcemobs())
+                stream = mob.essence.open('r')
+                dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.dnxhd' % profile_name)
+                with open(dump_path, 'w') as out:
+                    out.write(stream.read())
 
+                assert compare_files(dump_path, sample)
 
 
 
