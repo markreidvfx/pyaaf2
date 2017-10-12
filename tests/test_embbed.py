@@ -13,7 +13,7 @@ FFMPEG_EXEC='ffmpeg'
 
 import common
 import aaf2
-from aaf2 import video
+from aaf2 import video, audio
 
 sample_dir = os.path.join(common.sandbox(), 'samples')
 if not os.path.exists(sample_dir):
@@ -53,20 +53,20 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
     return outfile
 
 
-def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
+def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_format='s16le', format='wav'):
 
     outfile = os.path.join(sample_dir, '%s.%s' % (name, format))
 
     cmd = [FFMPEG_EXEC,'-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)::s=%d:d=%f' % (sample_rate, duration)]
-    cmd.extend([ '-acodec', 'pcm_%s' % sample_fmt])
+    cmd.extend([ '-acodec', 'pcm_%s' % sample_format])
 
     cmd.extend([outfile])
-
-    print(subprocess.list2cmdline(cmd))
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
     stdout,stderr = p.communicate()
-    print(stderr)
+
     if p.returncode < 0:
+        print(subprocess.list2cmdline(cmd))
+        print(stderr)
         return Exception("error encoding footage")
     return outfile
 
@@ -99,7 +99,17 @@ def md5(path):
     return hash_md5.hexdigest()
 
 def compare_files(a, b):
-    return md5(a) == md5(b)
+    return ffmpeg_frame_md5(a) == ffmpeg_frame_md5(b)
+
+def ffmpeg_frame_md5(path):
+    cmd = [FFMPEG_EXEC, '-i', path,  '-f', 'framemd5' , '-']
+    p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
+    stdout,stderr = p.communicate()
+    if p.returncode < 0:
+        return Exception("error framemd5 footage")
+
+    return stdout
+
 
 class EmbbedTests(unittest.TestCase):
 
@@ -185,13 +195,25 @@ class EmbbedTests(unittest.TestCase):
 
     def test_wav(self):
         # name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
-        profile_name = 'pcm_48000_s24le'
-        sample = generate_pcm_audio_mono('test', sample_fmt='s24le')
-        new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
-        with aaf2.open(new_file, 'w') as f:
-            mob = f.create.MasterMob(profile_name)
-            f.content.mobs.append(mob)
-            mob.embbed_audio_essence(sample)
+        # profile_name = 'pcm_48000_s24le'
+
+        for profile_name in sorted(audio.pcm_profiles):
+            sample_format = audio.pcm_profiles[profile_name]['sample_format']
+            sample_rate = audio.pcm_profiles[profile_name]['sample_rate']
+
+            sample = generate_pcm_audio_mono('test', sample_format=sample_format, sample_rate=sample_rate)
+            new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
+            with aaf2.open(new_file, 'w') as f:
+                mob = f.create.MasterMob(profile_name)
+                f.content.mobs.append(mob)
+                mob.embbed_audio_essence(sample)
+
+            with aaf2.open(new_file, 'r') as f:
+                mob = next(f.content.sourcemobs())
+                stream = mob.essence.open('r')
+                dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.wav' % profile_name)
+                mob.export_audio(dump_path)
+                assert compare_files(dump_path, sample)
 
 if __name__ == "__main__":
     import logging

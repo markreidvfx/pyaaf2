@@ -12,6 +12,7 @@ import io
 from . import core
 from . mobid import MobID
 from . utils import register_class
+from . import essence
 from . import video
 from . import audio
 
@@ -223,6 +224,32 @@ class SourceMob(Mob):
         slot.segment = clip
 
         return slot
+
+    def export_audio(self, path):
+        descriptor = self.descriptor
+        assert isinstance(descriptor, essence.PCMDescriptor)
+
+        a = audio.wave.Wave_write(path)
+        try:
+
+            channels = descriptor['Channels'].value
+            sample_rate = int(float(descriptor['SampleRate'].value))
+            sample_size = descriptor['QuantizationBits'].value // 8
+
+            a.setnchannels(channels)
+            a.setframerate(sample_rate)
+            a.setsampwidth(sample_size)
+
+            read_size = channels * int(float(sample_rate)) * sample_size
+            stream = self.essence.open('r')
+            while True:
+                data = stream.read(read_size)
+                if not data:
+                    break
+                a.writeframesraw(data)
+
+        finally:
+            a.close()
 
     @property
     def essence(self):
