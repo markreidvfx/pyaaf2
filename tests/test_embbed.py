@@ -201,7 +201,7 @@ class EmbbedTests(unittest.TestCase):
             sample_format = audio.pcm_profiles[profile_name]['sample_format']
             sample_rate = audio.pcm_profiles[profile_name]['sample_rate']
 
-            sample = generate_pcm_audio_mono('test', sample_format=sample_format, sample_rate=sample_rate)
+            sample = generate_pcm_audio_mono(profile_name, sample_format=sample_format, sample_rate=sample_rate)
             new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
             with aaf2.open(new_file, 'w') as f:
                 mob = f.create.MasterMob(profile_name)
@@ -214,6 +214,48 @@ class EmbbedTests(unittest.TestCase):
                 dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.wav' % profile_name)
                 mob.export_audio(dump_path)
                 assert compare_files(dump_path, sample)
+
+    def test_multi(self):
+        frame_rate = '23.97'
+        uhd2160 = (960, 540)
+        new_file = os.path.join(common.sandbox(), 'multi_embbed_essence.aaf')
+        audio_profile_name = 'pcm_48000_s24le'
+
+        sample_format = audio.pcm_profiles[audio_profile_name]['sample_format']
+        sample_rate = audio.pcm_profiles[audio_profile_name]['sample_rate']
+        audio_sample = generate_pcm_audio_mono(audio_profile_name, sample_format=sample_format, sample_rate=sample_rate)
+        samples = {}
+        with aaf2.open(new_file, 'w') as f:
+
+            for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
+                profile = video.dnx_profiles.get(profile_name)
+                sample = generate_dnxhd(profile_name, "%s-mulit-embbed.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
+
+                mob = f.create.MasterMob(profile_name)
+                f.content.mobs.append(mob)
+
+                vs_mob = mob.embbed_dnxhd_essence(sample, frame_rate)
+                as_mob = mob.embbed_audio_essence(audio_sample)
+
+                v_dump_path = os.path.join(common.sandbox(),'%s-multi-embbed-dump.wav' % profile_name)
+                a_dump_path = os.path.join(common.sandbox(),'%s-multi-embbed-dump.dnxhd' % profile_name)
+
+                samples[vs_mob.id] = (sample, v_dump_path)
+                samples[as_mob.id] = (audio_sample, a_dump_path)
+
+        with aaf2.open(new_file, 'r') as f:
+            for mob_id, (original_path, dump_path) in samples.items():
+                mob = f.content.mobs.get(mob_id)
+
+                if isinstance(mob.descriptor, aaf2.essence.PCMDescriptor):
+                    mob.export_audio(dump_path)
+                    assert compare_files(dump_path, original_path)
+
+                if isinstance(mob.descriptor, aaf2.essence.CDCIDescriptor):
+                    stream = mob.essence.open('r')
+                    with open(dump_path, 'wb') as out:
+                        out.write(stream.read())
+                    assert compare_files(dump_path, original_path)
 
 if __name__ == "__main__":
     import logging

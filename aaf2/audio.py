@@ -28,9 +28,9 @@ class WaveReader(wave.Wave_read):
         wave.Wave_read.__init__(self, f)
 
     def _read_fmt_chunk(self, chunk):
-        """
-        added support for wave extensible
-        """
+
+        # added support for wave extensible
+
         wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
         if wFormatTag in  (wave.WAVE_FORMAT_PCM, WAVE_EXTENSIBLE_PCM):
             sampwidth = struct.unpack_from('<H', chunk.read(2))[0]

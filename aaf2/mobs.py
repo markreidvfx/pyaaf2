@@ -149,6 +149,8 @@ class MasterMob(Mob):
         descriptor.length = i
         slot.segment.length = i
         source_slot.segment.length = i
+        return source_mob
+
     def embbed_audio_essence(self, path):
         a = audio.WaveReader(path)
         sample_rate = a.getframerate()
@@ -190,6 +192,7 @@ class MasterMob(Mob):
             if not data:
                 break
             stream.write(data)
+        return source_mob
 
 @register_class
 class SourceMob(Mob):
