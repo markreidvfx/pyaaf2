@@ -172,7 +172,7 @@ class EmbbedTests(unittest.TestCase):
     def test_dnxhr(self):
 
         frame_rate = '23.97'
-        uhd2160 = (3840, 2160)
+        uhd2160 = (960, 540)
 
         for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
             new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
