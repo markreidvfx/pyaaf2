@@ -1,3 +1,13 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
+
+import wave
+import struct
+
 profiles = {
 'pcm_32000_s16le' : {'sample_fmt' : 's16le', 'sample_rate' : 32000},
 'pcm_32000_s24le' : {'sample_fmt' : 's24le', 'sample_rate' : 32000},
@@ -8,3 +18,33 @@ profiles = {
 'pcm_48000_s16le' : {'sample_fmt' : 's16le', 'sample_rate' : 48000},
 'pcm_48000_s24le' : {'sample_fmt' : 's24le', 'sample_rate' : 48000},
 }
+
+WAVE_EXTENSIBLE_PCM=0xFFFE
+
+class WaveReader(wave.Wave_read):
+    def __init__(self, f):
+        self._blockalign = None
+        # can't use super in OldStyle 2.7 class
+        wave.Wave_read.__init__(self, f)
+
+    def _read_fmt_chunk(self, chunk):
+        """
+        added support for wave extensible
+        """
+        wFormatTag, self._nchannels, self._framerate, dwAvgBytesPerSec, wBlockAlign = struct.unpack_from('<HHLLH', chunk.read(14))
+        if wFormatTag in  (wave.WAVE_FORMAT_PCM, WAVE_EXTENSIBLE_PCM):
+            sampwidth = struct.unpack_from('<H', chunk.read(2))[0]
+            self._sampwidth = (sampwidth + 7) // 8
+        else:
+            raise wave.Error('unknown format: %r' % (wFormatTag,))
+
+        if not self._sampwidth in (2, 3):
+            raise wave.Error('unsupported sample width: %r' % (self._sampwidth,))
+
+        self._framesize = self._nchannels * self._sampwidth
+        self._comptype = 'NONE'
+        self._blockalign = wBlockAlign
+        self._compname = 'not compressed'
+
+    def getblockalign(self):
+        return self._blockalign

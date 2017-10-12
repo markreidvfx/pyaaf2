@@ -60,3 +60,27 @@ class RGBADescriptor(DigitalImageDescriptor):
 @register_class
 class TapeDescriptor(EssenceDescriptor):
     class_id = UUID("0d010101-0101-2e00-060e-2b3402060101")
+
+@register_class
+class SoundDescriptor(FileDescriptor):
+    class_id = UUID("0d010101-0101-4200-060e-2b3402060101")
+
+@register_class
+class DataEssenceDescriptor(FileDescriptor):
+    class_id = UUID("0d010101-0101-4300-060e-2b3402060101")
+
+@register_class
+class MultipleDescriptor(FileDescriptor):
+    class_id = UUID("0d010101-0101-4400-060e-2b3402060101")
+
+@register_class
+class PCMDescriptor(SoundDescriptor):
+    class_id = UUID("0d010101-0101-4800-060e-2b3402060101")
+
+@register_class
+class PhysicalDescriptor(EssenceDescriptor):
+    class_id = UUID("0d010101-0101-4900-060e-2b3402060101")
+
+@register_class
+class ImportDescriptor(PhysicalDescriptor):
+    class_id = UUID("0d010101-0101-4a00-060e-2b3402060101")

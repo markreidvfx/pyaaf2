@@ -185,7 +185,13 @@ class EmbbedTests(unittest.TestCase):
 
     def test_wav(self):
         # name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
+        profile_name = 'pcm_48000_s24le'
         sample = generate_pcm_audio_mono('test', sample_fmt='s24le')
+        new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
+        with aaf2.open(new_file, 'w') as f:
+            mob = f.create.MasterMob(profile_name)
+            f.content.mobs.append(mob)
+            mob.embbed_audio_essence(sample)
 
 if __name__ == "__main__":
     import logging

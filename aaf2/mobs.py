@@ -13,6 +13,7 @@ from . import core
 from . mobid import MobID
 from . utils import register_class
 from . import video
+from . import audio
 
 @register_class
 class Mob(core.AAFObject):
@@ -147,6 +148,47 @@ class MasterMob(Mob):
         descriptor.length = i
         slot.segment.length = i
         source_slot.segment.length = i
+    def embbed_audio_essence(self, path):
+        a = audio.WaveReader(path)
+        sample_rate = a.getframerate()
+        channels = a.getnchannels()
+        sample_width = a.getsampwidth()
+        block_align = a.getblockalign()
+        length = a.getnframes()
+
+        # create sourceMob and essencedata
+        source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
+        self.root.content.mobs.append(source_mob)
+        essencedata, source_slot = source_mob.create_essence(sample_rate, 'sound')
+
+        # create slot and clip that references source_mob slot
+        slot_id = self._next_slot_id()
+        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=sample_rate)
+        slot.segment = source_mob.createclip(source_slot.id, 'sound')
+        self.slots.append(slot)
+
+        # create essence descriptor
+        descriptor = self.root.create.PCMDescriptor()
+        source_mob.descriptor = descriptor
+        descriptor['Channels'].value = channels
+        descriptor['BlockAlign'].value = block_align
+        descriptor['SampleRate'].value = sample_rate
+        descriptor['AverageBPS'].value = sample_rate * channels * sample_width
+        descriptor['QuantizationBits'].value = sample_width * 8
+        descriptor['AudioSamplingRate'].value = sample_rate
+
+        # set lengths
+        descriptor.length = length
+        slot.segment.length = length
+        source_slot.segment.length = length
+
+        stream = essencedata.open('w')
+
+        while True:
+            data = a.readframes(sample_rate)
+            if not data:
+                break
+            stream.write(data)
 
 @register_class
 class SourceMob(Mob):
