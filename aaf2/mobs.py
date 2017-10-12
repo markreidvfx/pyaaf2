@@ -100,12 +100,13 @@ class MasterMob(Mob):
     class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
 
     def embbed_dnxhd_essence(self, path, edit_rate):
-        sample_rate = edit_rate
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
-        essencedata, source_slot = source_mob.create_essence(edit_rate, 'picture')
+
+        # import the essencedata
+        source_slot = source_mob.embbed_dnxhd_essence(path, edit_rate)
 
         # create slot and clip that references source_mob slot
         slot_id = self._next_slot_id()
@@ -113,85 +114,26 @@ class MasterMob(Mob):
         slot.segment = source_mob.createclip(source_slot.id, 'picture')
         self.slots.append(slot)
 
-        # create essence descriptor
-        descriptor = self.root.create.CDCIDescriptor()
-        source_mob.descriptor = descriptor
-
-        descriptor['SampleRate'].value = sample_rate
-        descriptor['VideoLineMap'].value = [42, 0] # ???
-
-        descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
-        dnxhd_codec_uuid = UUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
-        descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_uuid)
-
-        # open essence stream
-        stream = essencedata.open('w')
-
-        # open input file
-        f = io.open(path, 'rb')
-
-        cid = None
-        for i, packet in enumerate(video.iter_dnx_stream(f)):
-            if cid is None:
-                (cid, width, height, bitdepth, interlaced) = video.read_dnx_frame_header(packet)
-                descriptor['StoredWidth'].value = width
-                descriptor['StoredHeight'].value = height
-                descriptor['ComponentWidth'].value = bitdepth
-                descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
-                descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
-                descriptor['FrameSampleSize'].value = len(packet)
-                descriptor['Compression'].value = video.dnx_compression_uuids[cid]
-                descriptor['HorizontalSubsampling'].value = 2
-
-            stream.write(packet)
-
-        # set descriptor and component lengths
-        descriptor.length = i
-        slot.segment.length = i
-        source_slot.segment.length = i
+        # set clip length
+        slot.segment.length = source_slot.segment.length
         return source_mob
 
     def embbed_audio_essence(self, path):
-        a = audio.WaveReader(path)
-        sample_rate = a.getframerate()
-        channels = a.getnchannels()
-        sample_width = a.getsampwidth()
-        block_align = a.getblockalign()
-        length = a.getnframes()
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
-        essencedata, source_slot = source_mob.create_essence(sample_rate, 'sound')
+
+        source_slot = source_mob.embbed_audio_essence(path)
 
         # create slot and clip that references source_mob slot
         slot_id = self._next_slot_id()
-        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=sample_rate)
+        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=source_slot.edit_rate)
         slot.segment = source_mob.createclip(source_slot.id, 'sound')
         self.slots.append(slot)
 
-        # create essence descriptor
-        descriptor = self.root.create.PCMDescriptor()
-        source_mob.descriptor = descriptor
-        descriptor['Channels'].value = channels
-        descriptor['BlockAlign'].value = block_align
-        descriptor['SampleRate'].value = sample_rate
-        descriptor['AverageBPS'].value = sample_rate * channels * sample_width
-        descriptor['QuantizationBits'].value = sample_width * 8
-        descriptor['AudioSamplingRate'].value = sample_rate
-
-        # set lengths
-        descriptor.length = length
-        slot.segment.length = length
-        source_slot.segment.length = length
-
-        stream = essencedata.open('w')
-
-        while True:
-            data = a.readframes(sample_rate)
-            if not data:
-                break
-            stream.write(data)
+        # set clip length
+        slot.segment.length = source_slot.segment.length
         return source_mob
 
 @register_class
@@ -225,6 +167,85 @@ class SourceMob(Mob):
 
         clip = self.root.create.SourceClip(media_kind=media_kind)
         slot.segment = clip
+
+        return slot
+
+    def embbed_dnxhd_essence(self, path, edit_rate):
+
+        essencedata, slot = self.create_essence(edit_rate, 'picture')
+
+        # create essence descriptor
+        descriptor = self.root.create.CDCIDescriptor()
+        self.descriptor = descriptor
+
+        # set minimal properties
+        descriptor['SampleRate'].value = edit_rate
+        descriptor['VideoLineMap'].value = [42, 0] # Not exactly sure what linemap is
+        descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
+        dnxhd_codec_uuid = UUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
+        descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_uuid)
+
+        # open essence stream
+        stream = essencedata.open('w')
+
+        # open input file
+        with io.open(path, 'rb') as f:
+
+            cid = None
+            for i, packet in enumerate(video.iter_dnx_stream(f)):
+                if cid is None:
+                    (cid, width, height, bitdepth, interlaced) = video.read_dnx_frame_header(packet)
+                    descriptor['StoredWidth'].value = width
+                    descriptor['StoredHeight'].value = height
+                    descriptor['ComponentWidth'].value = bitdepth
+                    descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
+                    descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
+                    descriptor['FrameSampleSize'].value = len(packet)
+                    descriptor['Compression'].value = video.dnx_compression_uuids[cid]
+                    descriptor['HorizontalSubsampling'].value = 2
+
+                stream.write(packet)
+
+            # set descriptor and component lengths
+            descriptor.length = i
+            slot.segment.length = i
+
+        return slot
+
+    def embbed_audio_essence(self, path):
+
+        # read the wav file header
+        a = audio.WaveReader(path)
+        sample_rate = a.getframerate()
+        channels = a.getnchannels()
+        sample_width = a.getsampwidth()
+        block_align = a.getblockalign()
+        length = a.getnframes()
+
+        # create essencedata
+        essencedata, slot = self.create_essence(sample_rate, 'sound')
+
+        # create essence descriptor
+        descriptor = self.root.create.PCMDescriptor()
+        self.descriptor = descriptor
+        descriptor['Channels'].value = channels
+        descriptor['BlockAlign'].value = block_align
+        descriptor['SampleRate'].value = sample_rate
+        descriptor['AverageBPS'].value = sample_rate * channels * sample_width
+        descriptor['QuantizationBits'].value = sample_width * 8
+        descriptor['AudioSamplingRate'].value = sample_rate
+
+        # set lengths
+        descriptor.length = length
+        slot.segment.length = length
+
+        stream = essencedata.open('w')
+
+        while True:
+            data = a.readframes(sample_rate)
+            if not data:
+                break
+            stream.write(data)
 
         return slot
 
