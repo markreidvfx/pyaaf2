@@ -194,7 +194,7 @@ class SourceMob(Mob):
         with io.open(path, 'rb') as f:
 
             cid = None
-            for i, packet in enumerate(video.iter_dnx_stream(f)):
+            for i, packet in enumerate(video.iter_dnx_stream(f), 1):
                 if cid is None:
                     (cid, width, height, bitdepth, interlaced) = video.read_dnx_frame_header(packet)
                     descriptor['StoredWidth'].value = width

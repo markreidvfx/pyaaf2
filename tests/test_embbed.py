@@ -148,10 +148,10 @@ class ImportTests(unittest.TestCase):
         assert i+1 == 10
 
     def test_dnxhd(self):
-
+        frames = 3
         for profile_name in ['dnx_1080p_36_23.97', 'dnx_720p_90x_25', 'dnx_1080i_120_25', 'dnx_1080p_175x_23.97']:
             new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
-            sample = generate_dnxhd(profile_name, '%s-import.dnxhd' % profile_name, 3)
+            sample = generate_dnxhd(profile_name, '%s-import.dnxhd' % profile_name, frames=frames)
 
             with aaf2.open(new_file, 'w') as f:
                 profile = video.dnx_profiles.get(profile_name)
@@ -168,17 +168,21 @@ class ImportTests(unittest.TestCase):
                     out.write(stream.read())
 
                 assert compare_files(dump_path, sample)
+                assert mob.slots[0].segment.length == frames
+                assert mob.descriptor.length == frames
 
     def test_dnxhr(self):
 
         frame_rate = '23.97'
         uhd2160 = (960, 540)
 
+        frames = 3
+
         for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
             new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
             with aaf2.open(new_file, 'w') as f:
                 profile = video.dnx_profiles.get(profile_name)
-                sample = generate_dnxhd(profile_name, "%s-import.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
+                sample = generate_dnxhd(profile_name, "%s-import.dnxhd" % profile_name, frames=frames, size=uhd2160, frame_rate=frame_rate)
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
@@ -192,17 +196,19 @@ class ImportTests(unittest.TestCase):
                     out.write(stream.read())
 
                 assert compare_files(dump_path, sample)
+                assert mob.slots[0].segment.length == frames
+                assert mob.descriptor.length == frames
 
     def test_wav(self):
         # name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
         # profile_name = 'pcm_48000_s24le'
         frame_rate = 30
-
+        duration = 1.5
         for profile_name in sorted(audio.pcm_profiles):
             sample_format = audio.pcm_profiles[profile_name]['sample_format']
             sample_rate = audio.pcm_profiles[profile_name]['sample_rate']
 
-            sample = generate_pcm_audio_mono(profile_name, sample_format=sample_format, sample_rate=sample_rate)
+            sample = generate_pcm_audio_mono(profile_name, sample_format=sample_format, sample_rate=sample_rate, duration=duration)
             new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
             with aaf2.open(new_file, 'w') as f:
                 mob = f.create.MasterMob(profile_name)
@@ -215,22 +221,28 @@ class ImportTests(unittest.TestCase):
                 dump_path = os.path.join(common.sandbox(),'%s-import-dump.wav' % profile_name)
                 mob.export_audio(dump_path)
                 assert compare_files(dump_path, sample)
+                audio_samples = mob.descriptor['Length'].value
+                assert audio_samples == sample_rate * duration
+                edit_length = duration * frame_rate
+                assert mob.slots[0].segment.length == edit_length
 
     def test_multi(self):
-        frame_rate = 30
+        frame_rate = 30.0
+        frames = 3
+        audio_duration = frames/frame_rate
         uhd2160 = (960, 540)
         new_file = os.path.join(common.sandbox(), 'multi_import_essence.aaf')
         audio_profile_name = 'pcm_48000_s24le'
 
         sample_format = audio.pcm_profiles[audio_profile_name]['sample_format']
         sample_rate = audio.pcm_profiles[audio_profile_name]['sample_rate']
-        audio_sample = generate_pcm_audio_mono(audio_profile_name, sample_format=sample_format, sample_rate=sample_rate)
+        audio_sample = generate_pcm_audio_mono(audio_profile_name, sample_format=sample_format, sample_rate=sample_rate, duration=audio_duration)
         samples = {}
         with aaf2.open(new_file, 'w') as f:
 
             for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
                 profile = video.dnx_profiles.get(profile_name)
-                sample = generate_dnxhd(profile_name, "%s-mulit-import.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
+                sample = generate_dnxhd(profile_name, "%s-mulit-import.dnxhd" % profile_name, frames=frames, size=uhd2160, frame_rate=frame_rate)
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
@@ -251,12 +263,14 @@ class ImportTests(unittest.TestCase):
                 if isinstance(mob.descriptor, aaf2.essence.PCMDescriptor):
                     mob.export_audio(dump_path)
                     assert compare_files(dump_path, original_path)
+                    assert mob.slots[0].segment.length == frames
 
                 if isinstance(mob.descriptor, aaf2.essence.CDCIDescriptor):
                     stream = mob.essence.open('r')
                     with open(dump_path, 'wb') as out:
                         out.write(stream.read())
                     assert compare_files(dump_path, original_path)
+                    assert mob.slots[0].segment.length == frames
 
 if __name__ == "__main__":
     import logging

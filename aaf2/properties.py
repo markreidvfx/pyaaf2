@@ -372,6 +372,13 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             item = self.parent.root.read_object(dir_entry)
             yield item
 
+    def __getitem__(self, index):
+
+        ref = self.references[index]
+        dir_entry = self.parent.dir.get(ref)
+        item = self.parent.root.read_object(dir_entry)
+        return item
+
     def clear(self):
         for obj in self.objects:
             obj.detach()
