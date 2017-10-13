@@ -1,3 +1,9 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
 
 from struct import unpack, pack
 import uuid
@@ -108,3 +114,6 @@ def register_class(classobj):
     AAFClassName_dict[classobj.__name__] = classobj
 
     return classobj
+
+def rescale(value, current_rate, new_rate):
+    return (float(value) * float(new_rate)) / float(current_rate)

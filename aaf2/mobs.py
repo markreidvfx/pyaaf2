@@ -11,7 +11,7 @@ import io
 
 from . import core
 from . mobid import MobID
-from . utils import register_class
+from . utils import register_class, rescale
 from . import essence
 from . import video
 from . import audio
@@ -118,17 +118,19 @@ class MasterMob(Mob):
         slot.segment.length = source_slot.segment.length
         return source_mob
 
-    def import_audio_essence(self, path):
+    def import_audio_essence(self, path, edit_rate=None):
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
 
-        source_slot = source_mob.import_audio_essence(path)
+        source_slot = source_mob.import_audio_essence(path, edit_rate)
 
         # create slot and clip that references source_mob slot
         slot_id = self._next_slot_id()
-        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=source_slot.edit_rate)
+
+        edit_rate = edit_rate or source_slot.edit_rate
+        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
         slot.segment = source_mob.createclip(source_slot.id, 'sound')
         self.slots.append(slot)
 
@@ -225,8 +227,10 @@ class SourceMob(Mob):
         block_align = a.getblockalign()
         length = a.getnframes()
 
+        edit_rate = edit_rate or sample_rate
+
         # create essencedata
-        essencedata, slot = self.create_essence(sample_rate, 'sound')
+        essencedata, slot = self.create_essence(edit_rate, 'sound')
 
         # create essence descriptor
         descriptor = self.root.create.PCMDescriptor()
@@ -240,7 +244,7 @@ class SourceMob(Mob):
 
         # set lengths
         descriptor.length = length
-        slot.segment.length = length
+        slot.segment.length = int(rescale(length, sample_rate, edit_rate))
 
         stream = essencedata.open('w')
 

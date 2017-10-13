@@ -196,6 +196,7 @@ class ImportTests(unittest.TestCase):
     def test_wav(self):
         # name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
         # profile_name = 'pcm_48000_s24le'
+        frame_rate = 30
 
         for profile_name in sorted(audio.pcm_profiles):
             sample_format = audio.pcm_profiles[profile_name]['sample_format']
@@ -206,7 +207,7 @@ class ImportTests(unittest.TestCase):
             with aaf2.open(new_file, 'w') as f:
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.import_audio_essence(sample)
+                mob.import_audio_essence(sample, frame_rate)
 
             with aaf2.open(new_file, 'r') as f:
                 mob = next(f.content.sourcemobs())
@@ -216,7 +217,7 @@ class ImportTests(unittest.TestCase):
                 assert compare_files(dump_path, sample)
 
     def test_multi(self):
-        frame_rate = '23.97'
+        frame_rate = 30
         uhd2160 = (960, 540)
         new_file = os.path.join(common.sandbox(), 'multi_import_essence.aaf')
         audio_profile_name = 'pcm_48000_s24le'
@@ -235,7 +236,7 @@ class ImportTests(unittest.TestCase):
                 f.content.mobs.append(mob)
 
                 vs_mob = mob.import_dnxhd_essence(sample, frame_rate)
-                as_mob = mob.import_audio_essence(audio_sample)
+                as_mob = mob.import_audio_essence(audio_sample, frame_rate)
 
                 v_dump_path = os.path.join(common.sandbox(),'%s-multi-import-dump.wav' % profile_name)
                 a_dump_path = os.path.join(common.sandbox(),'%s-multi-import-dump.dnxhd' % profile_name)
