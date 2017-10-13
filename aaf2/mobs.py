@@ -99,14 +99,14 @@ class CompositionMob(Mob):
 class MasterMob(Mob):
     class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
 
-    def embbed_dnxhd_essence(self, path, edit_rate):
+    def import_dnxhd_essence(self, path, edit_rate):
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
 
         # import the essencedata
-        source_slot = source_mob.embbed_dnxhd_essence(path, edit_rate)
+        source_slot = source_mob.import_dnxhd_essence(path, edit_rate)
 
         # create slot and clip that references source_mob slot
         slot_id = self._next_slot_id()
@@ -118,13 +118,13 @@ class MasterMob(Mob):
         slot.segment.length = source_slot.segment.length
         return source_mob
 
-    def embbed_audio_essence(self, path):
+    def import_audio_essence(self, path):
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
 
-        source_slot = source_mob.embbed_audio_essence(path)
+        source_slot = source_mob.import_audio_essence(path)
 
         # create slot and clip that references source_mob slot
         slot_id = self._next_slot_id()
@@ -170,7 +170,7 @@ class SourceMob(Mob):
 
         return slot
 
-    def embbed_dnxhd_essence(self, path, edit_rate):
+    def import_dnxhd_essence(self, path, edit_rate):
 
         essencedata, slot = self.create_essence(edit_rate, 'picture')
 
@@ -212,7 +212,10 @@ class SourceMob(Mob):
 
         return slot
 
-    def embbed_audio_essence(self, path):
+    def import_audio_essence(self, path, edit_rate=None):
+        """
+        Import audio essence from wav file
+        """
 
         # read the wav file header
         a = audio.WaveReader(path)

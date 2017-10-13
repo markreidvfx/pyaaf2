@@ -111,7 +111,7 @@ def ffmpeg_frame_md5(path):
     return stdout
 
 
-class EmbbedTests(unittest.TestCase):
+class ImportTests(unittest.TestCase):
 
     def test_dnx_iter(self):
         profile_name = 'dnx_1080p_36_23.97'
@@ -150,20 +150,20 @@ class EmbbedTests(unittest.TestCase):
     def test_dnxhd(self):
 
         for profile_name in ['dnx_1080p_36_23.97', 'dnx_720p_90x_25', 'dnx_1080i_120_25', 'dnx_1080p_175x_23.97']:
-            new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
-            sample = generate_dnxhd(profile_name, '%s-embbed.dnxhd' % profile_name, 3)
+            new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
+            sample = generate_dnxhd(profile_name, '%s-import.dnxhd' % profile_name, 3)
 
             with aaf2.open(new_file, 'w') as f:
                 profile = video.dnx_profiles.get(profile_name)
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.embbed_dnxhd_essence(sample, profile['frame_rate'])
+                mob.import_dnxhd_essence(sample, profile['frame_rate'])
 
             with aaf2.open(new_file, 'r') as f:
                 mob = next(f.content.sourcemobs())
                 stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.dnxhd' % profile_name)
+                dump_path = os.path.join(common.sandbox(),'%s-import-dump.dnxhd' % profile_name)
                 with open(dump_path, 'wb') as out:
                     out.write(stream.read())
 
@@ -175,19 +175,19 @@ class EmbbedTests(unittest.TestCase):
         uhd2160 = (960, 540)
 
         for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
-            new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
+            new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
             with aaf2.open(new_file, 'w') as f:
                 profile = video.dnx_profiles.get(profile_name)
-                sample = generate_dnxhd(profile_name, "%s-embbed.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
+                sample = generate_dnxhd(profile_name, "%s-import.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.embbed_dnxhd_essence(sample, frame_rate)
+                mob.import_dnxhd_essence(sample, frame_rate)
 
             with aaf2.open(new_file, 'r') as f:
                 mob = next(f.content.sourcemobs())
                 stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.dnxhd' % profile_name)
+                dump_path = os.path.join(common.sandbox(),'%s-import-dump.dnxhd' % profile_name)
                 with open(dump_path, 'wb') as out:
                     out.write(stream.read())
 
@@ -202,23 +202,23 @@ class EmbbedTests(unittest.TestCase):
             sample_rate = audio.pcm_profiles[profile_name]['sample_rate']
 
             sample = generate_pcm_audio_mono(profile_name, sample_format=sample_format, sample_rate=sample_rate)
-            new_file = os.path.join(common.sandbox(), '%s_embbed_essence.aaf' % profile_name)
+            new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
             with aaf2.open(new_file, 'w') as f:
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.embbed_audio_essence(sample)
+                mob.import_audio_essence(sample)
 
             with aaf2.open(new_file, 'r') as f:
                 mob = next(f.content.sourcemobs())
                 stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sandbox(),'%s-embbed-dump.wav' % profile_name)
+                dump_path = os.path.join(common.sandbox(),'%s-import-dump.wav' % profile_name)
                 mob.export_audio(dump_path)
                 assert compare_files(dump_path, sample)
 
     def test_multi(self):
         frame_rate = '23.97'
         uhd2160 = (960, 540)
-        new_file = os.path.join(common.sandbox(), 'multi_embbed_essence.aaf')
+        new_file = os.path.join(common.sandbox(), 'multi_import_essence.aaf')
         audio_profile_name = 'pcm_48000_s24le'
 
         sample_format = audio.pcm_profiles[audio_profile_name]['sample_format']
@@ -229,16 +229,16 @@ class EmbbedTests(unittest.TestCase):
 
             for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
                 profile = video.dnx_profiles.get(profile_name)
-                sample = generate_dnxhd(profile_name, "%s-mulit-embbed.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
+                sample = generate_dnxhd(profile_name, "%s-mulit-import.dnxhd" % profile_name, 3, size=uhd2160, frame_rate=frame_rate)
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
 
-                vs_mob = mob.embbed_dnxhd_essence(sample, frame_rate)
-                as_mob = mob.embbed_audio_essence(audio_sample)
+                vs_mob = mob.import_dnxhd_essence(sample, frame_rate)
+                as_mob = mob.import_audio_essence(audio_sample)
 
-                v_dump_path = os.path.join(common.sandbox(),'%s-multi-embbed-dump.wav' % profile_name)
-                a_dump_path = os.path.join(common.sandbox(),'%s-multi-embbed-dump.dnxhd' % profile_name)
+                v_dump_path = os.path.join(common.sandbox(),'%s-multi-import-dump.wav' % profile_name)
+                a_dump_path = os.path.join(common.sandbox(),'%s-multi-import-dump.dnxhd' % profile_name)
 
                 samples[vs_mob.id] = (sample, v_dump_path)
                 samples[as_mob.id] = (audio_sample, a_dump_path)
