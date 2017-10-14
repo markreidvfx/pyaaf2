@@ -67,17 +67,6 @@ class Mob(core.AAFObject):
                 return slot
         raise IndexError("No SlotID: %s" % str(slot_id))
 
-    def _next_slot_id(self):
-        slots = [slot.id for slot in self.slots]
-        slots.sort()
-        start = 1
-        if slots and slots[0] == 0:
-            start = 0
-
-        for i, e in enumerate(slots + [None], start):
-            if i != e:
-                return i
-
     def create_timeline_slot(self, edit_rate, slot_id=None):
         slots = [slot.id for slot in self.slots]
         slots.sort()
@@ -169,11 +158,8 @@ class SourceMob(Mob):
         self['EssenceDescription'].value = value
 
     def create_essence(self, edit_rate=None, media_kind='picture', slot_id=None):
-        if slot_id is None:
-            slot_id = self._next_slot_id()
-        # NOTE: not sure if SourceMob can only contain 1 essence
-        assert slot_id == 1
-        slot = self.create_empty_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=slot_id)
+        # NOTE: appears like a SourceMob can only link to 1 essence and it must be slot 1
+        slot = self.create_empty_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=1)
         essencedata = self.root.create.EssenceData()
         essencedata.id = self.id
         self.root.content.essencedata.append(essencedata)
@@ -181,7 +167,7 @@ class SourceMob(Mob):
 
     def create_empty_slot(self, edit_rate=None, media_kind='picture', slot_id=None):
 
-        slot = self.create_timeline_slot(edit_rate)
+        slot = self.create_timeline_slot(edit_rate, slot_id)
         clip = self.root.create.SourceClip(media_kind=media_kind)
         slot.segment = clip
 
@@ -196,7 +182,7 @@ class SourceMob(Mob):
         self.name = tape_name
         self.descriptor = self.root.create.TapeDescriptor()
 
-        slot = self.create_empty_slot(edit_rate, media_kind)
+        slot = self.create_empty_slot(edit_rate, media_kind, slot_id=1)
         slot.segment.length = int(float(edit_rate) * 60 *60 * 12) # 12 hours
         timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame)
 
