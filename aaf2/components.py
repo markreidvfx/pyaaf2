@@ -114,3 +114,38 @@ class SourceClip(SourceReference):
     @start.setter
     def start(self, value):
         self['StartTime'].value = value
+
+@register_class
+class Timecode(Segment):
+    class_id = UUID("0d010101-0101-1400-060e-2b3402060101")
+
+    def __init__(self, fps=25, drop=False):
+        length = fps * 60 * 60 * 12 # 12 hours
+        super(Timecode, self).__init__(length=length, media_kind='Timecode')
+        self.start = 0
+        self.fps = fps
+        self.drop = drop
+
+    @property
+    def start(self):
+        return self['Start'].value
+
+    @start.setter
+    def start(self, value):
+        self['Start'].value = value
+
+    @property
+    def fps(self):
+        return self['FPS'].value
+
+    @fps.setter
+    def fps(self, value):
+        self['FPS'].value = value
+
+    @property
+    def drop(self):
+        return self['Drop'].value
+
+    @drop.setter
+    def drop(self, value):
+        self['Drop'].value = value

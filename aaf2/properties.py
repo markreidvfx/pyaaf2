@@ -281,7 +281,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         super(StrongRefVectorProperty, self).__init__(parent, pid, format, version)
         self.references = []
         self._objects = []
-        self.objects = []
+        self.objects = []  # should be a dictionary??
         self.ref = None
         self.next_free_key = 0
         self.last_free_key = 0xFFFFFFFF
@@ -366,11 +366,16 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def ref_classdef(self):
         return self.typedef.element_typedef.ref_classdef
 
+
     def __iter__(self):
-        for i, ref in enumerate(self.references):
-            dir_entry = self.parent.dir.get(ref)
-            item = self.parent.root.read_object(dir_entry)
-            yield item
+        if len(self.objects) == len(self.references):
+            for item in self.objects:
+                yield item
+        else:
+            for i, ref in enumerate(self.references):
+                dir_entry = self.parent.dir.get(ref)
+                item = self.parent.root.read_object(dir_entry)
+                yield item
 
     def __getitem__(self, index):
 

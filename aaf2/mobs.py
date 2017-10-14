@@ -78,10 +78,34 @@ class Mob(core.AAFObject):
             if i != e:
                 return i
 
-    def createclip(self, slot_id=None, media_kind=None):
+    def create_timeline_slot(self, edit_rate, slot_id=None):
+        slots = [slot.id for slot in self.slots]
+        slots.sort()
+        if slot_id is None:
+            start = 1
+            if slots and slots[0] == 0:
+                start = 0
+
+            for i, e in enumerate(slots + [None], start):
+                if i != e:
+                    slot_id = i
+        elif slot_id in slots:
+            raise ValueError("slot id: %d already exists" % slot_id)
+
+        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
+        self.slots.append(slot)
+        return slot
+
+    def create_source_clip(self, slot_id=None, start=None, length=None, media_kind=None):
+        source_slot = self.slot_at(slot_id)
+        if not media_kind:
+            media_kind = source_slot.media_kind
+
         clip = self.root.create.SourceClip(media_kind=media_kind)
         clip.mob = self
-        clip.slot = self.slot_at(slot_id)
+        clip.slot = source_slot
+        clip.start = start or 0
+        clip.length = length or 0
         return clip
 
     def __repr__(self):
@@ -99,40 +123,35 @@ class CompositionMob(Mob):
 class MasterMob(Mob):
     class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
 
-    def import_dnxhd_essence(self, path, edit_rate):
+    def import_dnxhd_essence(self, path, edit_rate, tape=None):
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
 
         # import the essencedata
-        source_slot = source_mob.import_dnxhd_essence(path, edit_rate)
+        source_slot = source_mob.import_dnxhd_essence(path, edit_rate, tape)
 
         # create slot and clip that references source_mob slot
-        slot_id = self._next_slot_id()
-        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
-        slot.segment = source_mob.createclip(source_slot.id, 'picture')
-        self.slots.append(slot)
+        slot = self.create_timeline_slot(edit_rate=edit_rate)
+        slot.segment = source_mob.create_source_clip(source_slot.id, media_kind='picture')
 
         # set clip length
         slot.segment.length = source_slot.segment.length
         return source_mob
 
-    def import_audio_essence(self, path, edit_rate=None):
+    def import_audio_essence(self, path, edit_rate=None, tape=None):
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
 
-        source_slot = source_mob.import_audio_essence(path, edit_rate)
+        source_slot = source_mob.import_audio_essence(path, edit_rate, tape)
 
         # create slot and clip that references source_mob slot
-        slot_id = self._next_slot_id()
-
         edit_rate = edit_rate or source_slot.edit_rate
-        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
-        slot.segment = source_mob.createclip(source_slot.id, 'sound')
-        self.slots.append(slot)
+        slot = self.create_timeline_slot(edit_rate=edit_rate)
+        slot.segment = source_mob.create_source_clip(source_slot.id, media_kind='sound')
 
         # set clip length
         slot.segment.length = source_slot.segment.length
@@ -154,27 +173,41 @@ class SourceMob(Mob):
             slot_id = self._next_slot_id()
         # NOTE: not sure if SourceMob can only contain 1 essence
         assert slot_id == 1
-        slot = self.create_null_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=slot_id)
+        slot = self.create_empty_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=slot_id)
         essencedata = self.root.create.EssenceData()
         essencedata.id = self.id
         self.root.content.essencedata.append(essencedata)
         return essencedata, slot
 
-    def create_null_slot(self, edit_rate=None, media_kind='picture', slot_id=None):
-        if slot_id is None:
-            slot_id = self._next_slot_id()
+    def create_empty_slot(self, edit_rate=None, media_kind='picture', slot_id=None):
 
-        slot = self.root.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
-        self.slots.append(slot)
-
+        slot = self.create_timeline_slot(edit_rate)
         clip = self.root.create.SourceClip(media_kind=media_kind)
         slot.segment = clip
 
         return slot
 
-    def import_dnxhd_essence(self, path, edit_rate):
+    def create_timecode_slot(self, edit_rate, timecode_fps, drop_frame=False):
+        timecode_slot = self.create_timeline_slot(edit_rate)
+        timecode_slot.segment = self.root.create.Timecode(timecode_fps, drop=drop_frame)
+        return timecode_slot
+
+    def create_tape_slots(self, tape_name, edit_rate, timecode_fps, drop_frame=False, media_kind=None):
+        self.name = tape_name
+        self.descriptor = self.root.create.TapeDescriptor()
+
+        slot = self.create_empty_slot(edit_rate, media_kind)
+        slot.segment.length = int(float(edit_rate) * 60 *60 * 12) # 12 hours
+        timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame)
+
+        return slot, timecode_slot
+
+    def import_dnxhd_essence(self, path, edit_rate, tape=None):
 
         essencedata, slot = self.create_essence(edit_rate, 'picture')
+
+        if tape:
+            slot.segment = tape
 
         # create essence descriptor
         descriptor = self.root.create.CDCIDescriptor()
@@ -214,7 +247,7 @@ class SourceMob(Mob):
 
         return slot
 
-    def import_audio_essence(self, path, edit_rate=None):
+    def import_audio_essence(self, path, edit_rate=None, tape=None):
         """
         Import audio essence from wav file
         """
@@ -231,6 +264,8 @@ class SourceMob(Mob):
 
         # create essencedata
         essencedata, slot = self.create_essence(edit_rate, 'sound')
+        if tape:
+            slot.segment = tape
 
         # create essence descriptor
         descriptor = self.root.create.PCMDescriptor()

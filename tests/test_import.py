@@ -163,7 +163,7 @@ class ImportTests(unittest.TestCase):
             with aaf2.open(new_file, 'r') as f:
                 mob = next(f.content.sourcemobs())
                 stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sandbox(),'%s-import-dump.dnxhd' % profile_name)
+                dump_path = os.path.join(sample_dir,'%s-import-dump.dnxhd' % profile_name)
                 with open(dump_path, 'wb') as out:
                     out.write(stream.read())
 
@@ -178,31 +178,56 @@ class ImportTests(unittest.TestCase):
 
         frames = 3
 
+        timecode_fps = 30
+        start_time = int(timecode_fps * 60 * 60) # 1 hour
+
         for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
             new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
             with aaf2.open(new_file, 'w') as f:
+
+
                 profile = video.dnx_profiles.get(profile_name)
                 sample = generate_dnxhd(profile_name, "%s-import.dnxhd" % profile_name, frames=frames, size=uhd2160, frame_rate=frame_rate)
 
+                # create a tape
+                tape_mob = f.create.SourceMob()
+                tape_mob.create_tape_slots(profile_name, frame_rate, timecode_fps)
+                f.content.mobs.append(tape_mob)
+                tape = tape_mob.create_source_clip(1, start=start_time)
+
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.import_dnxhd_essence(sample, frame_rate)
+                timecode = f.create.Timecode(timecode_fps)
+                mob.import_dnxhd_essence(sample, frame_rate, tape=tape)
 
             with aaf2.open(new_file, 'r') as f:
-                mob = next(f.content.sourcemobs())
+                source_mobs = []
+                tape_mobs = []
+                for mob in f.content.sourcemobs():
+                    if isinstance(mob.descriptor, aaf2.essence.TapeDescriptor):
+                        tape_mobs.append(mob)
+                    else:
+                        source_mobs.append(mob)
+
+                mob = source_mobs[0]
                 stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sandbox(),'%s-import-dump.dnxhd' % profile_name)
+                dump_path = os.path.join(sample_dir,'%s-import-dump.dnxhd' % profile_name)
                 with open(dump_path, 'wb') as out:
                     out.write(stream.read())
 
                 assert compare_files(dump_path, sample)
                 assert mob.slots[0].segment.length == frames
+                assert mob.slots[0].segment.start  == start_time
                 assert mob.descriptor.length == frames
+
 
     def test_wav(self):
         # name, sample_rate = 48000, duration = 2, sample_fmt='s16le', format='wav'):
         # profile_name = 'pcm_48000_s24le'
         frame_rate = 30
+        timecode_fps = 30
+        start_time = int(timecode_fps * 60 * 60) * 2
+
         duration = 1.5
         for profile_name in sorted(audio.pcm_profiles):
             sample_format = audio.pcm_profiles[profile_name]['sample_format']
@@ -211,20 +236,37 @@ class ImportTests(unittest.TestCase):
             sample = generate_pcm_audio_mono(profile_name, sample_format=sample_format, sample_rate=sample_rate, duration=duration)
             new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
             with aaf2.open(new_file, 'w') as f:
+
+                tape_mob = f.create.SourceMob()
+                f.content.mobs.append(tape_mob)
+                tape_mob.create_tape_slots(profile_name, frame_rate, timecode_fps, media_kind='sound')
+
+                tape = tape_mob.create_source_clip(1, start_time)
+
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.import_audio_essence(sample, frame_rate)
+                mob.import_audio_essence(sample, frame_rate, tape)
 
             with aaf2.open(new_file, 'r') as f:
-                mob = next(f.content.sourcemobs())
+                source_mobs = []
+                tape_mobs = []
+                for mob in f.content.sourcemobs():
+                    if isinstance(mob.descriptor, aaf2.essence.TapeDescriptor):
+                        tape_mobs.append(mob)
+                    else:
+                        source_mobs.append(mob)
+                mob = source_mobs[0]
+                tape_mob = tape_mobs[0]
                 stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sandbox(),'%s-import-dump.wav' % profile_name)
+                dump_path = os.path.join(sample_dir,'%s-import-dump.wav' % profile_name)
                 mob.export_audio(dump_path)
                 assert compare_files(dump_path, sample)
                 audio_samples = mob.descriptor['Length'].value
                 assert audio_samples == sample_rate * duration
                 edit_length = duration * frame_rate
                 assert mob.slots[0].segment.length == edit_length
+                assert mob.slots[0].segment.start == start_time
+                assert mob.slots[0].segment.mob_id == tape_mob.id
 
     def test_multi(self):
         frame_rate = 30.0
@@ -238,7 +280,16 @@ class ImportTests(unittest.TestCase):
         sample_rate = audio.pcm_profiles[audio_profile_name]['sample_rate']
         audio_sample = generate_pcm_audio_mono(audio_profile_name, sample_format=sample_format, sample_rate=sample_rate, duration=audio_duration)
         samples = {}
+
+        timecode_fps = 30
+        start_time = int(timecode_fps * 60 * 60)
+        tape_id = None
         with aaf2.open(new_file, 'w') as f:
+            # create a tape
+            tape_mob = f.create.SourceMob()
+            tape_mob.create_tape_slots("mulit-import", frame_rate, timecode_fps)
+            tape_id = tape_mob.id
+            f.content.mobs.append(tape_mob)
 
             for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
                 profile = video.dnx_profiles.get(profile_name)
@@ -247,17 +298,22 @@ class ImportTests(unittest.TestCase):
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
 
-                vs_mob = mob.import_dnxhd_essence(sample, frame_rate)
+                tape = tape_mob.create_source_clip(1, start=start_time)
+
+                vs_mob = mob.import_dnxhd_essence(sample, frame_rate, tape=tape)
                 as_mob = mob.import_audio_essence(audio_sample, frame_rate)
 
-                v_dump_path = os.path.join(common.sandbox(),'%s-multi-import-dump.wav' % profile_name)
-                a_dump_path = os.path.join(common.sandbox(),'%s-multi-import-dump.dnxhd' % profile_name)
+                v_dump_path = os.path.join(sample_dir,'%s-multi-import-dump.wav' % profile_name)
+                a_dump_path = os.path.join(sample_dir,'%s-multi-import-dump.dnxhd' % profile_name)
 
-                samples[vs_mob.id] = (sample, v_dump_path)
-                samples[as_mob.id] = (audio_sample, a_dump_path)
+                samples[vs_mob.id] = (sample, v_dump_path, start_time)
+                samples[as_mob.id] = (audio_sample, a_dump_path, start_time)
+
+                start_time += 100
 
         with aaf2.open(new_file, 'r') as f:
-            for mob_id, (original_path, dump_path) in samples.items():
+            tape_mob = f.content.mobs.get(tape_id)
+            for mob_id, (original_path, dump_path, start_time) in samples.items():
                 mob = f.content.mobs.get(mob_id)
 
                 if isinstance(mob.descriptor, aaf2.essence.PCMDescriptor):
@@ -271,6 +327,9 @@ class ImportTests(unittest.TestCase):
                         out.write(stream.read())
                     assert compare_files(dump_path, original_path)
                     assert mob.slots[0].segment.length == frames
+                    assert mob.slots[0].segment.start == start_time
+                    assert mob.slots[0].segment.mob_id == tape_id
+
 
 if __name__ == "__main__":
     import logging

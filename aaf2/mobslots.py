@@ -38,6 +38,18 @@ class MobSlot(core.AAFObject):
         self['SlotName'].value = value
 
     @property
+    def datadef(self):
+        segment = self.segment
+        if segment:
+            return segment.datadef
+
+    @property
+    def media_kind(self):
+        segment = self.segment
+        if segment:
+            return segment.media_kind
+
+    @property
     def id(self):
         return self['SlotID'].value
 
