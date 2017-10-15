@@ -852,21 +852,19 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
             if not ref_classdef.isinstance(item.classdef):
                 raise TypeError("Invalid Value")
 
-        pid_path = self.pid_path
-
         if self.ref is None:
             propdef = self.propertydef
             self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode()
 
-        for item in values:
+        if self.ref_index is None:
+            self.ref_index = self.parent.root.weakref_index(self.pid_path)
+        if self.ref_pid is None:
+            self.ref_pid = ref_classdef.unique_key_pid
+        if self.id_size is None:
+            self.id_size = ref_classdef.unique_key_size
 
-            if self.ref_index is None:
-                self.ref_index = self.parent.root.weakref_index(self.pid_path)
-            if self.ref_pid is None:
-                self.ref_pid = ref_classdef.unique_key_pid
-            if self.id_size is None:
-                self.id_size = ref_classdef.unique_key_size
+        for item in values:
             self.references.append(item.unique_key)
 
         self.add_pid_entry()
