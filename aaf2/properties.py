@@ -691,37 +691,37 @@ class WeakRefProperty(ObjectRefProperty):
         super(WeakRefProperty, self).__init__(parent, pid, format, version)
         self.ref_index = None
         self.key_pid = None
-        self.id_size = None
+        self.key_size = None
         self.ref = None
 
     def copy(self, parent):
         p = super(WeakRefProperty, self).copy(parent)
         p.ref_index = self.ref_index
         p.key_pid = self.pid
-        p.id_size = self.id_size
-        p.ref = self.id_size
+        p.key_size = self.key_size
+        p.ref = self.ref
         return p
 
     def decode(self):
         f = BytesIO(self.data)
         self.ref_index = read_u16le(f)
         self.key_pid = read_u16le(f)
-        self.id_size = read_u8(f)
-        assert self.id_size in (16, 32)
-        if self.id_size == 16:
-            self.ref = UUID(bytes_le=f.read(self.id_size))
+        self.key_size = read_u8(f)
+        assert self.key_size in (16, 32)
+        if self.key_size == 16:
+            self.ref = UUID(bytes_le=f.read(self.key_size))
         else:
-            self.ref = key = MobID(bytes_le=f.read(self.id_size))
+            self.ref = key = MobID(bytes_le=f.read(self.key_size))
 
     def encode(self):
         f = BytesIO()
         ref = self.ref.bytes_le
-        id_size = len(ref)
-        assert id_size in (16, 32)
+        key_size = len(ref)
+        assert key_size in (16, 32)
 
         write_u16le(f, self.ref_index)
         write_u16le(f, self.key_pid)
-        write_u8(f, id_size)
+        write_u8(f, key_size)
         f.write(ref)
         return f.getvalue()
 
@@ -751,8 +751,8 @@ class WeakRefProperty(ObjectRefProperty):
 
         if self.key_pid is None:
             self.key_pid = ref_classdef.unique_key_pid
-        if self.id_size is None:
-            self.id_size = ref_classdef.unique_key_size
+        if self.key_size is None:
+            self.key_size = ref_classdef.unique_key_size
         if self.ref_index is None:
             self.ref_index = self.parent.root.weakref_index(self.pid_path)
 
@@ -767,7 +767,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         self.ref = None
         self.ref_index = None
         self.key_pid = None
-        self.id_size = None
+        self.key_size = None
 
     def copy(self, parent):
         p = super(WeakRefArrayProperty, self).copy(parent)
@@ -775,7 +775,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         p.ref = self.ref
         p.ref_index = self.ref_index
         p.key_pid = self.key_pid
-        p.id_size = self.id_size
+        p.key_size = self.key_size
         return p
 
     def decode(self):
@@ -796,16 +796,15 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         count = read_u32le(f)
         self.ref_index = read_u16le(f)
         self.key_pid = read_u16le(f)
-        self.id_size = read_u8(f)
-        assert self.id_size in (16, 32)
+        self.key_size = read_u8(f)
+        assert self.key_size in (16, 32)
 
         for i in range(count):
-            if self.id_size == 16:
-                identification = UUID(bytes_le=f.read(self.id_size))
+            if self.key_size == 16:
+                key = UUID(bytes_le=f.read(self.key_size))
             else:
-                identification = key = MobID(bytes_le=f.read(self.id_size))
-            # print("  ",self.ref_index, identification)
-            self.references.append(identification)
+                key = key = MobID(bytes_le=f.read(self.key_size))
+            self.references.append(key)
 
     def encode(self):
         return self.ref.encode("utf-16le") + b"\x00" + b"\x00"
@@ -817,7 +816,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         write_u32le(f, count)
         write_u16le(f, self.ref_index)
         write_u16le(f, self.key_pid)
-        write_u8(f, self.id_size)
+        write_u8(f, self.key_size)
 
         for item in self.references:
             f.write(item.bytes_le)
@@ -860,8 +859,8 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
             self.ref_index = self.parent.root.weakref_index(self.pid_path)
         if self.key_pid is None:
             self.key_pid = ref_classdef.unique_key_pid
-        if self.id_size is None:
-            self.id_size = ref_classdef.unique_key_size
+        if self.key_size is None:
+            self.key_size = ref_classdef.unique_key_size
 
         for item in values:
             self.references.append(item.unique_key)
