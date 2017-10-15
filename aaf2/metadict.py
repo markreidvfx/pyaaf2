@@ -113,7 +113,6 @@ class ClassDef(core.AAFObject):
 
     @property
     def unique_key_size(self):
-        # Mobs and EssenceData
         mob_classdef = self.root.metadict.lookup_classdef(UUID("0d010101-0101-3400-060e-2b3402060101"))
         essencedata_classdef = self.root.metadict.lookup_classdef(UUID("0d010101-0101-2300-060e-2b3402060101"))
         if self.isinstance(mob_classdef) or self.isinstance(essencedata_classdef):

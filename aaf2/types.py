@@ -159,15 +159,6 @@ class TypeDefWeakRef(TypeDef):
         return [p.pid for c, p in self.propertydef_path]
 
     @property
-    def unique_key_size(self):
-        return self.ref_classdef.unique_key_size
-
-    @property
-    def unique_key_pid(self):
-        """the pid of the classdef used for unique_key"""
-        return self.ref_classdef.unique_key_pid
-
-    @property
     def target_set_path(self):
         if self._path:
             result = []

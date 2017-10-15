@@ -741,13 +741,6 @@ class WeakRefProperty(ObjectRefProperty):
     def pid_path(self):
         return self.typedef.pid_path
 
-    @property
-    def unique_key_size(self):
-        return self.typedef.unique_key_size
-    @property
-    def unique_key_pid(self):
-        return self.typedef.unique_key_pid
-
     @value.setter
     def value(self, value):
         if value is None:
@@ -758,9 +751,9 @@ class WeakRefProperty(ObjectRefProperty):
         assert ref_classdef.isinstance(value.classdef)
 
         if self.ref_pid is None:
-            self.ref_pid = self.unique_key_pid
+            self.ref_pid = ref_classdef.unique_key_pid
         if self.id_size is None:
-            self.id_size = self.unique_key_size
+            self.id_size = ref_classdef.unique_key_size
         if self.ref_index is None:
             self.ref_index = self.parent.root.weakref_index(self.pid_path)
 
@@ -844,13 +837,6 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         return self.typedef.element_typedef.pid_path
 
     @property
-    def unique_key_size(self):
-        return self.typedef.element_typedef.unique_key_size
-    @property
-    def unique_key_pid(self):
-        return self.typedef.element_typedef.unique_key_pid
-
-    @property
     def value(self):
         items = []
         for ref in self.references:
@@ -878,9 +864,9 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
             if self.ref_index is None:
                 self.ref_index = self.parent.root.weakref_index(self.pid_path)
             if self.ref_pid is None:
-                self.ref_pid = self.unique_key_pid
+                self.ref_pid = ref_classdef.unique_key_pid
             if self.id_size is None:
-                self.id_size = self.unique_key_size
+                self.id_size = ref_classdef.unique_key_size
             self.references.append(item.unique_key)
 
         self.add_pid_entry()
