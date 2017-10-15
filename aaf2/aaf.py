@@ -185,7 +185,7 @@ class AAFFile(object):
         p = root.property_entries[path[-1]]
         return root, p
 
-    def create_weakref(self, obj, pid_path):
+    def weakref_index(self, pid_path):
 
         if pid_path in self.weakref_table:
             index = self.weakref_table.index(pid_path)
@@ -193,13 +193,7 @@ class AAFFile(object):
             index = len(self.weakref_table)
             self.weakref_table.append(pid_path)
 
-        parent_obj, p = self.weakref_prop(index)
-        assert isinstance(p, StrongRefSetProperty)
-        weakref_pid, key_size = self.metadict.weakref_pid(parent_obj.classdef, p.propertydef)
-
-        ref_key = obj.unique_key
-
-        return index, weakref_pid, ref_key
+        return index
 
     def read_reference_properties(self):
         f = self.cfb.open("/referenced properties")

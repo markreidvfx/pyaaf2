@@ -479,9 +479,10 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
         self.next_free_key = 0
         self.last_free_key = 0xFFFFFFFF
-        self.key_size = 16
-        # this pid match the ref_pid on the weak ref
+
+        # Pid of the referenced objects unique_key
         self.index_pid = None
+        self.key_size = None
 
     def copy(self, parent):
         p = super(StrongRefSetProperty, self).copy(parent)
@@ -610,7 +611,11 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             if not classdef.isinstance(item.classdef):
                 raise TypeError("Invalid Value")
 
-        (self.index_pid, self.key_size) = self.parent.root.metadict.weakref_pid(self.parent.classdef, self.propertydef)
+        # (self.index_pid, self.key_size) = self.parent.root.metadict.weakref_pid(self.parent.classdef, self.propertydef)
+        if self.index_pid is None:
+            self.index_pid = classdef.unique_key_pid
+        if self.key_size is None:
+            self.key_size = classdef.unique_key_size
 
         if self.ref is None:
             propdef = self.propertydef
@@ -736,6 +741,13 @@ class WeakRefProperty(ObjectRefProperty):
     def pid_path(self):
         return self.typedef.pid_path
 
+    @property
+    def unique_key_size(self):
+        return self.typedef.unique_key_size
+    @property
+    def unique_key_pid(self):
+        return self.typedef.unique_key_pid
+
     @value.setter
     def value(self, value):
         if value is None:
@@ -745,8 +757,14 @@ class WeakRefProperty(ObjectRefProperty):
         ref_classdef = self.ref_classdef
         assert ref_classdef.isinstance(value.classdef)
 
-        (self.ref_index, self.ref_pid, self.ref)  = self.parent.root.create_weakref(value, self.pid_path)
+        if self.ref_pid is None:
+            self.ref_pid = self.unique_key_pid
+        if self.id_size is None:
+            self.id_size = self.unique_key_size
+        if self.ref_index is None:
+            self.ref_index = self.parent.root.weakref_index(self.pid_path)
 
+        self.ref = value.unique_key
         self.data = self.encode()
         self.add_pid_entry()
 
@@ -826,6 +844,13 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         return self.typedef.element_typedef.pid_path
 
     @property
+    def unique_key_size(self):
+        return self.typedef.element_typedef.unique_key_size
+    @property
+    def unique_key_pid(self):
+        return self.typedef.element_typedef.unique_key_pid
+
+    @property
     def value(self):
         items = []
         for ref in self.references:
@@ -849,15 +874,14 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
             self.data = self.encode()
 
         for item in values:
-            (ref_index, ref_pid, ref)  = self.parent.root.create_weakref(item, pid_path)
-            if self.ref_index is None:
-                self.ref_index = ref_index
-            if self.ref_pid is None:
-                self.ref_pid = ref_pid
-            if self.id_size is None:
-                self.id_size = len(ref.bytes_le)
 
-            self.references.append(ref)
+            if self.ref_index is None:
+                self.ref_index = self.parent.root.weakref_index(self.pid_path)
+            if self.ref_pid is None:
+                self.ref_pid = self.unique_key_pid
+            if self.id_size is None:
+                self.id_size = self.unique_key_size
+            self.references.append(item.unique_key)
 
         self.add_pid_entry()
 

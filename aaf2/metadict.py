@@ -105,6 +105,21 @@ class ClassDef(core.AAFObject):
     def unique_key(self):
         return self.uuid
 
+    @property
+    def unique_key_pid(self):
+        for p in self.all_propertydefs():
+            if p.unique:
+                return p.pid
+
+    @property
+    def unique_key_size(self):
+        # Mobs and EssenceData
+        mob_classdef = self.root.metadict.lookup_classdef(UUID("0d010101-0101-3400-060e-2b3402060101"))
+        essencedata_classdef = self.root.metadict.lookup_classdef(UUID("0d010101-0101-2300-060e-2b3402060101"))
+        if self.isinstance(mob_classdef) or self.isinstance(essencedata_classdef):
+            return 32
+        return 16
+
     def setup_defaults(self):
         self['Name'].value = self.class_name
         self['Identification'].value = self.uuid
@@ -387,42 +402,6 @@ class MetaDictionary(core.AAFObject):
         if isinstance(t, UUID):
             return self.classdefs_by_uuid.get(t, None)
         return self.classdefs_by_name.get(t, None)
-
-
-    def weakref_pid(self, classdef, propertydef):
-
-        # there are not many weakrefable types and key_size
-        MetaDefinition_Identification   = (0x0005, 16)
-        DefinitionObject_Identification = (0x1B01, 16)
-        Mob_MobID                       = (0x4401, 32)
-        EssenceData_MobID               = (0x2701, 32)
-
-        c_name = classdef.class_name
-        p_name = propertydef.property_name
-        # print(c_name, p_name)
-
-        if c_name in ('MetaDictionary', 'ClassDefinition') and \
-           p_name in ('TypeDefinitions', 'ClassDefinitions', 'Properties'):
-           return MetaDefinition_Identification
-
-        elif c_name in ('Dictionary',) and \
-            p_name in ('CodecDefinitions' ,'InterpolationDefinitions' ,
-                        'ParameterDefinitions' ,'TaggedValueDefinitions' ,
-                        'KLVDataDefinitions' ,'OperationDefinitions' ,
-                        'PluginDefinitions' ,'ContainerDefinitions' ,'DataDefinitions'):
-            return DefinitionObject_Identification
-
-        elif c_name in ('ContentStorage') and \
-            p_name in ('Mobs',):
-            return Mob_MobID
-
-        elif c_name in ('ContentStorage') and \
-            p_name in ('EssenceData',):
-            return EssenceData_MobID
-
-        else:
-            print (classdef, propertydef)
-            raise AAFPropertyError("unkown weak ref property id")
 
     @property
     def classdef(self):

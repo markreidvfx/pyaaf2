@@ -151,6 +151,23 @@ class TypeDefWeakRef(TypeDef):
         return self.root.metadict.lookup_classdef(self['ReferencedType'].ref)
 
     @property
+    def path(self):
+        return [p.name for c, p in self.propertydef_path]
+
+    @property
+    def pid_path(self):
+        return [p.pid for c, p in self.propertydef_path]
+
+    @property
+    def unique_key_size(self):
+        return self.ref_classdef.unique_key_size
+
+    @property
+    def unique_key_pid(self):
+        """the pid of the classdef used for unique_key"""
+        return self.ref_classdef.unique_key_pid
+
+    @property
     def target_set_path(self):
         if self._path:
             result = []
@@ -173,38 +190,19 @@ class TypeDefWeakRef(TypeDef):
         return self['TargetSet'].value
 
     @property
-    def path(self):
+    def propertydef_path(self):
         path = []
         classdef = self.root.metadict.lookup_classdef("Root")
         for auid in self.target_set_path:
             found = False
             for p in classdef.propertydefs:
-                # print(p, p.uuid)
                 if p.uuid == auid:
-                    path.append(p.property_name)
+                    path.append((classdef, p))
                     classdef = p.typedef.ref_classdef
                     found = True
                     break
             if not found:
                 raise AAFPropertyError("unable to resolve property path")
-
-        return path
-
-    @property
-    def pid_path(self):
-        path = []
-        classdef = self.root.metadict.lookup_classdef("Root")
-        for auid in self.target_set_path:
-            found = False
-            for p in classdef.propertydefs:
-                # print(p, p.uuid)
-                if p.uuid == auid:
-                    path.append(p.pid)
-                    classdef = p.typedef.ref_classdef
-                    found = True
-                    break
-            if not found:
-                raise  AAFPropertyError("unable to resolve property path")
 
         return path
 
