@@ -280,6 +280,7 @@ class ImportTests(unittest.TestCase):
         sample_rate = audio.pcm_profiles[audio_profile_name]['sample_rate']
         audio_sample = generate_pcm_audio_mono(audio_profile_name, sample_format=sample_format, sample_rate=sample_rate, duration=audio_duration)
         samples = {}
+        mastermobs = {}
 
         timecode_fps = 30
         start_time = int(timecode_fps * 60 * 60)
@@ -291,7 +292,7 @@ class ImportTests(unittest.TestCase):
             tape_id = tape_mob.id
             f.content.mobs.append(tape_mob)
 
-            for profile_name in ['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq']:
+            for i, profile_name in enumerate(['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq'], 1):
                 profile = video.dnx_profiles.get(profile_name)
                 sample = generate_dnxhd(profile_name, "%s-mulit-import.dnxhd" % profile_name, frames=frames, size=uhd2160, frame_rate=frame_rate)
 
@@ -303,6 +304,11 @@ class ImportTests(unittest.TestCase):
                 vs_mob = mob.import_dnxhd_essence(sample, frame_rate, tape=tape)
                 as_mob = mob.import_audio_essence(audio_sample, frame_rate)
 
+                mob.comments['profile'] = profile_name
+                mob.comments['integer'] = 100
+                mob.comments['integer'] = i
+                mastermobs[mob.id] = (profile_name, i)
+
                 v_dump_path = os.path.join(sample_dir,'%s-multi-import-dump.wav' % profile_name)
                 a_dump_path = os.path.join(sample_dir,'%s-multi-import-dump.dnxhd' % profile_name)
 
@@ -313,6 +319,11 @@ class ImportTests(unittest.TestCase):
 
         with aaf2.open(new_file, 'r') as f:
             tape_mob = f.content.mobs.get(tape_id)
+            for mob_id, (profile_name, v) in mastermobs.items():
+                mob = f.content.mobs.get(mob_id)
+                assert mob.comments['profile'] == profile_name
+                assert mob.comments['integer'] == v
+
             for mob_id, (original_path, dump_path, start_time) in samples.items():
                 mob = f.content.mobs.get(mob_id)
 
@@ -329,6 +340,8 @@ class ImportTests(unittest.TestCase):
                     assert mob.slots[0].segment.length == frames
                     assert mob.slots[0].segment.start == start_time
                     assert mob.slots[0].segment.mob_id == tape_id
+
+
 
 
 if __name__ == "__main__":

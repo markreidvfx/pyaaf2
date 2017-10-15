@@ -1,12 +1,10 @@
-# import aafobject
-
 from __future__ import (
     unicode_literals,
     absolute_import,
     print_function,
     division,
     )
-
+import sys
 from uuid import UUID
 from . import core
 from . import properties
@@ -18,6 +16,9 @@ import datetime
 
 from struct import (unpack, pack)
 from .utils import register_class
+
+if sys.version_info.major >= 3:
+    unicode = str
 
 @register_class
 class TypeDef(core.AAFObject):
@@ -717,6 +718,25 @@ class TypeDefIndirect(TypeDef):
         typedef = self.root.metadict.lookup_typedef(type_uuid)
         result = typedef.decode(data[17:])
         return result
+
+    def encode(self, data):
+        byte_order = b'\x4c'
+        if isinstance(data, (str, unicode)):
+            # aafString
+            type_uuid = UUID("01100200-0000-0000-060e-2b3401040101")
+
+        elif isinstance(data, int):
+            # aafInt64
+            type_uuid = UUID("01010800-0000-0000-060e-2b3401040101")
+        else:
+            raise NotImplementedError("Indirect type for: %s", str(type(data)))
+
+        typedef = self.root.metadict.lookup_typedef(type_uuid)
+        result = byte_order
+        result += type_uuid.bytes_le
+        result += typedef.encode(data)
+        return result
+
 
 
 @register_class
