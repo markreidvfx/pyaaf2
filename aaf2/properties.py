@@ -280,52 +280,51 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefVectorProperty, self).__init__(parent, pid, format, version)
         self.references = []
-        self._objects = []
-        self.objects = []  # should be a dictionary??
-        self.ref = None
+        self.objects = {}
+        self._ref = None
+
+        # self.ref = None
         self.next_free_key = 0
         self.last_free_key = 0xFFFFFFFF
-        self.local_map = {}
 
     def copy(self, parent):
         p = super(StrongRefVectorProperty, self).copy(parent)
         p.references = list(self.references)
-        p.references = list(self.references)
-        p.local_map =  dict(self.local_map)
 
-        p.objects = []
+        p.objects = {}
         p.ref = self.ref
         p.next_free_key = self.next_free_key
         p.last_free_key = self.last_free_key
 
         for i, value in enumerate(self):
-            ref = self.references[i]
+            ref = self.get_ref_name(self.references[i])
             dir_entry = parent.dir.get(ref)
             if dir_entry is None:
                 dir_entry = parent.dir.makedir(ref)
             c = value.copy(dir_entry)
-            p.objects.append(c)
+            p.objects[i] = c
 
         return p
 
     @property
-    def objects(self):
-        return self._objects
+    def ref(self):
+        if self._ref:
+            return self._ref
 
-    @objects.setter
-    def objects(self, value):
-        assert isinstance(value, list)
-        self._objects = value
+        propdef = self.propertydef
+        name = mangle_name(propdef.property_name, self.pid, 32-10)
+        self.data = self.encode(name)
+        self._ref = name
+        return name
+
+    @ref.setter
+    def ref(self, value):
+        self._ref = value
 
     def decode(self):
         self.references = []
-        self.ref = None
-        #null terminated
+        self.objects = {}
         self.ref = self.data[:-2].decode("utf-16le")
-        self.objects = []
-
-        if not self.ref:
-            return
 
     def read_index(self):
         index_name = self.ref + " index"
@@ -343,10 +342,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
         for i in range(count):
             local_key = read_u32le(f)
-            ref = "%s{%x}" % (self.ref, local_key)
-            # print(i, count, ref)
-            self.local_map[ref] = local_key
-            self.references.append(ref)
+            self.references.append(local_key)
 
     def write_index(self):
         s = self.parent.dir.touch(self.ref + " index").open(mode='w')
@@ -356,8 +352,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         write_u32le(f, self.next_free_key)
         write_u32le(f, self.last_free_key)
 
-        for ref in self.references:
-            local_key = self.local_map[ref]
+        for local_key in self.references:
             write_u32le(f, local_key)
 
         s.write(f.getvalue())
@@ -366,22 +361,34 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def ref_classdef(self):
         return self.typedef.element_typedef.ref_classdef
 
+    def get_ref_name(self, index):
+        return "%s{%x}" % (self.ref, self.references[index])
 
-    def __iter__(self):
-        if len(self.objects) == len(self.references):
-            for item in self.objects:
-                yield item
-        else:
-            for i, ref in enumerate(self.references):
-                dir_entry = self.parent.dir.get(ref)
-                item = self.parent.root.read_object(dir_entry)
-                yield item
+    def get(self, index, default=None):
+        if index >= len(self.references):
+            return default
 
-    def __getitem__(self, index):
+        if index < 0:
+            index = min(0, len(self.references) + index)
 
-        ref = self.references[index]
+        item = self.objects.get(index, None)
+        if item:
+            return item
+        ref = self.get_ref_name(index)
         dir_entry = self.parent.dir.get(ref)
         item = self.parent.root.read_object(dir_entry)
+
+        self.objects[index] = item
+        return item
+
+    def __iter__(self):
+        for i in range(len(self.references)):
+            yield self.get(i)
+
+    def __getitem__(self, index):
+        item = self.get(index, None)
+        if item is None:
+            raise IndexError(index)
         return item
 
     def clear(self):
@@ -389,45 +396,39 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             obj.detach()
 
         self.next_free_key = 0
-        self.objects = []
+        self.objects = {}
         self.references = []
-        self.local_map = {}
-
 
     def insert(self, index, value):
-        # read all the objects inserting extending
-        if len(self.objects) != len(self.references):
-            self.objects = [item for item in self]
+        assert self.ref_classdef.isinstance(value.classdef)
 
-        ref_classdef = self.ref_classdef
-        assert ref_classdef.isinstance(value.classdef)
+        self.references.insert(index, self.next_free_key)
 
-        ref = "%s{%x}" % (self.ref, self.next_free_key)
-        self.local_map[ref] = self.next_free_key
-        self.references.insert(index, ref)
-        self.objects.insert(index, value)
+        objects = {}
+        objects[index] = value
+        # increment all cached object with > indices +1
+        for key, value in self.objects.items():
+            if key >= index:
+                objects[key+1] = value
+            else:
+                objects[key] = value
+
         self.next_free_key += 1
+        self.objects = objects
+
 
     def extend(self, value):
-        # read all the objects before extending
-        if len(self.objects) != len(self.references):
-            self.objects = [item for item in self]
 
+        ref = self.ref # sets self.data
         ref_classdef = self.ref_classdef
 
         for obj in value:
             assert ref_classdef.isinstance(obj.classdef)
 
-        if self.ref is None:
-            propdef = self.propertydef
-            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
-            self.data = self.encode(self.ref)
-
         for obj in value:
-            ref = "%s{%x}" % (self.ref, self.next_free_key)
-            self.local_map[ref] = self.next_free_key
-            self.references.append(ref)
-            self.objects.append(obj)
+            i = len(self.references)
+            self.references.append(self.next_free_key)
+            self.objects[i] = obj
             self.next_free_key += 1
 
         self.add_pid_entry()
@@ -438,11 +439,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
     @property
     def value(self):
-        if len(self.objects) == len(self.references):
-            return self.objects
-
-        self.objects = [item for item in self]
-        return self.objects
+        return [item for item in self]
 
     @value.setter
     def value(self, value):
@@ -458,10 +455,9 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         if not self.parent.dir:
             return
 
-        for i, ref in enumerate(self.references):
+        for i, obj in enumerate(self):
+            ref = self.get_ref_name(i)
 
-            obj = self.objects[i]
-            # print(ref)
             dir_entry = self.parent.dir.get(ref)
             if dir_entry is None:
                 dir_entry = self.parent.dir.makedir(ref)
