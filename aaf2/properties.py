@@ -481,7 +481,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         self.last_free_key = 0xFFFFFFFF
 
         # Pid of the referenced objects unique_key
-        self.index_pid = None
+        self.key_pid = None
         self.key_size = None
 
     def copy(self, parent):
@@ -492,7 +492,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         p.last_free_key = self.last_free_key
         p.key_size = self.key_size
         p.ref = self.ref
-        p.index_pid = self.index_pid
+        p.key_pid = self.key_pid
 
         for key, value in self.items():
             ref = self.get_ref_name(key)
@@ -522,7 +522,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         count = read_u32le(f)
         self.next_free_key = read_u32le(f)
         self.last_free_key = read_u32le(f)
-        self.index_pid = read_u16le(f)
+        self.key_pid = read_u16le(f)
         self.key_size = read_u8(f)
         assert self.key_size in (16, 32)
 
@@ -550,7 +550,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         write_u32le(f, self.next_free_key)
         write_u32le(f, self.last_free_key)
 
-        write_u16le(f, self.index_pid)
+        write_u16le(f, self.key_pid)
         write_u8(f, self.key_size)
 
         for key, local_key in self.references.items():
@@ -611,9 +611,8 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             if not classdef.isinstance(item.classdef):
                 raise TypeError("Invalid Value")
 
-        # (self.index_pid, self.key_size) = self.parent.root.metadict.weakref_pid(self.parent.classdef, self.propertydef)
-        if self.index_pid is None:
-            self.index_pid = classdef.unique_key_pid
+        if self.key_pid is None:
+            self.key_pid = classdef.unique_key_pid
         if self.key_size is None:
             self.key_size = classdef.unique_key_size
 
@@ -685,20 +684,20 @@ def resolve_weakref(p, ref):
     elif ref_class_id == UUID("0d010101-0203-0000-060e-2b3402060101"):
         return p.parent.root.metadict.lookup_typedef(ref)
     else:
-        return p.parent.root.resovle_weakref(p.ref_index, p.ref_pid, ref)
+        return p.parent.root.resovle_weakref(p.ref_index, p.key_pid, ref)
 
 class WeakRefProperty(ObjectRefProperty):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(WeakRefProperty, self).__init__(parent, pid, format, version)
         self.ref_index = None
-        self.ref_pid = None
+        self.key_pid = None
         self.id_size = None
         self.ref = None
 
     def copy(self, parent):
         p = super(WeakRefProperty, self).copy(parent)
         p.ref_index = self.ref_index
-        p.ref_pid = self.pid
+        p.key_pid = self.pid
         p.id_size = self.id_size
         p.ref = self.id_size
         return p
@@ -706,7 +705,7 @@ class WeakRefProperty(ObjectRefProperty):
     def decode(self):
         f = BytesIO(self.data)
         self.ref_index = read_u16le(f)
-        self.ref_pid = read_u16le(f)
+        self.key_pid = read_u16le(f)
         self.id_size = read_u8(f)
         assert self.id_size in (16, 32)
         if self.id_size == 16:
@@ -721,7 +720,7 @@ class WeakRefProperty(ObjectRefProperty):
         assert id_size in (16, 32)
 
         write_u16le(f, self.ref_index)
-        write_u16le(f, self.ref_pid)
+        write_u16le(f, self.key_pid)
         write_u8(f, id_size)
         f.write(ref)
         return f.getvalue()
@@ -750,8 +749,8 @@ class WeakRefProperty(ObjectRefProperty):
         ref_classdef = self.ref_classdef
         assert ref_classdef.isinstance(value.classdef)
 
-        if self.ref_pid is None:
-            self.ref_pid = ref_classdef.unique_key_pid
+        if self.key_pid is None:
+            self.key_pid = ref_classdef.unique_key_pid
         if self.id_size is None:
             self.id_size = ref_classdef.unique_key_size
         if self.ref_index is None:
@@ -767,7 +766,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         self.references = []
         self.ref = None
         self.ref_index = None
-        self.ref_pid = None
+        self.key_pid = None
         self.id_size = None
 
     def copy(self, parent):
@@ -775,7 +774,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         p.references = list(self.references)
         p.ref = self.ref
         p.ref_index = self.ref_index
-        p.ref_pid = self.ref_pid
+        p.key_pid = self.key_pid
         p.id_size = self.id_size
         return p
 
@@ -796,7 +795,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
 
         count = read_u32le(f)
         self.ref_index = read_u16le(f)
-        self.ref_pid = read_u16le(f)
+        self.key_pid = read_u16le(f)
         self.id_size = read_u8(f)
         assert self.id_size in (16, 32)
 
@@ -817,7 +816,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         count = len(self.references)
         write_u32le(f, count)
         write_u16le(f, self.ref_index)
-        write_u16le(f, self.ref_pid)
+        write_u16le(f, self.key_pid)
         write_u8(f, self.id_size)
 
         for item in self.references:
@@ -859,8 +858,8 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
 
         if self.ref_index is None:
             self.ref_index = self.parent.root.weakref_index(self.pid_path)
-        if self.ref_pid is None:
-            self.ref_pid = ref_classdef.unique_key_pid
+        if self.key_pid is None:
+            self.key_pid = ref_classdef.unique_key_pid
         if self.id_size is None:
             self.id_size = ref_classdef.unique_key_size
 
