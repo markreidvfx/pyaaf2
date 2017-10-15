@@ -281,7 +281,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         super(StrongRefVectorProperty, self).__init__(parent, pid, format, version)
         self.references = []
         self.objects = {}
-        self._ref = None
+        self._index_name = None
 
         # self.ref = None
         self.next_free_key = 0
@@ -292,9 +292,10 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         p.references = list(self.references)
 
         p.objects = {}
-        p.ref = self.ref
+        p.index_name = self.index_name
         p.next_free_key = self.next_free_key
         p.last_free_key = self.last_free_key
+        p.data = self.data
 
         for i, value in enumerate(self):
             ref = self.get_ref_name(self.references[i])
@@ -307,27 +308,27 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         return p
 
     @property
-    def ref(self):
-        if self._ref:
-            return self._ref
+    def index_name(self):
+        if self._index_name:
+            return self._index_name
 
         propdef = self.propertydef
         name = mangle_name(propdef.property_name, self.pid, 32-10)
         self.data = self.encode(name)
-        self._ref = name
+        self._index_name = name
         return name
 
-    @ref.setter
-    def ref(self, value):
-        self._ref = value
+    @index_name.setter
+    def index_name(self, value):
+        self._index_name = value
 
     def decode(self):
         self.references = []
         self.objects = {}
-        self.ref = self.data[:-2].decode("utf-16le")
+        self.index_name = self.data[:-2].decode("utf-16le")
 
     def read_index(self):
-        index_name = self.ref + " index"
+        index_name = self.index_name + " index"
         index_dir = self.parent.dir.get(index_name)
         if not index_dir:
             raise AAFPropertyError("cannot find index stream: %s" % index_name)
@@ -345,7 +346,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             self.references.append(local_key)
 
     def write_index(self):
-        s = self.parent.dir.touch(self.ref + " index").open(mode='w')
+        s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
         f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
@@ -362,7 +363,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         return self.typedef.element_typedef.ref_classdef
 
     def get_ref_name(self, index):
-        return "%s{%x}" % (self.ref, self.references[index])
+        return "%s{%x}" % (self.index_name, self.references[index])
 
     def get(self, index, default=None):
         if index >= len(self.references):
@@ -418,8 +419,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
 
     def extend(self, value):
-
-        ref = self.ref # sets self.data
+        index_name = self.index_name # sets self.data
         ref_classdef = self.ref_classdef
 
         for obj in value:
@@ -465,7 +465,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
 
     def __repr__(self):
-        return "<%s %s to %s %d items>" % (self.name, self.__class__.__name__, str(self.ref), len(self.references))
+        return "<%s %s to %s %d items>" % (self.name, self.__class__.__name__, str(self.index_name), len(self.references))
 
 
 class StrongRefSetProperty(StrongRefArrayProperty):
@@ -475,7 +475,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         self.references = {}
         self.objects = {}
 
-        self.ref = None
+        self.index_name = None
 
         self.next_free_key = 0
         self.last_free_key = 0xFFFFFFFF
@@ -491,7 +491,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         p.next_free_key = self.next_free_key
         p.last_free_key = self.last_free_key
         p.key_size = self.key_size
-        p.ref = self.ref
+        p.index_name = self.index_name
         p.key_pid = self.key_pid
 
         for key, value in self.items():
@@ -504,13 +504,12 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         return p
 
     def decode(self):
-        self.ref = None
-        self.ref = self.data[:-2].decode("utf-16le")
+        self.index_name = self.data[:-2].decode("utf-16le")
         self.objects = {}
         self.references = {}
 
     def read_index(self):
-        index_name = self.ref + " index"
+        index_name = self.index_name + " index"
         index_dir = self.parent.dir.get(index_name)
         if not index_dir:
             raise AAFPropertyError("cannot find index stream: %s" % index_name)
@@ -543,7 +542,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
 
     def write_index(self):
-        s = self.parent.dir.touch(self.ref + " index").open(mode='w')
+        s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
         f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
@@ -561,7 +560,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         s.write(f.getvalue())
 
     def get_ref_name(self, key):
-        return "%s{%x}" % (self.ref, self.references[key])
+        return "%s{%x}" % (self.index_name, self.references[key])
 
     def read_object(self, key):
 
@@ -616,10 +615,10 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         if self.key_size is None:
             self.key_size = classdef.unique_key_size
 
-        if self.ref is None:
+        if self.index_name is None:
             propdef = self.propertydef
-            self.ref = mangle_name(propdef.property_name, self.pid, 32-10)
-            self.data = self.encode(self.ref)
+            self.index_name = mangle_name(propdef.property_name, self.pid, 32-10)
+            self.data = self.encode(self.index_name)
 
         for item in values:
             key = item.unique_key
@@ -672,7 +671,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
 
     def __repr__(self):
-        return "<%s to %s %d items>" % (self.__class__.__name__, str(self.ref), len(self.references))
+        return "<%s to %s %d items>" % (self.__class__.__name__, str(self.index_name), len(self.references))
 
 def resolve_weakref(p, ref):
     ref_class_id = p.ref_classdef.uuid
@@ -772,7 +771,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
     def copy(self, parent):
         p = super(WeakRefArrayProperty, self).copy(parent)
         p.references = list(self.references)
-        p.ref = self.ref
+        p.index_name = self.index_name
         p.weakref_index = self.weakref_index
         p.key_pid = self.key_pid
         p.key_size = self.key_size
@@ -781,10 +780,10 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
     def decode(self):
         self.references = []
         #null terminated
-        self.ref = self.data[:-2].decode("utf-16le")
+        self.index_name = self.data[:-2].decode("utf-16le")
 
     def read_index(self):
-        index_name = self.ref + " index"
+        index_name = self.index_name + " index"
         index_dir = self.parent.dir.get(index_name)
         if not index_dir:
             raise AAFPropertyError("cannot find index stream: %s" % index_name)
@@ -807,10 +806,10 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
             self.references.append(key)
 
     def encode(self):
-        return self.ref.encode("utf-16le") + b"\x00" + b"\x00"
+        return self.index_name.encode("utf-16le") + b"\x00" + b"\x00"
 
     def write_index(self):
-        s = self.parent.dir.touch(self.ref + " index").open(mode='w')
+        s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
         f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
@@ -850,9 +849,9 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
             if not ref_classdef.isinstance(item.classdef):
                 raise TypeError("Invalid Value")
 
-        if self.ref is None:
+        if self.index_name is None:
             propdef = self.propertydef
-            self.ref = mangle_name(propdef.property_name, self.pid, 32)
+            self.index_name = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode()
 
         if self.weakref_index is None:
