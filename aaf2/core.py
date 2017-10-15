@@ -191,7 +191,7 @@ class AAFObject(object):
 
             elif isinstance(p, properties.StrongRefSetProperty):
 
-                for key, obj in  p.value.items():
+                for obj in p.value:
                     refs.append(obj)
 
             elif isinstance(p, properties.StreamProperty):
