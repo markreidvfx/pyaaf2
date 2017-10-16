@@ -298,7 +298,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         p.data = self.data
 
         for i, value in enumerate(self):
-            ref = self.get_ref_name(self.references[i])
+            ref = self.index_ref_name(self.references[i])
             dir_entry = parent.dir.get(ref)
             if dir_entry is None:
                 dir_entry = parent.dir.makedir(ref)
@@ -362,7 +362,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def ref_classdef(self):
         return self.typedef.element_typedef.ref_classdef
 
-    def get_ref_name(self, index):
+    def index_ref_name(self, index):
         return "%s{%x}" % (self.index_name, self.references[index])
 
     def get(self, index, default=None):
@@ -375,7 +375,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         item = self.objects.get(index, None)
         if item:
             return item
-        ref = self.get_ref_name(index)
+        ref = self.index_ref_name(index)
         dir_entry = self.parent.dir.get(ref)
         item = self.parent.root.read_object(dir_entry)
 
@@ -456,7 +456,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             return
 
         for i, obj in enumerate(self):
-            ref = self.get_ref_name(i)
+            ref = self.index_ref_name(i)
 
             dir_entry = self.parent.dir.get(ref)
             if dir_entry is None:
@@ -495,7 +495,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         p.key_pid = self.key_pid
 
         for key, value in self.items():
-            ref = self.get_ref_name(key)
+            ref = self.index_ref_name(key)
             dir_entry = parent.dir.get(ref)
             if dir_entry is None:
                 dir_entry = parent.dir.makedir(ref)
@@ -559,7 +559,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
         s.write(f.getvalue())
 
-    def get_ref_name(self, key):
+    def index_ref_name(self, key):
         return "%s{%x}" % (self.index_name, self.references[key])
 
     def read_object(self, key):
@@ -568,7 +568,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         if obj:
             return obj
 
-        ref = self.get_ref_name(key)
+        ref = self.index_ref_name(key)
         dir_entry = self.parent.dir.get(ref)
         obj = self.parent.root.read_object(dir_entry)
         self.objects[key] = obj
@@ -663,7 +663,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
         for key in self.references:
             obj = self.objects[key]
-            ref = self.get_ref_name(key)
+            ref = self.index_ref_name(key)
             dir_entry = self.parent.dir.get(ref)
             if dir_entry is None:
                 dir_entry = self.parent.dir.makedir(ref)
