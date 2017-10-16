@@ -229,6 +229,10 @@ class Stream(object):
         pass
 
 class DirEntry(object):
+    __slots__ = ('name', 'type', 'color', 'left_id', 'right_id', 'child_id',
+                 'class_id', 'flags', 'create_time', 'modify_time', 'sector_id',
+                 'byte_size', 'storage', 'dir_id', 'parent', '_children_cache',)
+
     def __init__(self, storage, dir_id):
         self.name = None
         self.type = None
