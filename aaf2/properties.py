@@ -662,7 +662,9 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             return
 
         for key in self.references:
-            obj = self.objects[key]
+            obj = self.objects.get(key, None)
+            if not obj:
+                continue
             ref = self.index_ref_name(key)
             dir_entry = self.parent.dir.get(ref)
             if dir_entry is None:
