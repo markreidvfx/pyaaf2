@@ -38,6 +38,8 @@ FATSECT    = 0xFFFFFFFD
 ENDOFCHAIN = 0xFFFFFFFE
 FREESECT   = 0xFFFFFFFF
 
+RANGELOCKSECT = (0x7FFFFF00 // 4096) - 1
+
 MAXREGSECT = 0xFFFFFFFA
 MAXREGSID  = 0xFFFFFFFA
 MAX_DIR_ENTRIES = 0x00FFFFFF
@@ -826,6 +828,11 @@ class CompoundFileBinary(object):
                 self.fat_freelist.append(i)
 
         logging.debug("read %d fat sectors ", sector_count)
+
+        if self.sector_size == 4096 and len(self.fat) > RANGELOCKSECT:
+            if self.fat[RANGELOCKSECT] != ENDOFCHAIN:
+                logging.warn("range lock sector has data")
+
         # logging.debug("fat: %s" % str(pretty_sectors(self.fat)))
 
     def write_fat(self):
@@ -927,6 +934,10 @@ class CompoundFileBinary(object):
             # print("using fat free list")
             i = self.fat_freelist.pop(0)
             assert self.fat[i] == FREESECT
+
+            # Handle Range Lock Sector
+            if self.sector_size == 4096 and i == RANGELOCKSECT:
+                self.fat[i] = ENDOFCHAIN
             return i
 
         # if we got here need to add aditional fat
@@ -974,10 +985,6 @@ class CompoundFileBinary(object):
                     difat_index = i
                     break
 
-        # TODO handle Range Lock Sector
-        # The range lock sector is the sector
-        # that covers file offsets 0x7FFFFF00-0x7FFFFFFF in the file
-
         new_fat_sect = len(self.fat)
         logging.debug("adding new fat to sid: %d" % new_fat_sect)
 
@@ -988,6 +995,15 @@ class CompoundFileBinary(object):
         for i in range(self.sector_size // 4):
             self.fat.append(FREESECT)
             index = idx_start + i
+
+            # Handle Range Lock Sector
+
+            # The range lock sector is the sector
+            # that covers file offsets 0x7FFFFF00-0x7FFFFFFF in the file
+            if self.sector_size == 4096 and index == RANGELOCKSECT:
+                self.fat[index] = ENDOFCHAIN
+                self.has_range_lock = True
+                continue
 
             if index in (new_fat_sect, new_difat_sect):
                 continue
