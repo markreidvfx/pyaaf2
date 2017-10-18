@@ -193,7 +193,7 @@ class ImportTests(unittest.TestCase):
             tape_id = tape_mob.id
             f.content.mobs.append(tape_mob)
 
-            for i, profile_name in enumerate(['dnxhr_lb',], 1):
+            for i, profile_name in enumerate(['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq'], 1):
                 profile = video.dnx_profiles.get(profile_name)
                 sample = common.generate_dnxhd(profile_name, "%s-mulit-import.dnxhd" % profile_name, frames=frames, size=uhd2160, frame_rate=frame_rate)
 
