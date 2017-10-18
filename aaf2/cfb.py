@@ -60,8 +60,11 @@ class Stream(object):
         self.mode = mode
         self.buf = ""
         self.pos = 0
+        self.fat_chain = array(str('I'))
         if not mode in ('r', 'w'):
             raise ValueError("invalid mode: %s" % mode)
+        if self.dir.sector_id is not None:
+            self.fat_chain.extend(self.storage.get_fat_chain(self.dir.sector_id, self.is_mini_stream()))
 
     def tell(self):
         return self.pos
@@ -105,28 +108,22 @@ class Stream(object):
 
     def abs_pos(self):
         minifat = self.is_mini_stream()
-
-        start_sid = self.dir.sector_id
-
         sector_size = self.storage.sector_size
         mini_sector_size = self.storage.mini_stream_sector_size
 
         if minifat:
-            minifat_chain = self.storage.get_fat_chain(start_sid, True)
-            mini_fat_index = self.pos // mini_sector_size
-            sector_offset =  self.pos % mini_sector_size
+            minifat_chain = self.fat_chain
+            mini_fat_index, sector_offset = divmod(self.pos, mini_sector_size)
             mini_stream_sid = minifat_chain[mini_fat_index]
             mini_steam_pos = (mini_stream_sid * mini_sector_size) + sector_offset
 
-            index  = mini_steam_pos // sector_size
-            offset = mini_steam_pos % sector_size
+            index, offset  = divmod(mini_steam_pos, sector_size)
             sid = self.storage.mini_stream_chain[index]
             seek_pos = ((sid + 1) *  sector_size) + offset
             return seek_pos
         else:
-            fat_chain = self.storage.get_fat_chain(start_sid, False)
-            index  = self.pos // sector_size
-            offset = self.pos % sector_size
+            fat_chain = self.fat_chain
+            index, offset  = divmod(self.pos, sector_size)
 
             sid = fat_chain[index]
             seek_pos = ((sid + 1) *  sector_size) + offset
@@ -199,15 +196,18 @@ class Stream(object):
             self.storage.free_fat_chain(self.dir.sector_id, True)
             self.dir.sector_id = None
             minifat = False
+            self.fat_chain = array(str('I'))
 
         self.dir.byte_size = byte_size
         sector_count = int(math.ceil(byte_size / float(self.sector_size())))
 
-        current_sects= len(self.storage.get_fat_chain(self.dir.sector_id, minifat))
+        current_sects= len(self.fat_chain)
         # logging.debug("%d bytes requires %d sectors at %d has %d" % (byte_size, sector_count, self.sector_size(), current_sects))
 
-        while len(self.storage.get_fat_chain(self.dir.sector_id, minifat)) < sector_count:
-            sid = self.storage.fat_chain_append(self.dir.sector_id, minifat)
+        while len(self.fat_chain) < sector_count:
+            last_sector_id = self.fat_chain[-1] if self.fat_chain else None
+            sid = self.storage.fat_chain_append(last_sector_id, minifat)
+            self.fat_chain.append(sid)
             if self.dir.sector_id is None:
                 self.dir.sector_id = sid
 
@@ -938,6 +938,8 @@ class CompoundFileBinary(object):
             # Handle Range Lock Sector
             if self.sector_size == 4096 and i == RANGELOCKSECT:
                 self.fat[i] = ENDOFCHAIN
+                logging.warning("range lock sector in fat freelist, marking ENDOFCHAIN")
+                return self.next_free_sect()
             return i
 
         # if we got here need to add aditional fat
@@ -1001,8 +1003,8 @@ class CompoundFileBinary(object):
             # The range lock sector is the sector
             # that covers file offsets 0x7FFFFF00-0x7FFFFFFF in the file
             if self.sector_size == 4096 and index == RANGELOCKSECT:
+                logging.debug("adding range lock")
                 self.fat[index] = ENDOFCHAIN
-                self.has_range_lock = True
                 continue
 
             if index in (new_fat_sect, new_difat_sect):

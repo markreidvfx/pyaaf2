@@ -38,7 +38,7 @@ def sample_dir():
 
     return s
 
-def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_rate=None):
+def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_rate=None, overwrite=True):
 
     profile = video.dnx_profiles.get(profile_name)
     bitrate = profile.get('bitrate')
@@ -49,6 +49,10 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
     dnxhd_profile = profile.get("video_profile", None)
 
     outfile = os.path.join(sample_dir(), "%s.dnxhd" % name )
+
+    if not overwrite and os.path.exists(outfile):
+        return outfile
+
     cmd = [FFMPEG_EXEC, '-y', '-f', 'lavfi', '-i', 'testsrc=size=%dx%d:rate=%s' % (size[0],size[1], frame_rate), '-frames:v', str(frames)]
     cmd.extend(['-vcodec', 'dnxhd','-pix_fmt', pix_fmt])
     if bitrate:
