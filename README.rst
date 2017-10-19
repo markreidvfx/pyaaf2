@@ -3,7 +3,7 @@
 PyAAF 2.0
 =========
 
-A rewrite of [pyaaf](https://github.com/markreidvfx/pyaaf) in pure python.
+A rewrite of `pyaaf <https://github.com/markreidvfx/pyaaf>`_ in pure python.
 Still a work in progress, but getting pretty close to being feature complete
 with pyaaf.
 
