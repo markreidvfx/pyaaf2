@@ -2,7 +2,7 @@ pyaaf2
 ======
 
 ![Supported Versions](https://img.shields.io/badge/python-2.7%2C%203.5-blue.svg)
-[![Build Status](https://travis-ci.org/markreidvfx/pyaaf2.svg?branch=master)](https://travis-ci.org/markreidvfx/pyaaf2)
+[![Build Status](https://travis-ci.org/markreidvfx/pyaaf2.svg?branch=master)](https://travis-ci.org/markreidvfx/pyaaf2) [![Build status](https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true)](https://ci.appveyor.com/project/markreidvfx/pyaaf2)
 
 A rewrite of [pyaaf](https://github.com/markreidvfx/pyaaf) in pure python.
 Still a work in progress, but getting pretty close to being feature complete
