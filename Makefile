@@ -9,6 +9,9 @@ python-version:
 clean:
 	rm */*.pyc */*/*.pyc
 
+doc:
+	@make -C docs html
+
 coverage: python-version
 ifndef COVERAGE_EXEC
 	$(error "coverage command missing: https://coverage.readthedocs.io/en/coverage-4.2/install.html")
