@@ -386,6 +386,9 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         for i in range(len(self.references)):
             yield self.get(i)
 
+    def __len__(self):
+        return len(self.references)
+
     def __getitem__(self, index):
         item = self.get(index, None)
         if item is None:
@@ -461,7 +464,8 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             dir_entry = self.parent.dir.get(ref)
             if dir_entry is None:
                 dir_entry = self.parent.dir.makedir(ref)
-            obj.attach(dir_entry)
+            if obj.dir != dir_entry:
+                obj.attach(dir_entry)
 
 
     def __repr__(self):
@@ -590,6 +594,9 @@ class StrongRefSetProperty(StrongRefArrayProperty):
     def __iter__(self):
         return self.values()
 
+    def __len__(self):
+        return len(self.references)
+
     def get(self, key, default=None):
         if key not in self:
             return default
@@ -639,6 +646,19 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         self.objects = {}
         self.next_free_key = 0
 
+    def pop(self, key):
+        obj = self.get(key)
+        if obj is None:
+            raise KeyError(key)
+
+        self.references.pop(key)
+        self.objects.pop(key)
+
+        obj.detach()
+
+        return obj
+
+
     @property
     def value(self):
         return list(self.values())
@@ -669,7 +689,8 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             dir_entry = self.parent.dir.get(ref)
             if dir_entry is None:
                 dir_entry = self.parent.dir.makedir(ref)
-            obj.attach(dir_entry)
+            if obj.dir != dir_entry:
+                obj.attach(dir_entry)
 
 
     def __repr__(self):

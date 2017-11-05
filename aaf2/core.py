@@ -17,7 +17,7 @@ from .utils import (
     write_u32le,
     )
 from uuid import UUID
-from .exceptions import AAFPropertyError
+from .exceptions import AAFPropertyError, AAFAttachError
 from . import properties
 from .properties import property_formats
 
@@ -57,7 +57,6 @@ class AAFObject(object):
         raise AAFPropertyError("Object has no unique key")
 
     def read_properties(self):
-
         stream = self.dir.get('properties')
         if stream is None:
             return
@@ -164,13 +163,16 @@ class AAFObject(object):
             if item.dir:
                 # remove from path_cache
                 self.root.path_cache.pop(item.dir.path(), None)
+                # remove DirEntry from storage
+                self.root.cfb.rmtree(item.dir)
+
                 item.dir = None
         self.dir = None
 
 
     def attach(self, dir_entry):
         if self.dir:
-            self.detach()
+            raise AAFAttachError("object already attached to %s" % (self.dir.path()))
 
         self.dir = dir_entry
         self.dir.class_id = self.class_id

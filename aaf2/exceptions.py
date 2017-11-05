@@ -8,6 +8,9 @@ from __future__ import (
 class AAFError(Exception):
     pass
 
+class AAFAttachError(AAFError):
+    pass
+
 class AAFPropertyError(AAFError):
     pass
 
