@@ -283,6 +283,9 @@ class DirEntry(object):
         return self > other
 
     def __eq__(self, other):
+        if other is None:
+            return False
+
         if isinstance(other, DirEntry):
             other = other.name
         if len(self.name) == len(other):
