@@ -258,7 +258,7 @@ class AAFFile(object):
 
             metadict_pid = 0x01
             metadict = self.metadict
-            metadict.detach()
+            metadict.detach(False)
             self.root.property_entries[metadict_pid].value = metadict
             self.path_cache['/MetaDictionary-1'] = self.metadict
 

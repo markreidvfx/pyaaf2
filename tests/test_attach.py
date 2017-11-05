@@ -35,14 +35,32 @@ class ImportTests(unittest.TestCase):
 
             slot = mob.create_timeline_slot(25)
             slot.segment = f.create.Sequence()
-            slot.segment['Components'].value = []
-
             path = slot.dir.path()
+
+            comp_paths = []
+            for i in range(10):
+                filler = f.create.Filler()
+                filler['DataDefinition'].value = f.dictionary.lookup_datadef("picture")
+                filler['Length'].value = i
+                slot.segment['Components'].append(filler)
+                comp_paths.append(filler.dir.path())
+
+            assert len(slot.segment['Components']) == 10
+
+            last = slot.segment['Components'].pop(-1)
+            assert len(slot.segment['Components']) == 9
+            first = slot.segment['Components'].pop(0)
+            assert len(slot.segment['Components']) == 8
 
             mob = f.content.mobs.pop(mob_id)
 
             assert slot.dir == None
             assert f.cfb.exists(path) == False
+            # all componets should be dettached too
+            for p in comp_paths:
+                assert f.cfb.exists(p) == False
+
+            assert len(slot.segment['Components']) == 8
 
             f.content.mobs.append(mob)
 

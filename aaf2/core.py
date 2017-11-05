@@ -158,21 +158,22 @@ class AAFObject(object):
                 p.write_index()
 
 
-    def detach(self):
+    def detach(self, delete=True):
         for item, streams in self.walk_references(topdown=True):
             if item.dir:
                 # remove from path_cache
                 self.root.path_cache.pop(item.dir.path(), None)
-                # remove DirEntry from storage
-                self.root.cfb.rmtree(item.dir)
+                # NOTE: do we need to delete directory entry?
+                # new objects will overwrite whats there anyway
+                # and nothing will point to the old object
+                if delete:
+                    self.root.cfb.rmtree(item.dir)
 
                 item.dir = None
-        self.dir = None
-
 
     def attach(self, dir_entry):
         if self.dir:
-            raise AAFAttachError("object already attached to %s" % (self.dir.path()))
+            raise AAFAttachError("cannot attached obj to %s already attached to %s" % (dir_entry.path(), self.dir.path()))
 
         self.dir = dir_entry
         self.dir.class_id = self.class_id

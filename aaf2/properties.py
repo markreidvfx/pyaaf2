@@ -265,8 +265,8 @@ class StrongRefProperty(ObjectRefProperty):
         dir_entry = self.parent.dir.get(self.ref)
         if dir_entry is None:
             dir_entry = self.parent.dir.makedir(self.ref)
-
-        self.object.attach(dir_entry)
+        if self.object.dir != dir_entry:
+            self.object.attach(dir_entry)
 
 
 # abtract for referenece arrays
@@ -366,11 +366,12 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         return "%s{%x}" % (self.index_name, self.references[index])
 
     def get(self, index, default=None):
+
         if index >= len(self.references):
             return default
 
         if index < 0:
-            index = min(0, len(self.references) + index)
+            index = max(0, len(self.references) + index)
 
         item = self.objects.get(index, None)
         if item:
@@ -402,6 +403,31 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         self.next_free_key = 0
         self.objects = {}
         self.references = []
+
+    def pop(self, index):
+        obj = self.get(index, None)
+        if obj is None:
+            raise IndexError(index)
+        if index < 0:
+            index = max(0, len(self) + index)
+
+        self.references.pop(index)
+
+        # decrement all cached object with > index -1
+        objects = {}
+        for key, value in self.objects.items():
+            if key == index:
+                item = value
+            elif key > index:
+                objects[key-1] = value
+            else:
+                objects[key] = value
+
+        self.objects = objects
+        assert obj is item
+
+        obj.detach()
+        return obj
 
     def insert(self, index, value):
         assert self.ref_classdef.isinstance(value.classdef)
