@@ -249,6 +249,10 @@ class StrongRefProperty(ObjectRefProperty):
             self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode(self.ref)
 
+        # before asigning new object dettach old
+        if self.object:
+            self.object.detach()
+
         self.object = value
         if not self.pid in self.parent.property_entries:
             self.parent.property_entries[self.pid] = self
