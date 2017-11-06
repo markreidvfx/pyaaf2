@@ -696,6 +696,13 @@ class TypeDefExtEnum(TypeDef):
         v = UUID(bytes_le=data)
         return self.elements[v]
 
+    def encode(self, data):
+        for key, value in self.elements.items():
+            if value.lower() == data.lower():
+                return key.bytes_le
+
+        raise ValueError("invalid ext enum value: %s" % str(data))
+
 @register_class
 class TypeDefIndirect(TypeDef):
     class_id = UUID("0d010101-0221-0000-060e-2b3402060101")
