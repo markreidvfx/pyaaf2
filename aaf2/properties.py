@@ -19,7 +19,7 @@ from .utils import (
     mangle_name,
     )
 from .mobid import MobID
-from .exceptions import AAFPropertyError
+from .exceptions import AAFPropertyError, AAFAttachError
 
 SF_DATA                                   = 0x82
 SF_DATA_STREAM                            = 0x42
@@ -249,7 +249,7 @@ class StrongRefProperty(ObjectRefProperty):
             self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode(self.ref)
 
-        # before asigning new object dettach old
+        # before asigning new object detach old
         if self.object:
             self.object.detach()
 
@@ -400,6 +400,23 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             raise IndexError(index)
         return item
 
+    def __setitem__(self, index, value):
+        if index < 0:
+            index = max(0, len(self) + index)
+
+        if index >= len(self):
+            raise IndexError("StrongRefVectorProperty assignment index out of range")
+
+        if value.dir:
+            raise AAFAttachError("object already attached")
+
+        obj = self.get(index, None)
+        if obj:
+            obj.detach()
+
+        self.objects[index] = value
+        self.attach()
+
     def clear(self):
         for obj in self:
             obj.detach()
@@ -458,6 +475,8 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
         for obj in value:
             assert ref_classdef.isinstance(obj.classdef)
+            if obj.dir:
+                raise AAFAttachError("object already attached")
 
         for obj in value:
             i = len(self.references)
@@ -647,6 +666,8 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         for item in values:
             if not classdef.isinstance(item.classdef):
                 raise TypeError("Invalid Value")
+            if item.dir:
+                raise AAFAttachError("object already attached")
 
         if self.key_pid is None:
             self.key_pid = classdef.unique_key_pid
@@ -661,6 +682,10 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         for item in values:
             key = item.unique_key
             self.references[key] = self.next_free_key
+            current = self.objects.get(key, None)
+            if current:
+                current.detach()
+
             self.objects[key] = item
             self.next_free_key += 1
 

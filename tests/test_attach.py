@@ -21,6 +21,7 @@ class ImportTests(unittest.TestCase):
             mob = f.create.MasterMob()
             mob_id = mob.id
             f.content.mobs.append(mob)
+
             with self.assertRaises(exceptions.AAFAttachError):
                 f.content.mobs.append(mob)
 
@@ -49,7 +50,14 @@ class ImportTests(unittest.TestCase):
             first = slot.segment['Components'].pop(0)
             assert len(slot.segment['Components']) == 8
 
+            for filler in slot.segment['Components']:
+                assert filler.dir
+
+            with self.assertRaises(exceptions.AAFAttachError):
+                slot.segment['Components'][0] = slot.segment['Components'][1]
+
             mob = f.content.mobs.pop(mob_id)
+
 
             for filler in slot.segment['Components']:
                 assert filler.dir is None
@@ -58,6 +66,8 @@ class ImportTests(unittest.TestCase):
             assert len(slot.segment['Components']) == 8
 
             f.content.mobs.append(mob)
+
+            slot.segment['Components'][0] = first
 
             assert slot.dir
 
