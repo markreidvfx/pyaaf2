@@ -1,6 +1,6 @@
 ..
 
-Welcome to PyAAF's documentation!
+Welcome to PyAAF 2.0 Documentation!
 =================================
 
 A python module for the reading and writing Advanced Authoring Format (AAF) files.
@@ -41,7 +41,7 @@ Now lets generate some audio media::
 
     ffmpeg -f lavfi -i aevalsrc="sin(420*2*PI*t):s=48000:d=1.0" -acodec pcm_s16le sample.wav
 
-finally import the footage::
+Finally import the footage::
 
     import aaf2
 
