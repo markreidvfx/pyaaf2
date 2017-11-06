@@ -23,19 +23,16 @@ class ImportTests(unittest.TestCase):
             f.content.mobs.append(mob)
             with self.assertRaises(exceptions.AAFAttachError):
                 f.content.mobs.append(mob)
-            path = mob.dir.path()
 
             # dettach
             mob = f.content.mobs.pop(mob_id)
 
             assert len(f.content.mobs) == 0
-            assert f.cfb.exists(path) == False
 
             f.content.mobs.append(mob)
 
             slot = mob.create_timeline_slot(25)
             slot.segment = f.create.Sequence()
-            path = slot.dir.path()
 
             comp_paths = []
             for i in range(10):
@@ -54,12 +51,10 @@ class ImportTests(unittest.TestCase):
 
             mob = f.content.mobs.pop(mob_id)
 
-            assert slot.dir == None
-            assert f.cfb.exists(path) == False
-            # all componets should be dettached too
-            for p in comp_paths:
-                assert f.cfb.exists(p) == False
+            for filler in slot.segment['Components']:
+                assert filler.dir is None
 
+            assert slot.dir == None
             assert len(slot.segment['Components']) == 8
 
             f.content.mobs.append(mob)

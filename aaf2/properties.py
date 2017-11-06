@@ -445,6 +445,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
 
         self.next_free_key += 1
         self.objects = objects
+        self.attach()
 
 
     def extend(self, value):

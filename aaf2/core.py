@@ -158,7 +158,7 @@ class AAFObject(object):
                 p.write_index()
 
 
-    def detach(self, delete=True):
+    def detach(self, delete=False):
         for item, streams in self.walk_references(topdown=True):
             if item.dir:
                 # remove from path_cache
