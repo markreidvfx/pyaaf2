@@ -221,7 +221,8 @@ class AAFObject(object):
         # new_obj = self.__class__(self.root)
         new_obj = self.__class__.__new__(self.__class__)
         new_obj.root = self.root
-        new_obj.class_id = self.class_id
+        if type(new_obj) is AAFObject:
+            new_obj.class_id = self.class_id
         new_obj.dir = new_dir
         new_obj.dir.class_id = self.class_id
 

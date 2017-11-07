@@ -53,7 +53,8 @@ class AAFFactory(object):
         obj.root = self.root
         obj.__init__(*args, **kwargs)
 
-        if isinstance(obj, AAFObject):
+        # if a helper class is not found set class_id
+        if type(obj) is AAFObject:
             obj.class_id = classdef.uuid
 
         return obj
