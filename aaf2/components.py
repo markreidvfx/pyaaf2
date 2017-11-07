@@ -79,7 +79,7 @@ class SourceReference(Segment):
         mod_id = self.mob_id
         if mod_id is None or mod_id.int == 0:
             return None
-        return self.root.content.lookup_mob(mod_id)
+        return self.root.content.mobs.get(mod_id, None)
 
     @mob.setter
     def mob(self, value):
