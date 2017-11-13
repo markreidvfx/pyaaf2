@@ -20,7 +20,7 @@ class ContentStorage(core.AAFObject):
         return self['Mobs']
 
     def toplevel(self):
-        for mob in self.mobs:
+        for mob in self.compositionmobs():
             if mob.usage == 'Usage_TopLevel':
                 yield mob
 
