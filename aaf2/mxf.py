@@ -22,6 +22,14 @@ class MXFRef(UUID):
 class MXFRefArray(list):
     pass
 
+frame_layouts = {
+  0 : "FullFrame" ,
+  1 : "SeparateFields" ,
+  2 : "OneField" ,
+  3 : "MixedFields" ,
+  4 : "SegmentedFrame"
+}
+
 def read_uuid_be(f):
     data = f.read(16)
     if data:
@@ -109,6 +117,7 @@ class MXFObject(object):
     def __init__(self):
         self.instance_id = None
         self.data = {}
+        self.root = None
 
     def read_tag(self, tag, data):
         if tag == 0x3c0a:
@@ -122,6 +131,16 @@ class MXFObject(object):
                 self.data['FrameSampleSize'] = read_u32be(BytesIO(data))
             elif uid == UUID("a0240060-94eb-75cb-ce2a-ca4d51ab11d3"):
                 self.data['ResolutionID'] = read_u32be(BytesIO(data))
+
+    def resolve_ref(self, key):
+        ref = self.data.get(key, None)
+        if ref:
+            return self.root.resolve(ref)
+
+    def iter_strong_refs(self, key):
+        for ref in self.data.get(key, []):
+            yield self.root.resolve(ref)
+
 
     def __repr__(self):
         return str(self.data)
@@ -158,8 +177,35 @@ class MXFPackage(MXFObject):
             self.data['Name'] = decode_utf16be(data)
         elif tag == 0x4701:
             self.data['Descriptor'] = decode_strongref(data)
+    @property
+    def id(self):
+        return self.data.get('MobID', None)
+
+    def link(self, f):
+        if isinstance(self, MXFMaterialPackage):
+            mob = f.create.MasterMob()
+        else:
+            mob = f.create.SourceMob()
+
+        mob.id = self.id
+        f.content.mobs.append(mob)
+
+        name = self.resolve_ref("Name")
+        if name:
+            mob.name = name
+
+        for track in self.iter_strong_refs("Slots"):
+            timeline = track.link(f)
+            mob.slots.append(timeline)
+
+        d = self.resolve_ref('Descriptor')
+        if d:
+            mob.descriptor = d.link(f)
+
+        return mob
 
 class MXFMaterialPackage(MXFPackage):
+
     pass
 
 class MXFSourcePackage(MXFPackage):
@@ -183,6 +229,19 @@ class MXFTrack(MXFObject):
         elif tag == 0x4802:
             self.data['Name'] = decode_utf16be(data)
 
+    def link(self, f):
+        slot_id = self.data.get('SlotID', None)
+        edit_rate = self.data.get('EditRate', None)
+
+        if slot_id is not None and edit_rate is not None:
+            timeline = f.create.TimelineMobSlot(slot_id, edit_rate=edit_rate)
+            timeline.name= self.data.get("Name", None)
+
+            segment = self.resolve_ref('Segment')
+            if segment:
+                timeline.segment = segment.link(f)
+                return timeline
+
 class MXFComponent(MXFObject):
     def read_tag(self, tag, data):
         super(MXFComponent, self).read_tag(tag, data)
@@ -192,9 +251,9 @@ class MXFComponent(MXFObject):
         elif tag == 0x1201:
             self.data['StartTime'] = read_u64be(BytesIO(data))
         elif tag == 0x1102:
-            self.data['SlotID'] = read_u32be(BytesIO(data))
+            self.data['SourceMobSlotID'] = read_u32be(BytesIO(data))
         elif tag == 0x1101:
-            self.data['MobID'] = MobID(bytes_le=data)
+            self.data['SourceID'] = MobID(bytes_le=data)
         elif tag == 0x0202:
             self.data['Length'] = read_u64be(BytesIO(data))
         elif tag == 0x0201:
@@ -211,13 +270,34 @@ class MXFComponent(MXFObject):
             self.data['StillFrame'] = decode_strongref(data)
 
 class MXFSequence(MXFComponent):
-    pass
+
+    def link(self, f):
+        s = f.create.Sequence()
+        s.media_kind = self.data['DataDef']
+        s.length = self.data['Length']
+
+        for item in self.iter_strong_refs('Components'):
+            s['Components'].append(item.link(f))
+        return s
 
 class MXFSourceClip(MXFComponent):
-    pass
+    def link(self, f):
+        s = f.create.SourceClip()
+        s.media_kind = self.data['DataDef']
+        for key in ('SourceID', 'SourceMobSlotID', 'StartTime', 'Length'):
+            s[key].value = self.data.get(key, None)
+        return s
 
 class MXFTimecode(MXFComponent):
-    pass
+    def link(self, f):
+        fps = self.data['FPS']
+        drop = self.data['DropFrame']
+
+        s = f.create.Timecode(fps, drop=drop)
+        s.media_kind = self.data['DataDef']
+        s.length = self.data['Length']
+
+        return s
 
 class MXFEssenceGroup(MXFComponent):
     pass
@@ -235,7 +315,7 @@ class MXFDescriptor(MXFObject):
         elif tag == 0x3203:
             self.data['StoredWidth'] = read_u32be(BytesIO(data))
         elif tag == 0x3202:
-            self.data['SampledHeight'] = read_u32be(BytesIO(data))
+            self.data['StoredHeight'] = read_u32be(BytesIO(data))
         elif tag == 0x320d:
             self.data['VideoLineMap'] = decode_video_line_map(data)
         elif tag == 0x3211:
@@ -281,7 +361,15 @@ class MXFMultipleDescriptor(MXFDescriptor):
     pass
 
 class MXFCDCIDescriptor(MXFDescriptor):
-    pass
+
+    def link(self, f):
+        d = f.create.CDCIDescriptor()
+        for key in ('ComponentWidth', 'HorizontalSubsampling', 'ImageAspectRatio',
+           'StoredWidth', 'VideoLineMap', 'StoredHeight', 'SampleRate', 'Length'):
+           d[key].value = self.data[key]
+
+        d['FrameLayout'].value = frame_layouts[self.data.get('FrameLayout', 0)]
+        return d
 
 class MXFRGBADescriptor(MXFDescriptor):
     pass
@@ -293,7 +381,9 @@ class MXFPCMDescriptor(MXFDescriptor):
     pass
 
 class MXFImportDescriptor(MXFDescriptor):
-    pass
+    def link(self, f):
+        d = f.create.ImportDescriptor()
+        return d
 
 class MXFTapeDescriptor(MXFDescriptor):
     pass
@@ -394,10 +484,38 @@ class MXFFile(object):
 
                 obj = self.read_object(f, key, length)
                 if obj:
+                    obj.root = self
                     self.objects[obj.instance_id] = obj
 
                 if isinstance(obj, MXFPreface):
                     self.preface = obj
+
+
+    def resolve(self, ref):
+        if isinstance(ref, MXFRef):
+            return self.objects.get(ref)
+
+    @property
+    def content(self):
+        return self.resolve(self.preface.data.get("ContentStorage", None))
+
+    def packages(self):
+        if self.content:
+            for package in self.content.data.get("Packages", []):
+                yield self.resolve(package)
+
+    def material_packages(self):
+        for package in self.packages():
+            if isinstance(package, MXFMaterialPackage):
+                yield package
+
+    def link(self, f):
+        if self.operation_pattern != "OPAtom":
+            raise Exception("can only link OPAtom mxf files")
+
+        for package in self.packages():
+            package.link(f)
+
 
     def read_header(self, f, length):
         major_version = read_u16be(f)

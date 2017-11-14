@@ -10,6 +10,7 @@ from uuid import UUID
 from . import core
 from .utils import register_class
 from . import mobs
+from . import mxf
 
 @register_class
 class ContentStorage(core.AAFObject):
@@ -38,6 +39,10 @@ class ContentStorage(core.AAFObject):
         for mob in self.mobs:
             if isinstance(mob, mobs.SourceMob):
                 yield mob
+
+    def link_mxf(self, path):
+        m = mxf.MXFFile(path)
+        m.link(self.root)
 
     @property
     def essencedata(self):
