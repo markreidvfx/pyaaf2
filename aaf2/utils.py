@@ -17,17 +17,32 @@ def write_u8(f, value):
 def read_u16le(f):
     return unpack("<H", f.read(2))[0]
 
+def read_u16be(f):
+    return unpack(">H", f.read(2))[0]
+
 def write_u16le(f, value):
     f.write(pack("<H", value))
 
 def read_u32le(f):
     return unpack("<I", f.read(4))[0]
 
+def read_u32be(f):
+    return unpack(">I", f.read(4))[0]
+
+def read_s32be(f):
+    return unpack(">i", f.read(4))[0]
+
 def write_u32le(f, value):
     return f.write(pack("<I", value))
 
 def read_u64le(f):
     return unpack("<Q", f.read(8))[0]
+
+def read_u64be(f):
+    return unpack(">Q", f.read(8))[0]
+
+def read_s64be(f):
+    return unpack(">q", f.read(8))[0]
 
 def write_u64le(f, value):
     return f.write(pack("<Q", value))
@@ -45,7 +60,8 @@ def write_sid(f, value):
 
 def read_uuid(f):
     data = f.read(16)
-    return uuid.UUID(bytes_le=data)
+    if data:
+        return uuid.UUID(bytes_le=data)
 
 def write_uuid(f, value):
     if value is None:
