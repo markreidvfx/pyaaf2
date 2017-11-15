@@ -302,19 +302,20 @@ class DirEntry(object):
         return self.storage.read_dir_entry(self.child_id, self)
 
     def add_child(self, entry):
-        self._children_cache = None
+        if self._children_cache is None:
+            self.listdir()
 
         entry.parent = self
         child = self.child()
         if child:
             child.insert(entry)
+            self._children_cache.append(entry)
         else:
             self.child_id = entry.dir_id
+            self._children_cache = [entry]
 
     def remove_child(self, entry):
         # NOTE: this is really ineffecient
-        self._children_cache = None
-
         children = []
         for item in self.storage.listdir(self):
             if item.dir_id == entry.dir_id:
@@ -322,6 +323,7 @@ class DirEntry(object):
             children.append(item)
 
         self.child_id = None
+        self._children_cache = None
 
         # construct a new child list
         for item in children:
@@ -331,7 +333,7 @@ class DirEntry(object):
             self.add_child(item)
 
     def insert(self, entry):
-        self._children_cache = None
+
         root = self
 
         dir_per_sector = self.storage.sector_size // 128
