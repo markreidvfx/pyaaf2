@@ -1221,7 +1221,6 @@ class CompoundFileBinary(object):
 
         root.add_child(entry)
         self.dir_cache[dir_id] = entry
-        entry.write()
 
         return entry
 

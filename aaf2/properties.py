@@ -686,11 +686,18 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             if current:
                 current.detach()
 
+            if self.parent.dir:
+                ref = self.index_ref_name(key)
+                dir_entry = self.parent.dir.get(ref)
+                if dir_entry is None:
+                    dir_entry = self.parent.dir.makedir(ref)
+                if item.dir != dir_entry:
+                    item.attach(dir_entry)
+
             self.objects[key] = item
             self.next_free_key += 1
 
         self.add_pid_entry()
-        self.attach()
 
     def append(self, value):
         self.extend([value])
