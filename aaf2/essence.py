@@ -57,6 +57,10 @@ class CDCIDescriptor(DigitalImageDescriptor):
 class RGBADescriptor(DigitalImageDescriptor):
     class_id = UUID("0d010101-0101-2900-060e-2b3402060101")
 
+    @property
+    def pixel_layout(self):
+        return self['PixelLayout'].value
+
 @register_class
 class TapeDescriptor(EssenceDescriptor):
     class_id = UUID("0d010101-0101-2e00-060e-2b3402060101")

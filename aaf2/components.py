@@ -116,6 +116,22 @@ class SourceClip(SourceReference):
         self['StartTime'].value = value
 
 @register_class
+class Filler(Segment):
+    class_id = UUID("0d010101-0101-0900-060e-2b3402060101")
+
+@register_class
+class EssenceGroup(Segment):
+    class_id = UUID("0d010101-0101-0500-060e-2b3402060101")
+
+@register_class
+class Pulldown(Segment):
+    class_id = UUID("0d010101-0101-0c00-060e-2b3402060101")
+
+@register_class
+class ScopeReference(Segment):
+    class_id = UUID("0d010101-0101-0d00-060e-2b3402060101")
+
+@register_class
 class Timecode(Segment):
     class_id = UUID("0d010101-0101-1400-060e-2b3402060101")
 

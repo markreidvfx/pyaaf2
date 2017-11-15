@@ -63,7 +63,7 @@ class DefinitionObject(core.AAFObject):
         if name:
             s += " %s" % name
 
-        return '<%s at 0x%x>' % (s, id(self))
+        return '<%s %s at 0x%x>' % (s, str(self.uuid), id(self))
 
     @property
     def unique_key(self):

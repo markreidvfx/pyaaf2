@@ -260,6 +260,8 @@ class TypeDefEnum(TypeDef):
         for index, value in self.elements.items():
             if value == data:
                 return typedef.encode(index)
+            if index == data:
+                return typedef.encode(index)
 
         raise AAFPropertyError("invalid enum: %s" % str(data))
 
@@ -317,6 +319,27 @@ class TypeDefFixedArray(TypeDef):
             end = start + byte_size
             result.append(element_typedef.decode(data[start:end]))
             start = end
+
+        return result
+
+    def encode(self, data):
+        element_typedef = self.element_typedef
+        byte_size = element_typedef.byte_size
+        element_count = self.size
+        result = b""
+
+        for i, item in enumerate(data):
+            if i >= element_count:
+                raise AAFPropertyError("too many elements for fixed array: expected %d elements" % element_count)
+                break
+            result += element_typedef.encode(item)
+
+        # zero out remaining bytes
+        if i < element_count:
+            bytes_left = (element_count - i) * byte_size
+            while bytes_left:
+                result += b'\0'
+                bytes_left -= 1
 
         return result
 
@@ -698,8 +721,13 @@ class TypeDefExtEnum(TypeDef):
 
     def encode(self, data):
         for key, value in self.elements.items():
-            if value.lower() == data.lower():
-                return key.bytes_le
+            if isinstance(data, UUID):
+                if data == key:
+                    return key.bytes_le
+            else:
+
+                if value.lower() == data.lower():
+                    return key.bytes_le
 
         raise ValueError("invalid ext enum value: %s" % str(data))
 

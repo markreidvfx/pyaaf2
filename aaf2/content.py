@@ -40,9 +40,10 @@ class ContentStorage(core.AAFObject):
             if isinstance(mob, mobs.SourceMob):
                 yield mob
 
-    def link_mxf(self, path):
+    def link_external_mxf(self, path):
         m = mxf.MXFFile(path)
-        m.link(self.root)
+        # m.dump()
+        return m.link(self.root)
 
     @property
     def essencedata(self):
