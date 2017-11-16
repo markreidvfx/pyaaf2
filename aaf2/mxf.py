@@ -11,10 +11,12 @@ import datetime
 
 from uuid import UUID
 from io import BytesIO
+import io
 
 from .utils import (read_u8, read_u16be,
                    read_u32be, read_s32be,
-                   read_u64be, read_s64be)
+                   read_u64be, read_s64be,
+                   int_from_bytes)
 from .mobid import MobID
 from .model import datadefs
 
@@ -558,7 +560,7 @@ def ber_length(f):
     bytes_read = 1
     if length > 127:
         bytes_read += length - 128
-        length = int(f.read(length - 128).encode('hex'), 16)
+        length = int_from_bytes(bytearray(f.read(length - 128)))
     return length
 
 
@@ -595,7 +597,7 @@ class MXFFile(object):
         self.local_tags = {}
         self.preface = None
         self.header_operation_pattern = None
-        with open(path, 'rb') as f:
+        with io.open(path, 'rb') as f:
 
             local_tags = {}
             for key, length in iter_kl(f):

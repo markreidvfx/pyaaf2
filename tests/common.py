@@ -55,7 +55,7 @@ def probe(path, show_packets=False):
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, subprocess.list2cmdline(cmd), stderr)
 
-    return json.loads(stdout)
+    return json.loads(stdout.decode('utf8'))
 
 def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_rate=None, overwrite=True, fmt=None):
 
