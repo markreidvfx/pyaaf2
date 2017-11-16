@@ -236,7 +236,7 @@ class AAFFile(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         if (exc_type is None and exc_value is None and traceback is None):
-            self.save()
+            self.close()
 
     def __enter__(self):
         return self
@@ -272,3 +272,7 @@ class AAFFile(object):
                 obj.write_properties()
 
         self.cfb.close()
+
+    def close(self):
+        self.save()
+        self.f.close()
