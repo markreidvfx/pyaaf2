@@ -6,10 +6,13 @@ from __future__ import (
     )
 
 import os
+import json
+
 import subprocess
 from aaf2 import video, audio
 
 FFMPEG_EXEC='ffmpeg'
+FFPROBE_EXEC='ffprobe'
 base = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 
 def sandbox():
@@ -38,7 +41,23 @@ def sample_dir():
 
     return s
 
-def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_rate=None, overwrite=True):
+def probe(path, show_packets=False):
+
+    cmd = [FFPROBE_EXEC, '-of','json','-show_format','-show_streams', path]
+
+    if show_packets:
+        cmd.extend(['-show_packets',])
+
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    stdout,stderr = p.communicate()
+
+    if p.returncode != 0:
+        raise subprocess.CalledProcessError(p.returncode, subprocess.list2cmdline(cmd), stderr)
+
+    return json.loads(stdout)
+
+def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_rate=None, overwrite=True, fmt=None):
 
     profile = video.dnx_profiles.get(profile_name)
     bitrate = profile.get('bitrate')
@@ -48,7 +67,7 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
     frame_rate = profile.get('frame_rate') or frame_rate
     dnxhd_profile = profile.get("video_profile", None)
 
-    outfile = os.path.join(sample_dir(), "%s.dnxhd" % name )
+    outfile = os.path.join(sample_dir(), name )
 
     if not overwrite and os.path.exists(outfile):
         return outfile
@@ -64,6 +83,9 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
     if interlaced:
         cmd.extend(['-flags', '+ildct+ilme' ])
 
+    if fmt:
+        cmd.extend(['-f', fmt])
+
     cmd.extend([outfile])
 
     # print(subprocess.list2cmdline(cmd))
@@ -76,12 +98,15 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
     return outfile
 
 
-def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_format='s16le', format='wav'):
-
-    outfile = os.path.join(sample_dir(), '%s.%s' % (name, format))
+def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_format='s16le', fmt='wav'):
 
     cmd = [FFMPEG_EXEC,'-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)::s=%d:d=%f' % (sample_rate, duration)]
     cmd.extend([ '-acodec', 'pcm_%s' % sample_format])
+
+    cmd.extend(['-f', fmt])
+    if fmt == 'mxf_opatom':
+        fmt = 'mxf'
+    outfile = os.path.join(sample_dir(), '%s.%s' % (name, fmt))
 
     cmd.extend([outfile])
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)

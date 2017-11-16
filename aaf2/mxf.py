@@ -109,15 +109,19 @@ def decode_pixel_layout(data):
 
 def decode_timestamp(data):
     t = read_u64be(BytesIO(data))
+
     year = t >> 48
     month = t >> 40 & 0xFF
     day = t >> 32 & 0xFF
     hour = t >> 24 & 0xFF
     minute = t >> 16 & 0xFF
     sec = t >> 8  & 0xFF
+    try:
+        d = datetime.datetime(year, month, day, hour, minute, sec)
+        return d
+    except:
+        return datetime.datetime.now()
 
-    d = datetime.datetime(year, month, day, hour, minute, sec)
-    return d
 
 def decode_mob_id(data):
     uid1 = UUID(bytes=data[:16])
@@ -216,7 +220,7 @@ class MXFPackage(MXFObject):
         mob.id = self.id
         f.content.mobs.append(mob)
 
-        name = self.data['Name']
+        name = self.data.get('Name', None)
         if name:
             mob.name = name
 
@@ -448,11 +452,13 @@ class MXFCDCIDescriptor(MXFDescriptor):
 
         # required
         for key in ('ComponentWidth', 'HorizontalSubsampling', 'ImageAspectRatio',
-           'StoredWidth', 'VideoLineMap', 'StoredHeight', 'SampleRate', 'Length', 'FrameLayout'):
+           'StoredWidth', 'VideoLineMap', 'StoredHeight', 'SampleRate', 'FrameLayout'):
            d[key].value = self.data[key]
 
+        d['Length'].value = self.data.get('Length', 0)
+
         # optional
-        for key in ('FrameSampleSize', 'ResolutionID', 'Compression', 'VerticalSubsampling'):
+        for key in ('FrameSampleSize', 'ResolutionID', 'Compression', 'VerticalSubsampling',):
             if key in self.data:
                 d[key].value = self.data[key]
 
