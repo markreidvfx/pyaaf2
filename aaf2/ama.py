@@ -26,13 +26,14 @@ MediaContainerGUIDs = {
 }
 
 def create_video_descriptor(f, meta):
+    print(meta)
     d = f.create.CDCIDescriptor()
     d['StoredWidth'].value = meta['width']
     d['StoredHeight'].value = meta['height']
     d['ImageAspectRatio'].value = meta['display_aspect_ratio'].replace(':','/')
     d['Length'].value = int(meta['nb_frames'])
     d['FrameLayout'].value = 'FullFrame'
-    d['SampleRate'].value =  meta['r_frame_rate']
+    d['SampleRate'].value =  meta['avg_frame_rate']
     d['VideoLineMap'].value = [0,0]
     d['ComponentWidth'].value = 8
     d['HorizontalSubsampling'].value =2
@@ -59,29 +60,71 @@ def create_network_locator(f, path):
     return n
 
 
-def create_ama_link(f, path, metadata, container="Generic"):
+def guess_edit_rate(metadata):
 
-    m = f.create.SourceMob()
-    f.content.mobs.append(m)
+    for st in metadata['streams']:
+        codec_type = st['codec_type']
+        if codec_type == 'video':
+            return st['avg_frame_rate']
+
+def guess_length(metadata, edit_rate):
+    for st in metadata['streams']:
+        codec_type = st['codec_type']
+        if codec_type == 'video':
+            return int(st['nb_frames'])
+
+def create_ama_link(f, path, metadata, container="Generic"):
+    master_mob = f.create.MasterMob()
+    src_mob = f.create.SourceMob()
+    f.content.mobs.append(master_mob)
+    f.content.mobs.append(src_mob)
 
     d = f.create.MultipleDescriptor()
-    m.descriptor = d
+    src_mob.descriptor = d
     d['Length'].value = 0
-
-    d['MediaContainerGUID'].value = MediaContainerGUIDs[container][0]
+    container_guid, formats = MediaContainerGUIDs[container]
+    d['MediaContainerGUID'].value = container_guid
     d['Locator'].append(create_network_locator(f, path))
+
+    start_timecode = None
+
+    edit_rate = guess_edit_rate(metadata)
+    length = guess_length(metadata, edit_rate)
+
     for st in metadata['streams']:
 
         codec_type = st['codec_type']
         if codec_type == 'video':
-            rate = st['r_frame_rate']
-            d['SampleRate'].value = rate
+            d['SampleRate'].value = edit_rate
             desc = create_video_descriptor(f, st)
             desc['Locator'].append(create_network_locator(f, path))
+            desc['MediaContainerGUID'].value = container_guid
             d['FileDescriptors'].append(desc)
+            slot = src_mob.create_empty_slot(edit_rate, media_kind='picture')
+            slot.segment.length = length
+            clip = src_mob.create_source_clip(slot.id)
+            clip.length = length
+            clip.media_kind = 'picture'
+
+            master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='picture')
+            master_slot.segment.components.append(clip)
+            master_slot.segment.length = length
+
+            print(master_slot.segment.components)
 
         elif codec_type == 'audio':
             rate = st['sample_rate']
             desc = create_audio_descriptor(f, st)
             desc['Locator'].append(create_network_locator(f, path))
+            desc['MediaContainerGUID'].value = container_guid
             d['FileDescriptors'].append(desc)
+            for i in range(st['channels']):
+                slot =  src_mob.create_empty_slot(edit_rate, media_kind='sound')
+                slot.segment.length = length
+                clip = src_mob.create_source_clip(slot.id)
+                clip.length = length
+                clip.media_kind = 'sound'
+
+                master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
+                master_slot.segment.components.append(clip)
+                master_slot.segment.length = length

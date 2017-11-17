@@ -122,6 +122,13 @@ class Mob(core.AAFObject):
         self.slots.append(slot)
         return slot
 
+    def create_empty_sequence_slot(self, edit_rate, slot_id=None,  media_kind=None):
+        slot = self.create_timeline_slot(edit_rate, slot_id)
+        sequence = self.root.create.Sequence(media_kind=media_kind)
+        sequence['Components'].value = []
+        slot.segment = sequence
+        return slot
+
     def create_source_clip(self, slot_id=None, start=None, length=None, media_kind=None):
         source_slot = self.slot_at(slot_id)
         if not media_kind:

@@ -51,6 +51,10 @@ class Segment(Component):
 class Sequence(Segment):
     class_id = UUID("0d010101-0101-0f00-060e-2b3402060101")
 
+    @property
+    def components(self):
+        return self['Components']
+
 @register_class
 class NestedScope(Segment):
     class_id = UUID("0d010101-0101-0b00-060e-2b3402060101")
