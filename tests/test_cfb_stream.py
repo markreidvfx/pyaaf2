@@ -161,24 +161,24 @@ class StreamTests(unittest.TestCase):
     def test_seek(self):
         path = os.path.join(test_dir, "seek_test.aaf")
 
-        f = open(path, 'wb+')
-        ss = CompoundFileBinary(f, 'wb+')
+        with open(path, 'wb+') as f:
+            ss = CompoundFileBinary(f, 'wb+')
 
-        s = ss.open("/seektest", 'w')
-        s.seek(100)
-        data= b"end of seek"
-        s.write(data)
-        assert s.tell() == 100 + len(data)
-        s.close()
+            s = ss.open("/seektest", 'w')
+            s.seek(100)
+            data= b"end of seek"
+            s.write(data)
+            assert s.tell() == 100 + len(data)
+            s.close()
 
-        s = ss.open("/seek_large", 'w')
-        seek_size = 1000000
-        s.seek(seek_size)
-        data= b"end of seek"
-        s.write(data)
-        assert s.dir.byte_size == seek_size  + len(data)
-        s.close()
-        ss.close()
+            s = ss.open("/seek_large", 'w')
+            seek_size = 1000000
+            s.seek(seek_size)
+            data= b"end of seek"
+            s.write(data)
+            assert s.dir.byte_size == seek_size  + len(data)
+            s.close()
+            ss.close()
 
 
 if __name__ == "__main__":

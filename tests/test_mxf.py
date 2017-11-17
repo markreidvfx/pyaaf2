@@ -12,10 +12,6 @@ import common
 import aaf2
 from aaf2 import video, audio, mobid, mobs, essence
 
-def decode_mob_id(data):
-    return mobid.MobID(data[2:])
-
-
 class MXFTests(unittest.TestCase):
 
 
@@ -23,12 +19,9 @@ class MXFTests(unittest.TestCase):
         profile_name = 'dnx_1080p_36_23.97'
         video_sample = common.generate_dnxhd(profile_name, "mxf_link_video.mxf", 10, fmt='mxf_opatom')
 
-
         meta = common.probe(video_sample)
-        video_mob_id = decode_mob_id(meta['format']['tags']['material_package_umid'])
-        video_source_mob_id = decode_mob_id(meta['streams'][0]['tags']['file_package_umid'])
-
-
+        video_mob_id = mobid.MobID(meta['format']['tags']['material_package_umid'])
+        video_source_mob_id = mobid.MobID(meta['streams'][0]['tags']['file_package_umid'])
 
         new_file = os.path.join(common.sandbox(), 'mxf_link_video.aaf')
 
@@ -55,13 +48,10 @@ class MXFTests(unittest.TestCase):
                          sample_rate=sample_rate, duration=audio_duration, fmt='mxf_opatom')
 
         meta = common.probe(audio_sample)
-        audio_mob_id = decode_mob_id(meta['format']['tags']['material_package_umid'])
-        audio_source_mob_id = decode_mob_id(meta['streams'][0]['tags']['file_package_umid'])
+        audio_mob_id = mobid.MobID(meta['format']['tags']['material_package_umid'])
+        audio_source_mob_id = mobid.MobID(meta['streams'][0]['tags']['file_package_umid'])
 
         new_file = os.path.join(common.sandbox(), 'mxf_link_audio.aaf')
-
-        print(audio_sample)
-        print(new_file)
 
         with aaf2.open(new_file, 'w') as f:
             f.content.link_external_mxf(audio_sample)
