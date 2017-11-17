@@ -144,7 +144,7 @@ def read_dnx_frame_header(dnx_header):
     if len(dnx_header) < 640:
         raise ValueError("Invalid DNxHD frame: header to Short")
 
-    prefix = int_from_bytes(bytearray(dnx_header[:6])) & 0xffffffffff00
+    prefix = int_from_bytes(bytearray(dnx_header[:6]), byte_order='big') & 0xffffffffff00
     if not valid_dnx_prefix(prefix):
         raise ValueError("Invalid DNxHD frame: unknown prefix: 0x%012X" % prefix)
 

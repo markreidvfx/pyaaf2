@@ -7,6 +7,7 @@ from __future__ import (
 
 import uuid
 import struct
+from .utils import (int_from_bytes, bytes_from_int)
 
 MOBID_STRUCT = struct.Struct(''.join(( '<',
    '12B',  # UInt8Array12   SMPTELabel
@@ -172,15 +173,12 @@ class MobID(object):
     @property
     def int(self):
         data = bytearray(self.bytes_le)
-        num = 0
-        for i, byte in enumerate(data):
-            num += byte << ((31-i) * 8)
-        return num
+        return int_from_bytes(data, byte_order='big')
 
     @int.setter
     def int(self, value):
-        v = bytearray((value >> (31-i)*8) & 0xff for i in range(32))
-        self.bytes_le = v
+        # NOTE: interpreted as big endian
+        self.bytes_le = bytes_from_int(value, 32, byte_order='big')
 
     def __int__(self):
         return self.int

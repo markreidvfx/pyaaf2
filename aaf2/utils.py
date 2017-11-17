@@ -75,26 +75,26 @@ def read_filetime(f):
 def write_filetime(f, value):
     write_u64le(f, value)
 
-def int_from_bytes(data, endianess='little'):
+def int_from_bytes(data, byte_order='big'):
     num = 0
-    if endianess == 'little':
+    if byte_order == 'little':
+        for i, byte in enumerate(data):
+            num += byte << (i * 8)
+        return num
+    elif byte_order == 'big':
         length = len(data) - 1
         for i, byte in enumerate(data):
             num += byte << ((length-i) * 8)
         return num
-    elif endianess == 'big':
-        for i, byte in enumerate(data):
-            num += byte << (i * 8)
-        return num
     else:
         raise ValueError('endianess must be "little" or "big"')
 
-def bytes_from_int(num, length, endianess='little'):
-    if endianess == 'little':
-        v = bytearray((num >> (length - 1 - i) * 8) & 0xff for i in range(length))
-        return bytes(v)
-    elif endianess == 'big':
+def bytes_from_int(num, length, byte_order='big'):
+    if byte_order == 'little':
         v = bytearray((num >> (i * 8) & 0xff for i in range(length)))
+        return bytes(v)
+    elif byte_order == 'big':
+        v = bytearray((num >> (length - 1 - i) * 8) & 0xff for i in range(length))
         return bytes(v)
     else:
         raise ValueError('endianess must be "little" or "big"')

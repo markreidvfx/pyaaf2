@@ -554,13 +554,12 @@ UUID("060e2b34-0253-0101-0d01-010101012300") : MXFEssenceData,
 }
 
 def ber_length(f):
-
     length = read_u8(f)
-
-    bytes_read = 1
     if length > 127:
-        bytes_read += length - 128
-        length = int_from_bytes(bytearray(f.read(length - 128)))
+        data = bytearray(length - 128)
+        bytes_read = f.readinto(data)
+        assert bytes_read == len(data)
+        length = int_from_bytes(data, byte_order='big')
     return length
 
 
@@ -598,26 +597,23 @@ class MXFFile(object):
         self.preface = None
         self.header_operation_pattern = None
         with io.open(path, 'rb') as f:
-
-            local_tags = {}
             for key, length in iter_kl(f):
-
                 if key == UUID("060e2b34-0205-0101-0d01-020101050100"):
                     self.local_tags = self.read_primer(f, length)
-
-                if key == UUID("060e2b34-0205-0101-0d01-020101020400"):
+                elif key == UUID("060e2b34-0205-0101-0d01-020101020400"):
                     self.read_header(f, length)
-                # print('{')
-                # print(key,  uuid_to_str_list(key, sep='.'))
-                obj = self.read_object(f, key, length)
-                if obj:
-                    # print(obj.__class__.__name__)
-                    obj.root = self
-                    self.objects[obj.instance_id] = obj
-                # print('}')
-                if isinstance(obj, MXFPreface):
-                    self.preface = obj
+                else:
+                    # print('{')
+                    # print(key,  uuid_to_str_list(key, sep='.'))
+                    obj = self.read_object(f, key, length)
+                    if obj:
+                        # print(obj.__class__.__name__)
+                        obj.root = self
+                        self.objects[obj.instance_id] = obj
 
+                    if isinstance(obj, MXFPreface):
+                        self.preface = obj
+                    # print('}')
 
     def resolve(self, ref):
         if isinstance(ref, MXFRef):
