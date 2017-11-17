@@ -621,12 +621,12 @@ class MXFFile(object):
 
     @property
     def content(self):
-        return self.resolve(self.preface.data.get("ContentStorage", None))
+        return self.preface.resolve_ref("ContentStorage")
 
     def packages(self):
         if self.content:
-            for package in self.content.data.get("Packages", []):
-                yield self.resolve(package)
+            for package in self.content.iter_strong_refs("Packages"):
+                yield package
 
     def material_packages(self):
         for package in self.packages():
