@@ -57,6 +57,61 @@ def probe(path, show_packets=False):
 
     return json.loads(stdout.decode('utf8'))
 
+def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwrite=True):
+    frames = int(duration * float(frame_rate))
+    audio_samples = []
+    for i in range(audio_channels):
+        sample = generate_pcm_audio_mono("%s_audio_%d.wav" % (name, i ), duration=duration)
+        audio_samples.append(sample)
+
+
+    size = (1920,1080)
+    cmd = [FFMPEG_EXEC, '-y',]
+
+    cmd.extend(['-f', 'lavfi', '-i', 'testsrc=size=%dx%d:rate=%s' % (size[0],size[1], frame_rate)])
+
+    cmd.extend(['-frames:v', str(frames)])
+    cmd.extend(['-pix_fmt', 'yuv420p'])
+    cmd.extend(['-c:v', 'h264'])
+
+    video_file = os.path.join(sample_dir(), name + "_video.mov")
+    cmd.extend([video_file])
+    # print(subprocess.list2cmdline(cmd))
+
+
+    if overwrite or not os.path.exists(video_file):
+        p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
+
+        stdout,stderr = p.communicate()
+        # print(stderr)
+        if p.returncode != 0:
+            print(stderr)
+            return Exception("error video encoding footage")
+
+    sample_rate= 48000
+    cmd = [FFMPEG_EXEC, '-y',]
+    cmd.extend(['-i', video_file])
+    cmd.extend(['-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t):cos(430*2*PI*t)::s=%d' % (sample_rate, )])
+
+    cmd.extend(['-c:a', 'aac'])
+    cmd.extend(['-c:v', 'copy'])
+    cmd.extend(['-frames:v', str(frames)])
+
+    outfile = os.path.join(sample_dir(), name )
+    cmd.extend([outfile])
+
+    # print(subprocess.list2cmdline(cmd))
+
+    if overwrite or not os.path.exists(outfile):
+        p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
+
+        stdout,stderr = p.communicate()
+        # print(stderr)
+        if p.returncode != 0:
+            print(stderr)
+            return Exception("error encoding footage")
+    return outfile
+
 def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_rate=None, overwrite=True, fmt=None):
 
     profile = video.dnx_profiles.get(profile_name)

@@ -11,6 +11,7 @@ from . import core
 from .utils import register_class
 from . import mobs
 from . import mxf
+from . import ama
 
 @register_class
 class ContentStorage(core.AAFObject):
@@ -44,6 +45,9 @@ class ContentStorage(core.AAFObject):
         m = mxf.MXFFile(path)
         # m.dump()
         return m.link(self.root)
+
+    def create_ama_link(self, path, metadata, container="Generic"):
+        ama.create_ama_link(self.root, path, metadata, container)
 
     @property
     def essencedata(self):
