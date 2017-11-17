@@ -219,7 +219,7 @@ classdefs = {
      "SubDescriptors" : ( "06010104-0610-0000-060e-2b3401010109" ,  0xFFF3 ,  "kAAFTypeID_SubDescriptorStrongReferenceVector" , True ,  False ),
      "MediaContainer" : ( "13980e2b-2f30-44ec-bdb0-3b730da56562" ,  0xFFF1 ,  "aafString" , True ,  False ),
      "Locator" : ( "06010104-0603-0000-060e-2b3401010102" ,  0x2F01 ,  "kAAFTypeID_LocatorStrongReferenceVector" , True ,  False ),
-     "MediaStreamPluginGUID" : ( "92790417-0131-4a05-898d-167691e11ca1" ,  0xFFF2 ,  "AUID" , True ,  False ),
+     "MediaContainerGUID" : ( "92790417-0131-4a05-898d-167691e11ca1" ,  0xFFF2 ,  "AUID" , True ,  False ),
      }
 ),
 "FileDescriptor"  : ( "0d010101-0101-2500-060e-2b3402060101" , "EssenceDescriptor" , False , {
