@@ -20,11 +20,13 @@ class AMATests(unittest.TestCase):
         mov = common.generate_mov('ama.mov', overwrite=False)
         meta = common.probe(mov)
 
-        new_file = os.path.join(common.sandbox(), 'mxf_link_video.aaf')
+        new_file = os.path.join(common.sandbox(), 'ama_mov.aaf')
 
         with aaf2.open(new_file, 'w') as f:
-            f.content.create_ama_link(mov, meta)
+            mobs = f.content.create_ama_link(mov, meta)
 
+        with aaf2.open(new_file, 'r') as f:
+            f.content.dump()
 
 if __name__ == "__main__":
     import logging

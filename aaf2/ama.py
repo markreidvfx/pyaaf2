@@ -25,5 +25,63 @@ MediaContainerGUIDs = {
      '.jpeg', '.jfif', '.tif',   '.tiff', '.png', '.bmp',  '.psd', '.dv')),
 }
 
+def create_video_descriptor(f, meta):
+    d = f.create.CDCIDescriptor()
+    d['StoredWidth'].value = meta['width']
+    d['StoredHeight'].value = meta['height']
+    d['ImageAspectRatio'].value = meta['display_aspect_ratio'].replace(':','/')
+    d['Length'].value = int(meta['nb_frames'])
+    d['FrameLayout'].value = 'FullFrame'
+    d['SampleRate'].value =  meta['r_frame_rate']
+    d['VideoLineMap'].value = [0,0]
+    d['ComponentWidth'].value = 8
+    d['HorizontalSubsampling'].value =2
+    return d
+
+def create_audio_descriptor(f, meta):
+
+    d = f.create.PCMDescriptor()
+    rate = meta['sample_rate']
+    d['SampleRate'].value = rate
+    d['AudioSamplingRate'].value = rate
+    d['Channels'].value = meta['channels']
+    d['BlockAlign'].value = 4
+    d['AverageBPS'].value = 192000
+    d['QuantizationBits'].value = 32
+    d['Length'].value = 91152
+
+    return d
+
+
+def create_network_locator(f, path):
+    n = f.create.NetworkLocator()
+    n['URLString'].value = path
+    return n
+
+
 def create_ama_link(f, path, metadata, container="Generic"):
-    pass
+
+    m = f.create.SourceMob()
+    f.content.mobs.append(m)
+
+    d = f.create.MultipleDescriptor()
+    m.descriptor = d
+    d['Length'].value = 0
+
+    d['MediaContainerGUID'].value = MediaContainerGUIDs[container][0]
+    d['Locator'].append(create_network_locator(f, path))
+    for st in metadata['streams']:
+
+        codec_type = st['codec_type']
+        if codec_type == 'video':
+            rate = st['r_frame_rate']
+            d['SampleRate'].value = rate
+            desc = create_video_descriptor(f, st)
+            desc['Locator'].append(create_network_locator(f, path))
+            d['FileDescriptors'].append(desc)
+
+        elif codec_type == 'audio':
+            rate = st['sample_rate']
+            desc = create_audio_descriptor(f, st)
+            desc['Locator'].append(create_network_locator(f, path))
+            d['FileDescriptors'].append(desc)
