@@ -251,10 +251,12 @@ class AAFObject(object):
             keys.append(p.name)
         return keys
 
-    def get(self, key, default=None):
+    def get(self, key, default=None, allkeys=True):
         for item in self.properties():
             if item.name == key:
                 return item
+        if allkeys == False:
+            return default
 
         classdef = self.classdef
         for propertydef in classdef.all_propertydefs():
@@ -284,6 +286,12 @@ class AAFObject(object):
         if result is None:
             raise KeyError(key)
         return result
+
+    def __contains__(self, key, all=False):
+        result = self.get(key, default=None, allkeys=False)
+        if result is None:
+            return False
+        return True
 
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,

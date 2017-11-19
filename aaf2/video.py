@@ -111,6 +111,15 @@ dnx_compression_uuids = {
 
 }
 
+compression_ids = {
+'CompressedPictureCoding'      : UUID('04010202-0000-0000-060e-2b3404010101'),
+'AVCBaselineUnconstrained'     : UUID('04010202-0131-1101-060e-2b340401010d'),
+'AVCHighUnconstrained'         : UUID('04010202-0131-4001-060e-2b340401010d'),
+'AVCHigh422IntraUnconstrained' : UUID('04010202-0132-3001-060e-2b340401010a'),
+
+'mjpeg'                        : UUID('0e040201-0205-0100-060e-2b3404010101'),
+}
+
 def dnx_frame_size(cid, width=None, height=None):
     size = dnxhd_frame_sizes.get(cid, None)
     if size:

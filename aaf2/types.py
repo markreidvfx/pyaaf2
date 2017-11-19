@@ -740,6 +740,8 @@ class TypeDefIndirect(TypeDef):
         assert byte_order == b'\x4c' # little endian
         type_uuid = UUID(bytes_le=data[1:17])
         typedef = self.root.metadict.lookup_typedef(type_uuid)
+
+        # print("???", typedef, typedef.auid)
         result = typedef.decode(data[17:])
         return result
 
@@ -750,8 +752,8 @@ class TypeDefIndirect(TypeDef):
             type_uuid = UUID("01100200-0000-0000-060e-2b3401040101")
 
         elif isinstance(data, int):
-            # aafInt64
-            type_uuid = UUID("01010800-0000-0000-060e-2b3401040101")
+            # aafInt32
+            type_uuid = UUID("01010700-0000-0000-060e-2b3401040101")
         else:
             raise NotImplementedError("Indirect type for: %s", str(type(data)))
 

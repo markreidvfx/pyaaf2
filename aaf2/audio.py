@@ -19,6 +19,20 @@ pcm_profiles = {
 'pcm_48000_s24le' : {'sample_format' : 's24le', 'sample_rate' : 48000},
 }
 
+audio_format_sizes = {
+'s16'   :  (16, 2),
+'s32'   :  (32, 4),
+'flt'   :  (32, 4),
+'dbl'   :  (64, 8),
+'u8p'   :  (8,  1),
+'s16p'  :  (16, 2),
+'s32p'  :  (32, 4),
+'fltp'  :  (32, 4),
+'dblp'  :  (64, 8),
+'s64'   :  (64, 8),
+'s64p'  :  (64, 8),
+}
+
 WAVE_EXTENSIBLE_PCM=0xFFFE
 
 class WaveReader(wave.Wave_read):
