@@ -112,12 +112,20 @@ dnx_compression_uuids = {
 }
 
 compression_ids = {
-'CompressedPictureCoding'      : UUID('04010202-0000-0000-060e-2b3404010101'),
-'AVCBaselineUnconstrained'     : UUID('04010202-0131-1101-060e-2b340401010d'),
-'AVCHighUnconstrained'         : UUID('04010202-0131-4001-060e-2b340401010d'),
-'AVCHigh422IntraUnconstrained' : UUID('04010202-0132-3001-060e-2b340401010a'),
-
-'mjpeg'                        : UUID('0e040201-0205-0100-060e-2b3404010101'),
+'CompressedPicture'                   : UUID('04010202-0000-0000-060e-2b3404010101'),
+'AVCBaselineUnconstrained'            : UUID('04010202-0131-1001-060e-2b340401010d'),
+'AVCConstrainedBaselineUnconstrained' : UUID('04010202-0131-1101-060e-2b340401010d'),
+'AVCMainUnconstrained'                : UUID('04010202-0131-2001-060e-2b340401010d'),
+'AVCExtendedUnconstrained'            : UUID('04010202-0131-3001-060e-2b340401010d'),
+'AVCHighUnconstrained'                : UUID('04010202-0131-4001-060e-2b340401010d'),
+'AVCHigh10Unconstrained'              : UUID('04010202-0131-5001-060e-2b340401010d'),
+'AVCHigh422Unconstrained'             : UUID('04010202-0131-6001-060e-2b340401010d'),
+'AVCHigh444PredictiveUnconstrained'   : UUID('04010202-0131-7001-060e-2b340401010d'),
+'AVCHigh10IntraUnconstrained'         : UUID('04010202-0132-2001-060e-2b340401010a'),
+'AVCHigh422IntraUnconstrained'        : UUID('04010202-0132-3001-060e-2b340401010a'),
+'AVCHigh444IntraUnconstrained'        : UUID('04010202-0132-4001-060e-2b340401010d'),
+'AVCCAVLC444IntraUnconstrained'       : UUID('04010202-0132-5001-060e-2b340401010d'),
+'mjpeg'                               : UUID('0e040201-0205-0100-060e-2b3404010101'),
 }
 
 def dnx_frame_size(cid, width=None, height=None):

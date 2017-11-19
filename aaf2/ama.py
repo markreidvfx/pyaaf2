@@ -6,6 +6,7 @@ from __future__ import (
     )
 
 from uuid import UUID
+import os
 from .fractions import AAFFraction
 from . import video
 from . import audio
@@ -53,14 +54,36 @@ def pixel_sizes(pix_fmt):
 
     return (depth, h_samp, v_samp)
 
-def get_h264_compression(meta):
+def get_avc_compression(meta):
 
     profile = meta.get('profile')
-    key = 'CompressedPictureCoding'
-    if profile == 'Constrained Baseline':
+    key = 'CompressedPicture'
+    if profile  == "Baseline":
         key = 'AVCBaselineUnconstrained'
-    elif profile == 'High':
+    elif profile == "Constrained Baseline":
+        key = 'AVCConstrainedBaselineUnconstrained'
+    elif profile == "Main":
+        key = 'AVCMainUnconstrained'
+    elif profile == "Extended":
+        key ='AVCExtendedUnconstrained'
+    elif profile == "High":
         key = 'AVCHighUnconstrained'
+    elif profile == "High 10":
+        key = 'AVCHigh10Unconstrained'
+    elif profile == "High 10 Intra":
+        key = 'AVCHigh10IntraUnconstrained'
+    elif profile == "High 4:2:2":
+        key = 'AVCHigh422Unconstrained'
+    elif profile == "High 4:2:2 Intra":
+        key = 'AVCHigh422IntraUnconstrained'
+    # elif profile == "High 4:4:4":
+    #     key = 'AVCHigh444IntraUnconstrained'
+    elif profile == "High 4:4:4 Predictive":
+        key = 'AVCHigh444PredictiveUnconstrained'
+    elif profile == "High 4:4:4 Intra":
+        key = 'AVCHigh444IntraUnconstrained'
+    elif profile == 'CAVLC 4:4:4':
+        key = 'AVCCAVLC444IntraUnconstrained'
 
     return video.compression_ids[key]
 
@@ -69,9 +92,9 @@ def get_compression(meta):
     if codec_name == 'mjpeg':
         return video.compression_ids['mjpeg']
     if codec_name == 'h264':
-        return get_h264_compression(meta)
+        return get_avc_compression(meta)
 
-    return video.compression_ids['CompressedPictureCoding']
+    return video.compression_ids['CompressedPicture']
 
 def create_video_descriptor(f, meta):
     d = f.create.CDCIDescriptor()
@@ -157,12 +180,14 @@ def create_ama_link(f, path, metadata, container="Generic"):
     length = guess_length(metadata, edit_rate)
     tape_length = 4142016
     prefix ="file://"
-
+    basename = os.path.basename(path)
     path = prefix + path
 
     master_mob = f.create.MasterMob()
     src_mob = f.create.SourceMob()
     tape_mob = f.create.SourceMob()
+
+    master_mob.name = basename
 
     f.content.mobs.append(master_mob)
     f.content.mobs.append(src_mob)

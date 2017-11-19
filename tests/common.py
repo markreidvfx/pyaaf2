@@ -57,7 +57,7 @@ def probe(path, show_packets=False):
 
     return json.loads(stdout.decode('utf8'))
 
-def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwrite=True):
+def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwrite=True, vcodec=None):
     frames = int(duration * float(frame_rate))
     audio_samples = []
     for i in range(audio_channels):
@@ -71,8 +71,13 @@ def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwri
     cmd.extend(['-f', 'lavfi', '-i', 'testsrc=size=%dx%d:rate=%s' % (size[0],size[1], frame_rate)])
 
     cmd.extend(['-frames:v', str(frames)])
-    cmd.extend(['-pix_fmt', 'yuv420p'])
-    cmd.extend(['-c:v', 'h264'])
+
+    if vcodec:
+        cmd.extend(vcodec)
+    else:
+        cmd.extend(['-pix_fmt', 'yuv420p'])
+        cmd.extend(['-c:v', 'h264'])
+        # cmd.extend(['-profile:v', 'high'])
 
     video_file = os.path.join(sample_dir(), name + "_video.mov")
     cmd.extend([video_file])
