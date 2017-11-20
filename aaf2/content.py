@@ -46,8 +46,8 @@ class ContentStorage(core.AAFObject):
         # m.dump()
         return m.link(self.root)
 
-    def create_ama_link(self, path, metadata, container="Generic"):
-        ama.create_ama_link(self.root, path, metadata, container)
+    def create_ama_link(self, path, metadata):
+        ama.create_ama_link(self.root, path, metadata)
 
     @property
     def essencedata(self):

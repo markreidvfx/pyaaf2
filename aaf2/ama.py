@@ -11,7 +11,7 @@ from .fractions import AAFFraction
 from . import video
 from . import audio
 
-MediaContainerGUIDs = {
+MediaContainerGUID = {
 "Generic"        : (UUID("b22697a2-3442-44e8-bb8f-7a1cd290ebf1"),
     ('.3g2',   '.3gp',  '.aac', '.au',  '.avi', '.bmp', '.dv', '.gif',
      '.jfif',  '.jpeg', '.jpg', '.m4a', '.mid', '.moov', '.mov',
@@ -35,7 +35,6 @@ MediaContainerGUIDs = {
 }
 
 def pixel_sizes(pix_fmt):
-
     h_samp = 2
     v_samp = 2
 
@@ -43,9 +42,12 @@ def pixel_sizes(pix_fmt):
     if pix_fmt.count('420'):
         h_samp = 2
         v_samp = 2
+    elif pix_fmt.count('422'):
+        h_samp = 2
+        v_samp = 1
     elif pix_fmt.count('444'):
-        h_samp = 4
-        v_samp = 4
+        h_samp = 1
+        v_samp = 1
 
     for i in [8, 10, 12, 16]:
         if pix_fmt.count("p%d" % i):
@@ -56,7 +58,7 @@ def pixel_sizes(pix_fmt):
 
 def get_avc_compression(meta):
 
-    profile = meta.get('profile')
+    profile = meta.get('profile', None)
     key = 'CompressedPicture'
     if profile  == "Baseline":
         key = 'AVCBaselineUnconstrained'
@@ -76,14 +78,18 @@ def get_avc_compression(meta):
         key = 'AVCHigh422Unconstrained'
     elif profile == "High 4:2:2 Intra":
         key = 'AVCHigh422IntraUnconstrained'
-    # elif profile == "High 4:4:4":
-    #     key = 'AVCHigh444IntraUnconstrained'
+    elif profile == "High 4:4:4":
+        # key = 'AVCHigh444IntraUnconstrained'
+        key = 'CompressedPicture'
     elif profile == "High 4:4:4 Predictive":
-        key = 'AVCHigh444PredictiveUnconstrained'
+        # key = 'AVCHigh444PredictiveUnconstrained'
+        key = 'CompressedPicture'
     elif profile == "High 4:4:4 Intra":
-        key = 'AVCHigh444IntraUnconstrained'
+        # key = 'AVCHigh444IntraUnconstrained'
+        key = 'CompressedPicture'
     elif profile == 'CAVLC 4:4:4':
-        key = 'AVCCAVLC444IntraUnconstrained'
+        # key = 'AVCCAVLC444IntraUnconstrained'
+        key = 'CompressedPicture'
 
     return video.compression_ids[key]
 
@@ -113,18 +119,18 @@ def create_video_descriptor(f, meta):
     d['FrameLayout'].value = 'FullFrame'
 
     d['VideoLineMap'].value = [0,0]
+    # d['VideoLineMap'].value = [42, 0]
     d['ImageAspectRatio'].value = aspect_ratio
 
     d['StoredWidth'].value = width
     d['StoredHeight'].value = height
     d['SampleRate'].value =  meta['avg_frame_rate']
-    # compression = meta.get('compression', None)
-    # print(meta)
-    # raise Exception()
 
     compression = get_compression(meta)
 
     d['Compression'].value = compression
+
+    # d['ResolutionID'].value =  2900
     # d['Compression'].value = UUID('04010202-0000-0000-060e-2b3404010101')
     d['Length'].value = int(meta['nb_frames'])
 
@@ -148,8 +154,7 @@ def create_audio_descriptor(f, meta):
     duration = float(meta['duration'])
     d['Length'].value = int(duration * float(rate))
 
-    # CompressedPictureCoding smpte ul
-    # d['Compression'].value = UUID('040102020000-0000-060e-2b3404010101')
+    d['Compression'].value = UUID('04020202-0000-0000-060e-2b3404010101')
     return d
 
 
@@ -173,9 +178,18 @@ def guess_length(metadata, edit_rate):
             return int(st['nb_frames'])
 
 
-def create_ama_link(f, path, metadata, container="Generic"):
+def get_container_guid(metadata):
 
-    container_guid, formats = MediaContainerGUIDs[container]
+    for st in metadata['streams']:
+        codec_name = st['codec_name']
+        if codec_name in ('prores', ):
+            return MediaContainerGUID['QuickTime']
+
+    return MediaContainerGUID['Generic']
+
+def create_ama_link(f, path, metadata):
+
+    container_guid, formats = get_container_guid(metadata)
     edit_rate = guess_edit_rate(metadata)
     length = guess_length(metadata, edit_rate)
     tape_length = 4142016
@@ -207,13 +221,16 @@ def create_ama_link(f, path, metadata, container="Generic"):
     descriptors = []
 
     for st in metadata['streams']:
-
+        codec_name = st.get('codec_name', None)
         codec_type = st['codec_type']
         if codec_type == 'video':
             desc = create_video_descriptor(f, st)
             desc['Locator'].append(create_network_locator(f, path))
             desc['MediaContainerGUID'].value = container_guid
             descriptors.append(desc)
+
+            # MC Quicktime plugin will error if theis is not set to something...
+            src_mob.comments['Video'] = codec_name
 
             tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='picture')
             tape_slot.segment.length = tape_length
