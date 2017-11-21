@@ -10,6 +10,7 @@ import os
 from .fractions import AAFFraction
 from . import video
 from . import audio
+from . import mxf
 
 MediaContainerGUID = {
 "Generic"        : (UUID("b22697a2-3442-44e8-bb8f-7a1cd290ebf1"),
@@ -189,13 +190,23 @@ def get_container_guid(metadata):
 
 def create_ama_link(f, path, metadata):
 
-    container_guid, formats = get_container_guid(metadata)
-    edit_rate = guess_edit_rate(metadata)
-    length = guess_length(metadata, edit_rate)
     tape_length = 4142016
     prefix ="file://"
     basename = os.path.basename(path)
+    name, ext = os.path.splitext(basename)
+
+
+    if ext.lower() == '.mxf':
+
+        m = mxf.MXFFile(path)
+        m.ama = True
+        m.dump()
+        return m.link(f)
+
     path = prefix + path
+    edit_rate = guess_edit_rate(metadata)
+    length = guess_length(metadata, edit_rate)
+    container_guid, formats = get_container_guid(metadata)
 
     master_mob = f.create.MasterMob()
     src_mob = f.create.SourceMob()
@@ -303,3 +314,5 @@ def create_ama_link(f, path, metadata):
         src_mob.descriptor = desc
     else:
         src_mob.descriptor = descriptors[0]
+
+    return master_mob, src_mob, tape_mob

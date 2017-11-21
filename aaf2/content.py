@@ -43,11 +43,12 @@ class ContentStorage(core.AAFObject):
 
     def link_external_mxf(self, path):
         m = mxf.MXFFile(path)
-        # m.dump()
+        if m.operation_pattern != "OPAtom":
+            raise Exception("can only link OPAtom mxf files")
         return m.link(self.root)
 
     def create_ama_link(self, path, metadata):
-        ama.create_ama_link(self.root, path, metadata)
+        return ama.create_ama_link(self.root, path, metadata)
 
     @property
     def essencedata(self):
