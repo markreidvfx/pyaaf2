@@ -175,6 +175,14 @@ enums = {
      7 : "ScanningDirection_BottomToTopRightToLeft" ,
      }
 ),
+"AVCContentScanningType" : ( "0201012c-0000-0000-060e-2b3401040101" , "aafUInt8" , {
+     0 : "AVCContentScanning_NotKnown" ,
+     1 : "AVCContentScanning_ProgressiveFramePicture" ,
+     2 : "AVCContentScanning_InterlaceFieldPicture" ,
+     3 : "AVCContentScanning_InterlaceFramePicture" ,
+     4 : "AVCContentScanning_Interlace_FrameFieldPicture" ,
+     }
+),
 "AvidPannerKindType" : ( "3659b342-4f19-4316-9309-f139434a94e5" , "aafUInt32" , {
      1 : "AvidPannerKind_Stereo" ,
      2 : "AvidPannerKind_LCR" ,
@@ -354,17 +362,21 @@ extenums = {
      }
 ),
 "TransferCharacteristicType" : ( "02020102-0000-0000-060e-2b3401040101" , {
+     "0e040501-0106-0000-060e-2b3404010101" : "TransferCharacteristic_SMPTE_ST2084" ,
      "04010101-0106-0000-060e-2b3404010101" : "TransferCharacteristic_linear" ,
+     "0e040501-0108-0000-060e-2b3404010101" : "TransferCharacteristic_ARIB_B67" ,
      "0e040501-0105-0000-060e-2b3404010101" : "TransferCharacteristic_SMPTE_RP431" ,
      "04010101-0101-0000-060e-2b3404010101" : "TransferCharacteristic_ITU470_PAL" ,
+     "0e040501-010a-0000-060e-2b3404010101" : "TransferCharacteristic_ITU709_Extended2" ,
      "0e040501-0102-0000-060e-2b3404010101" : "TransferCharacteristic_DPXLogarithmic" ,
+     "0e060401-0101-0605-060e-2b3404010106" : "TransferCharacteristic_Sony_SLog3" ,
      "04010101-0103-0000-060e-2b3404010101" : "TransferCharacteristic_SMPTE240M" ,
      "0e170000-0001-0101-060e-2b340401010c" : "TransferCharacteristic_ARRI_LogC" ,
      "0e040501-0101-0000-060e-2b3404010101" : "TransferCharacteristic_DPXPrintingDensity" ,
      "04010101-0102-0000-060e-2b3404010101" : "TransferCharacteristic_ITU709" ,
      "0e040501-0103-0000-060e-2b3404010101" : "TransferCharacteristic_SRGB" ,
      "04010101-0104-0000-060e-2b3404010101" : "TransferCharacteristic_274M_296M" ,
-     "04010101-0105-0000-060e-2b3404010101" : "TransferCharacteristic_ITU1361" ,
+     "04010101-0105-0000-060e-2b3404010101" : "TransferCharacteristic_ITU1361",
      }
 ),
 "PluginCategoryType" : ( "02020103-0000-0000-060e-2b3401040101" , {
@@ -383,9 +395,11 @@ extenums = {
 ),
 "ColorPrimariesType" : ( "02020105-0000-0000-060e-2b3401040101" , {
      "0e040501-0301-0000-060e-2b3404010101" : "ColorPrimaries_SMPTE_RP431" ,
-     "04010101-0303-0000-060e-2b3404010106" : "ColorPrimaries_ITU709" ,
-     "04010101-0302-0000-060e-2b3404010106" : "ColorPrimaries_ITU470_PAL" ,
      "04010101-0301-0000-060e-2b3404010106" : "ColorPrimaries_SMPTE170M" ,
+     "04010101-0302-0000-060e-2b3404010106" : "ColorPrimaries_ITU470_PAL" ,
+     "04010101-0303-0000-060e-2b3404010106" : "ColorPrimaries_ITU709" ,
+     "0e040501-0302-0000-060e-2b3404010101" : "ColorPrimaries_Sony_SGamut3" ,
+     "0e040501-0303-0000-060e-2b3404010101" : "ColorPrimaries_Sony_SGamut3_Cine" ,
      "04010101-0304-0000-060e-2b340401010d" : "ColorPrimaries_ITU2020" ,
      }
 ),

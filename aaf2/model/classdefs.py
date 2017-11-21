@@ -392,6 +392,9 @@ classdefs = {
      "EditRate" : ( "05300402-0000-0000-060e-2b3401010102" ,  0x4901 ,  "Rational" , False ,  False ),
      }
 ),
+"StaticMobSlot" : ( "0d010101-0101-3a00-060e-2b3402060101", "MobSlot", True , {
+    }
+),
 "TimelineMobSlot"  : ( "0d010101-0101-3b00-060e-2b3402060101" , "MobSlot" , True , {
      "TimelineMobAttributeList" : ( "107f8331-1914-4234-b2c4-5a3eb755b7ca" ,  0xFFF4 ,  "kAAFTypeID_TaggedValueStrongReferenceVector" , True ,  False ),
      "MarkOut" : ( "07020103-0203-0000-060e-2b3401010107" ,  0x4B04 ,  "aafPositionType" , True ,  False ),
@@ -491,6 +494,24 @@ classdefs = {
      }
 ),
 "SubDescriptor"  : ( "0d010101-0101-5900-060e-2b3402060101" , "InterchangeObject" , False , {
+     }
+),
+"AVCSubDescriptor"  : ( "0101010d-0101-006e-060e-2b3402060101" , "SubDescriptor" , True , {
+     "AVCMaximumBitRate" : ( "06060104-0b01-0000-060e-2b340101010e" ,  0xFFAF ,  "aafUInt32" , True ,  False ),
+     "AVCProfileConstraint" : ( "06060104-0c01-0000-060e-2b340101010e" ,  0xFFAE ,  "aafUInt8" , True ,  False ),
+     "AVCLevel" : ( "06060104-0d01-0000-060e-2b340101010e" ,  0xFFAD ,  "aafUInt8" , True ,  False ),
+     "AVCDecodingDelay" : ( "06060104-0e01-0000-060e-2b340101010e" ,  0xFFAC ,  "aafUInt8" , False ,  False ),
+     "AVCMaximumRefFrames" : ( "06060104-0f01-0000-060e-2b340101010e" ,  0xFFAB ,  "aafUInt8" , True ,  False ),
+     "AVCCodedContentKind" : ( "06060104-0401-0000-060e-2b340101010e" ,  0xFFB5 ,  "AVCContentScanningType" , True ,  False ),
+     "AVCSequenceParameterSetFlag" : ( "06060104-1001-0000-060e-2b340101010e" ,  0xFFAA ,  "aafUInt8" , True ,  False ),
+     "AVCPictureParameterSetFlag" : ( "06060104-1101-0000-060e-2b340101010e" ,  0xFFA9 ,  "aafUInt8" , True ,  False ),
+     "AVCMaximumGOPSize" : ( "06060104-0801-0000-060e-2b340101010e" ,  0xFFB2 ,  "aafUInt16" , True ,  False ),
+     "AVCConstantBPictureFlag" : ( "06060104-0301-0000-060e-2b340101010e" ,  0xFFB6 ,  "Boolean" , True ,  False ),
+     "AVCIdenticalGOPIndicator" : ( "06060104-0701-0000-060e-2b340101010e" ,  0xFFB3 ,  "Boolean" , True ,  False ),
+     "AVCClosedGOPIndicator" : ( "06060104-0601-0000-060e-2b340101010e" ,  0xFFB4 ,  "Boolean" , True ,  False ),
+     "AVCMaximumBPictureCount" : ( "06060104-0901-0000-060e-2b340101010e" ,  0xFFB1 ,  "aafUInt16" , True ,  False ),
+     "AVCAverageBitRate" : ( "06060104-1401-0000-060e-2b340101010e" ,  0xFFA8 ,  "aafUInt32" , True ,  False ),
+     "AVCProfile" : ( "06060104-0a01-0000-060e-2b340101010e" ,  0xFFB0 ,  "aafUInt8" , True ,  False ),
      }
 ),
 "ANCDataDescriptor"  : ( "0d010101-0101-5c00-060e-2b3402060101" , "DataEssenceDescriptor" , True , {

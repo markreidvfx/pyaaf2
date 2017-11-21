@@ -100,10 +100,11 @@ ParameterDefs = {
 
 DataDefs = {
 "01030202-0100-0000-060e-2b3404010101" : ("DataDef_Picture", "Picture data"),
+"01030202-0200-0000-060e-2b3404010101" : ("DataDef_Sound", "Sound data"),
+"01030202-0300-0000-060e-2b3404010101" : ("DataDef_Data", "Data"),
 "6f3c8ce1-6cef-11d2-807d-006008143e6f" : ("DataDef_LegacyPicture", "Picture data (legacy)"),
 "05cba731-1daa-11d3-80ad-006008143e6f" : ("DataDef_Matte", "Matte data"),
 "05cba732-1daa-11d3-80ad-006008143e6f" : ("DataDef_PictureWithMatte", "Picture and Matte data"),
-"01030202-0200-0000-060e-2b3404010101" : ("DataDef_Sound", "Sound data"),
 "78e1ebe1-6cef-11d2-807d-006008143e6f" : ("DataDef_LegacySound", "Sound data (legacy)"),
 "01030201-0100-0000-060e-2b3404010101" : ("DataDef_Timecode", "Timecode data"),
 "7f275e81-77e5-11d2-807f-006008143e6f" : ("DataDef_LegacyTimecode", "Timecode data (legacy)"),
