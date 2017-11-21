@@ -208,7 +208,7 @@ class ClassDef(core.AAFObject):
 
         self.class_name = self.property_entries[pid_name].data[:-2].decode('utf-16le')
         self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
-        self.abstract = self.property_entries[pid_abstract].data == b'\x01'
+        self.concrete = self.property_entries[pid_abstract].data == b'\x01'
 
         if pid_properties in self.property_entries:
             for key,value in self.property_entries[pid_properties].items():
