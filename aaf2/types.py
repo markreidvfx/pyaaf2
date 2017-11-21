@@ -717,7 +717,11 @@ class TypeDefExtEnum(TypeDef):
         if data is None:
             return None
         v = UUID(bytes_le=data)
-        return self.elements[v]
+        result = self.elements.get(v, None)
+        if result is None:
+            return v
+
+        return result
 
     def encode(self, data):
         for key, value in self.elements.items():
