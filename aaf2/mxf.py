@@ -20,6 +20,13 @@ from .utils import (read_u8, read_u16be,
 from .mobid import MobID
 from .model import datadefs
 
+MXF_CLASSES = {}
+
+def register_mxf_class(classobj):
+    MXF_CLASSES[classobj.class_id] = classobj
+    return classobj
+
+
 class MXFRef(UUID):
     pass
 
@@ -178,7 +185,9 @@ class MXFObject(object):
     def __repr__(self):
         return str(self.data)
 
+@register_mxf_class
 class MXFPreface(MXFObject):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101012f00")
     def read_tag(self, tag, data):
         super(MXFPreface, self).read_tag(tag, data)
 
@@ -187,7 +196,9 @@ class MXFPreface(MXFObject):
         elif tag == 0x3b03:
             self.data['ContentStorage'] = decode_strongref(data)
 
+@register_mxf_class
 class MXFContentStorage(MXFObject):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101011800")
     def read_tag(self, tag, data):
         super(MXFContentStorage, self).read_tag(tag, data)
 
@@ -253,16 +264,19 @@ class MXFPackage(MXFObject):
 
         return mob
 
+@register_mxf_class
 class MXFMaterialPackage(MXFPackage):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101013600")
     def __init__(self):
         super(MXFMaterialPackage, self).__init__()
 
-
+@register_mxf_class
 class MXFSourcePackage(MXFPackage):
-    pass
+    class_id = UUID("060e2b34-0253-0101-0d01-010101013700")
 
+@register_mxf_class
 class MXFTrack(MXFObject):
-
+    class_id = UUID("060e2b34-0253-0101-0d01-010101013b00")
     def read_tag(self, tag, data):
         super(MXFTrack, self).read_tag(tag, data)
 
@@ -293,7 +307,9 @@ class MXFTrack(MXFObject):
         timeline.segment = segment.link(f)
         return timeline
 
+@register_mxf_class
 class MXFStaticTrack(MXFTrack):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101013a00")
     def link(self, f):
         slot_id = self.data['SlotID']
 
@@ -307,8 +323,9 @@ class MXFStaticTrack(MXFTrack):
         timeline.segment = segment.link(f)
         return timeline
 
+@register_mxf_class
 class MXFEventTrack(MXFTrack):
-    pass
+    class_id = UUID("060e2b34-0253-0101-0d01-010101013900")
 
 class MXFComponent(MXFObject):
     def read_tag(self, tag, data):
@@ -349,8 +366,9 @@ class MXFComponent(MXFObject):
         elif tag == 0x0e02:
             self.data['RelativeSlot'] = read_s32be(BytesIO(data))
 
+@register_mxf_class
 class MXFSequence(MXFComponent):
-
+    class_id = UUID("060e2b34-0253-0101-0d01-010101010f00")
     def link(self, f):
         s = f.create.Sequence()
         s.media_kind = self.data['DataDef'] #or 'DataDef_Unknown'
@@ -361,7 +379,9 @@ class MXFSequence(MXFComponent):
             s['Components'].append(item.link(f))
         return s
 
+@register_mxf_class
 class MXFSourceClip(MXFComponent):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101011100")
     def link(self, f):
         s = f.create.SourceClip()
         s.media_kind = self.data['DataDef'] or 'DataDef_Unknown'
@@ -369,7 +389,9 @@ class MXFSourceClip(MXFComponent):
             s[key].value = self.data.get(key, None)
         return s
 
+@register_mxf_class
 class MXFTimecode(MXFComponent):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101011400")
     def link(self, f):
         fps = self.data['FPS']
         drop = self.data['DropFrame']
@@ -382,7 +404,9 @@ class MXFTimecode(MXFComponent):
 
         return s
 
+@register_mxf_class
 class MXFPulldown(MXFComponent):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101010c00")
     def link(self, f):
 
         p = f.create.Pulldown()
@@ -395,14 +419,18 @@ class MXFPulldown(MXFComponent):
             p[key].value = self.data[key]
         return p
 
+@register_mxf_class
 class MXFFiller(MXFComponent):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101010900")
     def link(self, f):
         c = f.create.Filler()
         c.media_kind = self.data['DataDef']
         c.length = self.data['Length']
         return c
 
+@register_mxf_class
 class MXFScopeReference(MXFComponent):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101010d00")
     def link(self, f):
         c = f.create.ScopeReference()
         c.media_kind = self.data['DataDef']
@@ -412,7 +440,9 @@ class MXFScopeReference(MXFComponent):
 
         return c
 
+@register_mxf_class
 class MXFEssenceGroup(MXFComponent):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101010500")
     def link(self, f):
 
         e = f.create.EssenceGroup()
@@ -481,7 +511,9 @@ class MXFDescriptor(MXFObject):
         elif tag == 0x3401:
             self.data['PixelLayout'] = decode_pixel_layout(data)
 
+@register_mxf_class
 class MXFMultipleDescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101014400")
     def link(self, f):
         d = f.create.MultipleDescriptor()
         for item in self.iter_strong_refs("FileDescriptors"):
@@ -498,8 +530,10 @@ class MXFMultipleDescriptor(MXFDescriptor):
             d['MediaContainerGUID'].value = UUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
 
         return d
-class MXFCDCIDescriptor(MXFDescriptor):
 
+@register_mxf_class
+class MXFCDCIDescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101012800")
     def link(self, f):
         d = f.create.CDCIDescriptor()
 
@@ -529,7 +563,9 @@ class MXFCDCIDescriptor(MXFDescriptor):
 
         return d
 
+@register_mxf_class
 class MXFRGBADescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101012900")
     def link(self, f):
         d = f.create.RGBADescriptor()
 
@@ -551,24 +587,32 @@ class MXFRGBADescriptor(MXFDescriptor):
 
         return d
 
+@register_mxf_class
 class MXFANCDataDescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101015c00")
     def link(self, f):
         d = f.create.ANCDataDescriptor()
         for key in ('SampleRate', 'Length',):
             d[key].value = self.data[key]
         return d
 
+@register_mxf_class
 class MXFMPEG2VideoDescriptor(MXFCDCIDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101015100")
     def link(self, f):
         # 060e2b34.04010103.04010202.01040300
         self.data['ResolutionID'] = 4076 #XDCAM HD 50Mbit
 
         return super(MXFMPEG2VideoDescriptor, self).link(f)
 
+@register_mxf_class
 class MXFSoundDescriptor(MXFDescriptor):
-    pass
+    class_id = UUID("060e2b34-0253-0101-0d01-010101014200")
 
+
+@register_mxf_class
 class MXFPCMDescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101014800")
     def link(self, f):
         d = f.create.PCMDescriptor()
         # required
@@ -583,7 +627,9 @@ class MXFPCMDescriptor(MXFDescriptor):
 
         return d
 
+@register_mxf_class
 class MXFAES3AudioDescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101014700")
     def link(self, f):
         d = f.create.PCMDescriptor()
         for key in ('BlockAlign', 'AverageBPS', 'Channels',
@@ -599,7 +645,9 @@ class MXFAES3AudioDescriptor(MXFDescriptor):
 
         return d
 
+@register_mxf_class
 class MXFImportDescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101014a00")
     def link(self, f):
         d = f.create.ImportDescriptor()
         if self.root.ama:
@@ -609,7 +657,9 @@ class MXFImportDescriptor(MXFDescriptor):
 
         return d
 
+@register_mxf_class
 class MXFTapeDescriptor(MXFDescriptor):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101012e00")
     def link(self, f):
         d = f.create.TapeDescriptor()
         return d
@@ -621,48 +671,22 @@ class MXFLocator(MXFObject):
         if tag == 0x4001:
             self.data['URLString'] =  decode_utf16be(data)
 
+@register_mxf_class
 class MXFNetworkLocator(MXFLocator):
-
+    class_id = UUID("060e2b34-0253-0101-0d01-010101013200")
     def link(self, f):
         n = f.create.NetworkLocator()
         n['URLString'].value = self.data['URLString']
         return n
 
+@register_mxf_class
 class MXFEssenceData(MXFObject):
+    class_id = UUID("060e2b34-0253-0101-0d01-010101012300")
     def read_tag(self, tag, data):
         super(MXFEssenceData, self).read_tag(tag, data)
 
         if tag == 0x2701:
             self.data['MobID'] = decode_mob_id(data)
-
-read_table = {
-UUID("060e2b34-0253-0101-0d01-010101012f00") : MXFPreface,
-UUID("060e2b34-0253-0101-0d01-010101011800") : MXFContentStorage,
-UUID("060e2b34-0253-0101-0d01-010101013600") : MXFMaterialPackage,
-UUID("060e2b34-0253-0101-0d01-010101013700") : MXFSourcePackage,
-UUID("060e2b34-0253-0101-0d01-010101013b00") : MXFTrack,
-UUID("060e2b34-0253-0101-0d01-010101013a00") : MXFStaticTrack,
-UUID("060e2b34-0253-0101-0d01-010101013900") : MXFEventTrack,
-UUID("060e2b34-0253-0101-0d01-010101010f00") : MXFSequence,
-UUID("060e2b34-0253-0101-0d01-010101011100") : MXFSourceClip,
-UUID("060e2b34-0253-0101-0d01-010101011400") : MXFTimecode,
-UUID("060e2b34-0253-0101-0d01-010101010c00") : MXFPulldown,
-UUID("060e2b34-0253-0101-0d01-010101010900") : MXFFiller,
-UUID("060e2b34-0253-0101-0d01-010101010d00") : MXFScopeReference,
-UUID("060e2b34-0253-0101-0d01-010101014400") : MXFMultipleDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101012800") : MXFCDCIDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101012900") : MXFRGBADescriptor,
-UUID("060e2b34-0253-0101-0d01-010101014200") : MXFSoundDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101014800") : MXFPCMDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101015100") : MXFMPEG2VideoDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101014700") : MXFAES3AudioDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101015c00") : MXFANCDataDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101014a00") : MXFImportDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101012e00") : MXFTapeDescriptor,
-UUID("060e2b34-0253-0101-0d01-010101013200") : MXFNetworkLocator,
-UUID("060e2b34-0253-0101-0d01-010101010500") : MXFEssenceGroup,
-UUID("060e2b34-0253-0101-0d01-010101012300") : MXFEssenceData,
-}
 
 def ber_length(f):
     length = read_u8(f)
@@ -813,7 +837,7 @@ class MXFFile(object):
         if not b[5] == 0x53:
             return
 
-        obj_class = read_table.get(key, None)
+        obj_class = MXF_CLASSES.get(key, None)
         if obj_class:
 
             obj = obj_class()
