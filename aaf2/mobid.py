@@ -129,7 +129,7 @@ class MobID(object):
         self.Data4[7],
         ) = MOBID_STRUCT.unpack(data)
 
-    def _from_dict(self, d):
+    def from_dict(self, d):
         self.length = d.get("length", 0)
         self.instanceHigh = d.get("instanceHigh", 0)
         self.instanceMid = d.get("instanceMid", 0)
