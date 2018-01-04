@@ -1309,42 +1309,28 @@ class CompoundFileBinary(object):
 
         dir_per_sector = self.sector_size // 128
         max_dirs_entries = self.dir_sector_count * dir_per_sector
-        count = 0
 
-        # MorrisTraversal Non-recusive
         current = child
-
+        stack = []
         result = []
 
-        while not current is None:
-            if current.left() is None:
-                result.append(current)
-                current = current.right()
-            else:
-                #Find the inorder predecessor of current
-                pre = current.left()
-                pre_count = 0
-                while not pre.right() is None and pre.right() != current:
-                    pre = pre.right()
-                    pre_count += 1
-                    # in case of inifinite loop, not sure if this can happen
-                    # if pre_count > max_dirs_entries:
-                    #     raise Exception("exceed max dir count %d %d" % (pre_count, max_dirs_entries))
+        while True:
 
-                # Make current as right child of its inorder predecessor
-                if pre.right() is None:
-                    pre.right_id = current.dir_id
-                    current = current.left()
-                # Revert the changes made in if part to restore the original tree
-                else:
-                    pre.right_id = None
-                    result.append(current)
-                    current = current.right()
+            # go to left most node
+            while current is not None:
+                stack.append(current)
+                current = current.left()
+                if len(stack) > max_dirs_entries:
+                    raise CompoundFileBinaryError("corrupt folder structure")
 
-            count += 1
-            # in case of inifinite loop, not sure if this can happen
-            # if count > max_dirs_entries:
-            #     raise Exception("exceed max dir count %d %d" % (count, max_dirs_entries))
+            # done if stack is empy
+            if not stack:
+                break
+
+            current = stack.pop()
+            result.append(current)
+            current = current.right()
+
         root._children_cache = result
         return result
 
