@@ -311,7 +311,7 @@ class DirEntry(object):
             self.child_id = entry.dir_id
 
         if self.dir_id in self.storage.children_cache:
-            del self.storage.children_cache[self.dir_id]
+            self.storage.children_cache[self.dir_id].append(entry)
 
 
     def remove_child(self, entry):
