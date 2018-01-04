@@ -1267,6 +1267,8 @@ class CompoundFileBinary(object):
         if entry.dir_id in self.children_cache:
             del self.children_cache[entry.dir_id]
 
+        entry.dir_id = None
+
 
     def rmtree(self, path):
         """
@@ -1280,14 +1282,18 @@ class CompoundFileBinary(object):
                 if item.dir_id in self.dir_cache:
                     del self.dir_cache[item.dir_id]
                 if item.dir_id in self.children_cache:
-                    del self.dir_cache[item.dir_id]
+                    del self.children_cache[item.dir_id]
+
+                item.dir_id = None
 
             for item in storage:
                 self.dir_freelist.append(item.dir_id)
                 if item.dir_id in self.dir_cache:
                     del self.dir_cache[item.dir_id]
                 if item.dir_id in self.children_cache:
-                    del self.dir_cache[item.dir_id]
+                    del self.children_cache[item.dir_id]
+
+                item.dir_id = None
 
             root.child_id = None
 
