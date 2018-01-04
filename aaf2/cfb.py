@@ -11,6 +11,7 @@ import os
 import uuid
 import io
 import math
+import weakref
 from array import array
 from struct import Struct
 
@@ -23,6 +24,7 @@ from .utils import (
     write_filetime, write_sid, write_uuid
 )
 from .exceptions import CompoundFileBinaryError
+from .cache import LRUCacheDict
 
 from io import BytesIO
 
@@ -233,7 +235,7 @@ class Stream(object):
 class DirEntry(object):
     __slots__ = ('name', 'type', 'color', 'left_id', 'right_id', 'child_id',
                  'class_id', 'flags', 'create_time', 'modify_time', 'sector_id',
-                 'byte_size', 'storage', 'dir_id', 'parent', )
+                 'byte_size', 'storage', 'dir_id', 'parent', '__weakref__' )
 
     def __init__(self, storage, dir_id):
         self.name = None
@@ -523,9 +525,12 @@ class CompoundFileBinary(object):
         self.dir_fat_chain = []
 
         self.mini_stream_chain = []
+        if mode in ("r", "rb",):
+            self.dir_cache = weakref.WeakValueDictionary()
+        else:
+            self.dir_cache = {}
 
-        self.dir_cache = {}
-        self.children_cache = {}
+        self.children_cache = LRUCacheDict()
         self.dir_freelist = array(str('I'))
 
         self.debug_grow = False
