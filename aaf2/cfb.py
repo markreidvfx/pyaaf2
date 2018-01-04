@@ -233,7 +233,7 @@ class Stream(object):
 class DirEntry(object):
     __slots__ = ('name', 'type', 'color', 'left_id', 'right_id', 'child_id',
                  'class_id', 'flags', 'create_time', 'modify_time', 'sector_id',
-                 'byte_size', 'storage', 'dir_id', 'parent', '_children_cache',)
+                 'byte_size', 'storage', 'dir_id', 'parent', )
 
     def __init__(self, storage, dir_id):
         self.name = None
@@ -256,7 +256,6 @@ class DirEntry(object):
         self.storage = storage
         self.dir_id = dir_id
         self.parent = None
-        self._children_cache = None
 
     def __lt__(self, other):
         if isinstance(other, DirEntry):
@@ -302,17 +301,16 @@ class DirEntry(object):
         return self.storage.read_dir_entry(self.child_id, self)
 
     def add_child(self, entry):
-        if self._children_cache is None:
-            self.listdir()
-
         entry.parent = self
         child = self.child()
         if child:
             child.insert(entry)
-            self._children_cache.append(entry)
         else:
             self.child_id = entry.dir_id
-            self._children_cache = [entry]
+
+        if self.dir_id in self.storage.children_cache:
+            del self.storage.children_cache[self.dir_id]
+
 
     def remove_child(self, entry):
         # NOTE: this is really ineffecient
@@ -323,7 +321,7 @@ class DirEntry(object):
             children.append(item)
 
         self.child_id = None
-        self._children_cache = None
+        self.storage.children_cache[self.dir_id] = []
 
         # construct a new child list
         for item in children:
@@ -527,6 +525,7 @@ class CompoundFileBinary(object):
         self.mini_stream_chain = []
 
         self.dir_cache = {}
+        self.children_cache = {}
         self.dir_freelist = array(str('I'))
 
         self.debug_grow = False
@@ -1260,6 +1259,9 @@ class CompoundFileBinary(object):
         if entry.dir_id in self.dir_cache:
             del self.dir_cache[entry.dir_id]
 
+        if entry.dir_id in self.children_cache:
+            del self.children_cache[entry.dir_id]
+
 
     def rmtree(self, path):
         """
@@ -1272,13 +1274,16 @@ class CompoundFileBinary(object):
                 self.dir_freelist.append(item.dir_id)
                 if item.dir_id in self.dir_cache:
                     del self.dir_cache[item.dir_id]
+                if item.dir_id in self.children_cache:
+                    del self.dir_cache[item.dir_id]
 
             for item in storage:
                 self.dir_freelist.append(item.dir_id)
                 if item.dir_id in self.dir_cache:
                     del self.dir_cache[item.dir_id]
+                if item.dir_id in self.children_cache:
+                    del self.dir_cache[item.dir_id]
 
-            root._children_cache = None
             root.child_id = None
 
         # remove root item
@@ -1300,19 +1305,21 @@ class CompoundFileBinary(object):
         if not root.isdir():
             raise ValueError("can only list storage types")
 
-        if not root._children_cache is None:
-            return root._children_cache
+        if root.dir_id in self.children_cache:
+           return self.children_cache[root.dir_id]
 
         child = root.child()
+
+        result = []
         if not child:
-            return []
+            self.children_cache[root.dir_id] = result
+            return result
 
         dir_per_sector = self.sector_size // 128
         max_dirs_entries = self.dir_sector_count * dir_per_sector
 
         current = child
         stack = []
-        result = []
 
         while True:
 
@@ -1331,7 +1338,7 @@ class CompoundFileBinary(object):
             result.append(current)
             current = current.right()
 
-        root._children_cache = result
+        self.children_cache[root.dir_id] = result
         return result
 
     def find(self, path):
