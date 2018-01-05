@@ -249,6 +249,8 @@ class AAFFile(object):
         if path:
             mode = 'wb+'
             f = io.open(path, mode)
+            old_f = self.f
+            old_cfb = self.cfb
             cfb = CompoundFileBinary(f, mode)
 
             self.root = self.root.copy(cfb.root)
@@ -266,13 +268,17 @@ class AAFFile(object):
             for item, streams in self.root.walk_references():
                 self.path_cache[item.dir.path()] = item
 
+            old_cfb.close()
+            old_f.close()
+
         if self.mode in ("wb+", 'rb+'):
             self.write_reference_properties()
             for path, obj in self.path_cache.items():
                 obj.write_properties()
 
-        self.cfb.close()
+
 
     def close(self):
         self.save()
+        self.cfb.close()
         self.f.close()

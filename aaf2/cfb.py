@@ -508,6 +508,21 @@ class DirEntry(object):
     def __repr__(self):
         return self.name
 
+    def __del__(self):
+        if not self.storage:
+            return
+
+        if self.storage.mode in ('r', 'rb'):
+            return
+
+        if not self.storage.is_open:
+            return
+
+        if self.dir_id is None:
+            return
+
+        self.write()
+
 class CompoundFileBinary(object):
     def __init__(self, file_object, mode='rb'):
 
@@ -525,15 +540,13 @@ class CompoundFileBinary(object):
         self.dir_fat_chain = []
 
         self.mini_stream_chain = []
-        if mode in ("r", "rb",):
-            self.dir_cache = weakref.WeakValueDictionary()
-        else:
-            self.dir_cache = {}
 
+        self.dir_cache = weakref.WeakValueDictionary()
         self.children_cache = LRUCacheDict()
         self.dir_freelist = array(str('I'))
 
         self.debug_grow = False
+        self.is_open = True
 
         if isinstance(self.f, BytesIO):
             self.mode = 'wb+'
@@ -578,6 +591,7 @@ class CompoundFileBinary(object):
         self.write_fat()
         self.write_minifat()
         self.write_dir_entries()
+        self.is_open = False
 
 
     def setup_empty(self):
