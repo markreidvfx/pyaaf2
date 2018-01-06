@@ -302,6 +302,17 @@ class AAFObject(object):
 
         return '<%s at 0x%x>' % (s, id(self))
 
+    def __del__(self):
+        if self.dir is None:
+            return
+        if self.root.mode in ('rb', ):
+            return
+        if not self.root.is_open:
+            return
+
+        self.write_properties()
+
+
     def dump(self, space=""):
 
         indent = "  "

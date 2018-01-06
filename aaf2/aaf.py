@@ -87,6 +87,7 @@ class AAFFile(object):
         self.metadict = MetaDictionary(self)
         self.metadict.root = self
         self.create = AAFFactory(self)
+        self.is_open = True
 
         if self.mode in ("rb", "rb+"):
             self.metadict.dir = self.cfb.find('/MetaDictionary-1')
@@ -282,3 +283,4 @@ class AAFFile(object):
         self.save()
         self.cfb.close()
         self.f.close()
+        self.is_open = False
