@@ -39,6 +39,13 @@ SF_DATA_SET                               = 0xDA
 
 PROPERTY_VERSION=32
 
+def writeonly(func):
+    def func_wrapper(self, *args, **kwargs):
+        if not self.writeable:
+            raise AAFPropertyError("file readonly")
+        return func(self, *args, **kwargs)
+    return func_wrapper
+
 class BaseProperty(object):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         self.parent = parent
@@ -50,6 +57,12 @@ class BaseProperty(object):
 
     def format_name(self):
         return str(property_formats[self.format].__name__)
+
+    @property
+    def writeable(self):
+        if self.parent.dir and self.parent.root.mode in ('rb', ):
+            return False
+        return True
 
     @property
     def data(self):
@@ -100,6 +113,7 @@ class BaseProperty(object):
         return self.typedef.decode(d)
 
     @value.setter
+    @writeonly
     def value(self, value):
         if value is None:
             self.remove_pid_entry()
@@ -180,6 +194,9 @@ class StreamProperty(Property):
                 raise AAFPropertyError("cannot find stream: %s" % index_name)
             return stream.open(mode)
         else:
+            if not self.writeable:
+                raise AAFPropertyError("file readonly")
+
             return self.parent.dir.touch(self.stream_name).open(mode)
 
     @property
@@ -233,6 +250,7 @@ class StrongRefProperty(ObjectRefProperty):
 
 
     @value.setter
+    @writeonly
     def value(self, value):
         if value is None:
             self.remove_pid_entry()
@@ -349,6 +367,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             local_key = read_u32le(f)
             self.references.append(local_key)
 
+    @writeonly
     def write_index(self):
         s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
         f = BytesIO()
@@ -400,6 +419,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             raise IndexError(index)
         return item
 
+    @writeonly
     def __setitem__(self, index, value):
         if index < 0:
             index = max(0, len(self) + index)
@@ -417,6 +437,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         self.objects[index] = value
         self.attach()
 
+    @writeonly
     def clear(self):
         for obj in self:
             obj.detach()
@@ -425,6 +446,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         self.objects = {}
         self.references = []
 
+    @writeonly
     def pop(self, index):
         obj = self.get(index, None)
         if obj is None:
@@ -450,6 +472,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         obj.detach()
         return obj
 
+    @writeonly
     def insert(self, index, value):
         assert self.ref_classdef.isinstance(value.classdef)
 
@@ -468,7 +491,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         self.objects = objects
         self.attach()
 
-
+    @writeonly
     def extend(self, value):
         index_name = self.index_name # sets self.data
         ref_classdef = self.ref_classdef
@@ -495,6 +518,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         return [item for item in self]
 
     @value.setter
+    @writeonly
     def value(self, value):
         if value is None:
             self.remove_pid_entry()
@@ -594,7 +618,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
             self.references[key] = local_key
 
-
+    @writeonly
     def write_index(self):
         s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
         f = BytesIO()
@@ -658,6 +682,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             raise KeyError(key)
         return result
 
+    @writeonly
     def extend(self, values):
         typedef = self.typedef
         classdef = typedef.ref_classdef
@@ -702,6 +727,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
     def append(self, value):
         self.extend([value])
 
+    @writeonly
     def clear(self):
         for item in self.values():
             item.detach()
@@ -709,6 +735,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         self.objects = {}
         self.next_free_key = 0
 
+    @writeonly
     def pop(self, key):
         obj = self.get(key)
         if obj is None:
@@ -727,6 +754,7 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         return list(self.values())
 
     @value.setter
+    @writeonly
     def value(self, value):
         if value is None:
             self.remove_pid_entry()
@@ -826,6 +854,7 @@ class WeakRefProperty(ObjectRefProperty):
         return self.typedef.pid_path
 
     @value.setter
+    @writeonly
     def value(self, value):
         if value is None:
             self.remove_pid_entry()
@@ -894,6 +923,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
     def encode(self):
         return self.index_name.encode("utf-16le") + b"\x00" + b"\x00"
 
+    @writeonly
     def write_index(self):
         s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
         f = BytesIO()
@@ -927,6 +957,7 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
             items.append(r)
         return items
 
+    @writeonly
     def extend(self, values):
         ref_classdef = self.ref_classdef
 
@@ -955,10 +986,12 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
     def append(self, value):
         self.extend([value])
 
+    @writeonly
     def clear(self):
         self.references = []
 
     @value.setter
+    @writeonly
     def value(self, value):
         if value is None:
             self.remove_pid_entry()
