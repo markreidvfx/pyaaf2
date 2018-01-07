@@ -12,7 +12,7 @@ import os
 from uuid import UUID, uuid4
 import sys
 import datetime
-
+import weakref
 from .utils import (
     read_u8,
     read_u16le,
@@ -83,7 +83,7 @@ class AAFFile(object):
 
         self.cfb = CompoundFileBinary(self.f, self.mode)
         self.weakref_table = []
-        self.path_cache = {}
+        self.path_cache =  weakref.WeakValueDictionary()
         self.metadict = MetaDictionary(self)
         self.metadict.root = self
         self.create = AAFFactory(self)

@@ -7,6 +7,7 @@ from __future__ import (
     )
 
 from io import BytesIO
+import weakref
 
 from .utils import (
     read_u8,
@@ -116,9 +117,9 @@ class AAFObject(object):
             message = "%s missing the following required properties:\n    %s" % (str(self), "\n    ".join(m))
             raise AAFPropertyError(message)
 
-    def write_properties(self):
-
-        self.validate()
+    def write_properties(self, validate=True):
+        if validate:
+            self.validate()
 
         s = self.dir.touch("properties").open(mode='w')
 
@@ -160,6 +161,12 @@ class AAFObject(object):
 
     def detach(self, delete=False):
         for item, streams in self.walk_references(topdown=True):
+
+            for pid, p in item.property_entries.items():
+                if isinstance(p, (properties.StrongRefProperty,
+                                  properties.StrongRefArrayProperty)):
+                    p.detach()
+
             if item.dir:
                 # remove from path_cache
                 self.root.path_cache.pop(item.dir.path(), None)
@@ -304,13 +311,16 @@ class AAFObject(object):
 
     def __del__(self):
         if self.dir is None:
+            # print("freeing:", self)
             return
+
+        # print("freeing: %s" % self.dir.path())
         if self.root.mode in ('rb', ):
             return
         if not self.root.is_open:
             return
 
-        self.write_properties()
+        self.write_properties(validate=False)
 
 
     def dump(self, space=""):

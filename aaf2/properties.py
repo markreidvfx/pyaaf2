@@ -9,6 +9,7 @@ from __future__ import (
 import uuid
 from uuid import UUID
 from io import BytesIO
+import weakref
 from .utils import (
     read_u8,
     read_u16le,
@@ -48,19 +49,34 @@ def writeonly(func):
 
 class BaseProperty(object):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
-        self.parent = parent
         self.pid = pid
         self.format = format
         self.version = version
         self._data = None
         self._propertydef = None
+        # self.parentref = None
+        self.parent = parent
 
     def format_name(self):
         return str(property_formats[self.format].__name__)
 
+    # @property
+    # def parent(self):
+    #     return self.parentref()
+    #
+    # @parent.setter
+    # def parent(self, value):
+    #     self.parentref = weakref.ref(value)
+
+    @property
+    def attached(self):
+        if self.parent.dir:
+            return True
+        return False
+
     @property
     def writeable(self):
-        if self.parent.dir and self.parent.root.mode in ('rb', ):
+        if self.parent.root.mode in ('rb', ):
             return False
         return True
 
@@ -216,7 +232,25 @@ class StrongRefProperty(ObjectRefProperty):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefProperty, self).__init__(parent, pid, format, version)
         self.ref = None
-        self.object = None
+        self.objectref = None
+
+    @property
+    def object(self):
+        if self.objectref is None:
+            return None
+        elif isinstance(self.objectref, weakref.ref):
+            return self.objectref()
+        else:
+            return self.objectref
+
+    @object.setter
+    def object(self, value):
+        if value is None:
+            self.objectref = None
+        elif self.attached:
+            self.objectref = weakref.ref(value)
+        else:
+            self.objectref = value
 
     def copy(self, parent):
         p = super(StrongRefProperty, self).copy(parent)
@@ -244,9 +278,11 @@ class StrongRefProperty(ObjectRefProperty):
         if self.object:
             return self.object
         dir_entry = self.parent.dir.get(self.ref)
+        obj = None
         if dir_entry:
-            self.object = self.parent.root.read_object(dir_entry)
-        return self.object
+            obj = self.parent.root.read_object(dir_entry)
+            self.object = obj
+        return obj
 
 
     @value.setter
@@ -270,12 +306,17 @@ class StrongRefProperty(ObjectRefProperty):
         # before asigning new object detach old
         if self.object:
             self.object.detach()
+            self.object = None
 
         self.object = value
         if not self.pid in self.parent.property_entries:
             self.parent.property_entries[self.pid] = self
 
         self.attach()
+
+    def detach(self):
+        # convert to regular ref
+        self.object = self.value
 
     def attach(self):
         if not self.object:
@@ -290,6 +331,9 @@ class StrongRefProperty(ObjectRefProperty):
         if self.object.dir != dir_entry:
             self.object.attach(dir_entry)
 
+        # convert to weakref
+        self.object = self.object
+
 
 # abtract for referenece arrays
 class StrongRefArrayProperty(ObjectRefArrayProperty):
@@ -302,12 +346,16 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefVectorProperty, self).__init__(parent, pid, format, version)
         self.references = []
-        self.objects = {}
         self._index_name = None
 
         # self.ref = None
         self.next_free_key = 0
         self.last_free_key = 0xFFFFFFFF
+
+        if self.attached:
+            self.objects = weakref.WeakValueDictionary()
+        else:
+            self.objects = {}
 
     def copy(self, parent):
         p = super(StrongRefVectorProperty, self).copy(parent)
@@ -345,8 +393,6 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         self._index_name = value
 
     def decode(self):
-        self.references = []
-        self.objects = {}
         self.index_name = self.data[:-2].decode("utf-16le")
 
     def read_index(self):
@@ -443,8 +489,12 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             obj.detach()
 
         self.next_free_key = 0
-        self.objects = {}
         self.references = []
+
+        if self.attached:
+            self.objects = weakref.WeakValueDictionary()
+        else:
+            self.objects = {}
 
     @writeonly
     def pop(self, index):
@@ -466,7 +516,11 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
             else:
                 objects[key] = value
 
-        self.objects = objects
+        if self.attached:
+            self.objects = weakref.WeakValueDictionary(objects)
+        else:
+            self.objects = objects
+
         assert obj is item
 
         obj.detach()
@@ -488,7 +542,10 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
                 objects[key] = value
 
         self.next_free_key += 1
-        self.objects = objects
+        if self.attached:
+            self.objects = weakref.WeakValueDictionary(objects)
+        else:
+            self.objects = objects
         self.attach()
 
     @writeonly
@@ -527,6 +584,12 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         self.clear()
         self.extend(value)
 
+    def detach(self):
+        objects = {}
+        for i, obj in enumerate(self):
+            objects[i] = obj
+        self.objects = objects
+
     def attach(self):
 
         if not self.parent.dir:
@@ -551,7 +614,6 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         super(StrongRefSetProperty, self).__init__(parent, pid, format, version)
 
         self.references = {}
-        self.objects = {}
 
         self.index_name = None
 
@@ -561,6 +623,11 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         # Pid of the referenced objects unique_key
         self.key_pid = None
         self.key_size = None
+
+        if self.attached:
+            self.objects = weakref.WeakValueDictionary()
+        else:
+            self.objects = {}
 
     def copy(self, parent):
         p = super(StrongRefSetProperty, self).copy(parent)
@@ -583,8 +650,6 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
     def decode(self):
         self.index_name = self.data[:-2].decode("utf-16le")
-        self.objects = {}
-        self.references = {}
 
     def read_index(self):
         index_name = self.index_name + " index"
@@ -732,7 +797,10 @@ class StrongRefSetProperty(StrongRefArrayProperty):
         for item in self.values():
             item.detach()
         self.references = {}
-        self.objects = {}
+        if self.attached:
+            self.objects = weakref.WeakValueDictionary()
+        else:
+            self.objects = {}
         self.next_free_key = 0
 
     @writeonly
@@ -766,6 +834,12 @@ class StrongRefSetProperty(StrongRefArrayProperty):
 
         self.extend(value)
         return
+
+    def detach(self):
+        objects = {}
+        for key, value in self.items():
+            objects[key] = value
+        self.objects = objects
 
     def attach(self):
 
