@@ -1,7 +1,7 @@
 COVERAGE_EXEC := $(shell command -v coverage 2> /dev/null)
 
 test: python-version
-	@python -m unittest discover tests
+	@python -m unittest discover tests -v
 
 python-version:
 	@python --version
