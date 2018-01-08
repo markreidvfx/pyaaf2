@@ -8,6 +8,7 @@ import os
 import subprocess
 import unittest
 import hashlib
+import shutil
 import common
 import aaf2
 from aaf2 import exceptions
@@ -71,6 +72,56 @@ class ImportTests(unittest.TestCase):
 
             assert slot.dir
 
+    def test_reattach(self):
+        new_file = os.path.join(common.sandbox(), 'test_reattach.aaf')
+        test_file = common.test_file_01()
+        shutil.copy(test_file, new_file)
+
+        mob_ids = []
+        original_child_count = 0
+
+        with aaf2.open(new_file, 'r+') as f:
+            mobs = f.content['Mobs'].value
+
+            for m in mobs:
+                for item, streams in m.walk_references():
+                    assert item.dir is not None
+                    original_child_count += 1
+
+            assert original_child_count > len(mobs)
+
+            mob_ids = [m.id for m in mobs]
+            f.content['Mobs'].value = []
+
+            child_count = 0
+            for m in mobs:
+                for item, streams in m.walk_references():
+                    assert item.dir is None
+                    child_count += 1
+
+            assert child_count == original_child_count
+
+            f.content['Mobs'].value = mobs
+            child_count = 0
+            for m in mobs:
+                for item, streams in m.walk_references():
+                    assert item.dir is not None
+                    child_count += 1
+
+            assert child_count == original_child_count
+
+        with aaf2.open(new_file, 'r') as f:
+            for mob_id in mob_ids:
+                assert f.content.mobs.get(mob_id, None) is not None
+
+            mobs = f.content['Mobs'].value
+            child_count = 0
+            for m in mobs:
+                for item, streams in m.walk_references():
+                    assert item.dir is not None
+                    child_count += 1
+
+            assert child_count == original_child_count
 
 if __name__ == "__main__":
     import logging

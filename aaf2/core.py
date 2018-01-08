@@ -160,7 +160,10 @@ class AAFObject(object):
 
 
     def detach(self, delete=False):
+        items = []
         for item, streams in self.walk_references(topdown=True):
+            # store reference not sure if necessary
+            items.append(item)
 
             for pid, p in item.property_entries.items():
                 if isinstance(p, (properties.StrongRefProperty,
@@ -183,6 +186,7 @@ class AAFObject(object):
         # remove self from object manager
         if self.dir:
             self.root.manager.pop(self.dir.path(), None)
+            self.dir = None
 
     def attach(self, dir_entry):
         if self.dir:

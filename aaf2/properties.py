@@ -311,9 +311,12 @@ class StrongRefProperty(ObjectRefProperty):
 
     def detach(self):
         # convert to regular ref
-        self.object = self.value
+        self.objectref = self.value
 
     def attach(self):
+
+        obj = self.value
+
         if not self.object:
             return
 
@@ -327,7 +330,7 @@ class StrongRefProperty(ObjectRefProperty):
             self.object.attach(dir_entry)
 
         # convert to weakref
-        self.object = self.object
+        self.objectref = weakref.ref(obj)
 
 
 # abtract for referenece arrays
