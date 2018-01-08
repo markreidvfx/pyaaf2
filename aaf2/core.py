@@ -165,11 +165,13 @@ class AAFObject(object):
             for pid, p in item.property_entries.items():
                 if isinstance(p, (properties.StrongRefProperty,
                                   properties.StrongRefArrayProperty)):
+                    # converts all internal weakrefs to strongrefs
                     p.detach()
 
             if item.dir:
-                # remove from path_cache
-                self.root.path_cache.pop(item.dir.path(), None)
+                # remove child from object manager
+                self.root.manager.pop(item.dir.path(), None)
+
                 # NOTE: do we need to delete directory entry?
                 # new objects will overwrite whats there anyway
                 # and nothing will point to the old object
@@ -178,14 +180,20 @@ class AAFObject(object):
 
                 item.dir = None
 
+        # remove self from object manager
+        if self.dir:
+            self.root.manager.pop(self.dir.path(), None)
+
     def attach(self, dir_entry):
         if self.dir:
             raise AAFAttachError("cannot attached obj to %s already attached to %s" % (dir_entry.path(), self.dir.path()))
 
         self.dir = dir_entry
         self.dir.class_id = self.class_id
-        self.root.path_cache[dir_entry.path()] = self
-        # print("attach: %s" % self.dir.path(), self)
+
+        # add self to modified
+        self.root.manager.add_modified(self)
+
         for pid, p in self.property_entries.items():
             if isinstance(p, (properties.StrongRefProperty,
                               properties.StrongRefArrayProperty)):
@@ -308,20 +316,6 @@ class AAFObject(object):
             s += ' %s' % name
 
         return '<%s at 0x%x>' % (s, id(self))
-
-    def __del__(self):
-        if self.dir is None:
-            # print("freeing:", self)
-            return
-
-        # print("freeing: %s" % self.dir.path())
-        if self.root.mode in ('rb', ):
-            return
-        if not self.root.is_open:
-            return
-
-        self.write_properties(validate=False)
-
 
     def dump(self, space=""):
 

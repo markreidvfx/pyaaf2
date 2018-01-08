@@ -44,7 +44,11 @@ def writeonly(func):
     def func_wrapper(self, *args, **kwargs):
         if not self.writeable:
             raise AAFPropertyError("file readonly")
-        return func(self, *args, **kwargs)
+        result = func(self, *args, **kwargs)
+        if self.attached:
+            self.parent.root.manager.add_modified(self.parent)
+        return result
+
     return func_wrapper
 
 class BaseProperty(object):
@@ -54,19 +58,10 @@ class BaseProperty(object):
         self.version = version
         self._data = None
         self._propertydef = None
-        # self.parentref = None
         self.parent = parent
 
     def format_name(self):
         return str(property_formats[self.format].__name__)
-
-    # @property
-    # def parent(self):
-    #     return self.parentref()
-    #
-    # @parent.setter
-    # def parent(self, value):
-    #     self.parentref = weakref.ref(value)
 
     @property
     def attached(self):

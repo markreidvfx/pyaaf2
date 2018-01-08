@@ -62,6 +62,73 @@ class AAFFactory(object):
     def create_instance(self, *args, **kwargs):
         return self.from_name(self.class_name, *args, **kwargs)
 
+class AAFObjectManager(object):
+
+    def __init__(self, root):
+        self.root = root
+        self.path_cache = weakref.WeakValueDictionary()
+        # to hold onto modified objects
+        self.modified = {}
+
+    def add_modified(self, obj):
+        if self.root.mode == 'rb':
+            raise ValueError("cannot modify read only file")
+
+        path = obj.dir.path()
+        self.modified[path] = obj
+        self.path_cache[path] = obj
+
+    def pop(self, path, default=None):
+        cached_obj = self.path_cache.pop(path, default)
+        modified_obj = self.modified.pop(path, default)
+        return modified_obj or cached_obj
+
+    def __setitem__(self, key, value):
+        self.path_cache[key] = value
+
+    def read_object(self, path):
+        if isinstance(path, DirEntry):
+            dir_entry = path
+            path = dir_entry.path()
+            if path in self.path_cache:
+                return self.path_cache[path]
+        else:
+            if path in self.path_cache:
+                return self.path_cache[path]
+
+            dir_entry = self.root.cfb.find(path)
+
+        if dir_entry is None:
+            raise ValueError("cannot find path: %s" % path)
+
+        obj_class = self.root.metadict.lookup_class(dir_entry.class_id)
+
+        # NOTE: objects read from file do not run __init__
+        obj = obj_class.__new__(obj_class)
+        obj.root = self.root
+        obj.dir = dir_entry
+        if obj_class is AAFObject:
+            obj.class_id = dir_entry.class_id
+        obj.read_properties()
+
+        self[path] = obj
+        # obj.dump()
+        return obj
+
+    def write_objects(self):
+        written = []
+        for path, obj in self.modified.items():
+            try:
+                obj.write_properties()
+                written.append(path)
+            except:
+                print("failed to write: %s %s" %  (str(path), str(obj)))
+                raise
+
+        # no longer need to be in modified
+        for path in written:
+            self.modified.pop(path)
+
 class AAFFile(object):
 
     def __init__(self, path=None, mode='r'):
@@ -83,7 +150,7 @@ class AAFFile(object):
 
         self.cfb = CompoundFileBinary(self.f, self.mode)
         self.weakref_table = []
-        self.path_cache =  weakref.WeakValueDictionary()
+        self.manager = AAFObjectManager(self)
         self.metadict = MetaDictionary(self)
         self.metadict.root = self
         self.create = AAFFactory(self)
@@ -91,7 +158,7 @@ class AAFFile(object):
 
         if self.mode in ("rb", "rb+"):
             self.metadict.dir = self.cfb.find('/MetaDictionary-1')
-            self.path_cache['/MetaDictionary-1'] = self.metadict
+            self.manager['/MetaDictionary-1'] = self.metadict
             self.root = self.read_object("/")
             self.read_reference_properties()
             self.metadict.read_properties()
@@ -144,33 +211,7 @@ class AAFFile(object):
         self.content['Mobs'].value = []
 
     def read_object(self, path):
-        if isinstance(path, DirEntry):
-            dir_entry = path
-            path = dir_entry.path()
-            if path in self.path_cache:
-                return self.path_cache[path]
-        else:
-            if path in self.path_cache:
-                return self.path_cache[path]
-
-            dir_entry = self.cfb.find(path)
-
-        if dir_entry is None:
-            raise ValueError("cannot find path: %s" % path)
-
-        obj_class = self.metadict.lookup_class(dir_entry.class_id)
-
-        # NOTE: objects read from file do not run __init__
-        obj = obj_class.__new__(obj_class)
-        obj.root = self
-        obj.dir = dir_entry
-        if obj_class is AAFObject:
-            obj.class_id = dir_entry.class_id
-        obj.read_properties()
-
-        self.path_cache[path] = obj
-        # obj.dump()
-        return obj
+        return self.manager.read_object(path)
 
     def resovle_weakref(self, index, ref_pid, ref):
         parent, p = self.weakref_prop(index)
@@ -247,12 +288,13 @@ class AAFFile(object):
 
     def save(self):
         if self.mode in ("wb+", 'rb+'):
+            if not self.is_open:
+                raise IOError("file closed")
             self.write_reference_properties()
-            for path, obj in self.path_cache.items():
-                obj.write_properties()
+            self.manager.write_objects()
 
     def close(self):
         self.save()
         self.cfb.close()
-        self.f.close()
         self.is_open = False
+        self.f.close()

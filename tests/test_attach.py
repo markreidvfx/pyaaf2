@@ -27,7 +27,7 @@ class ImportTests(unittest.TestCase):
 
             # dettach
             mob = f.content.mobs.pop(mob_id)
-
+            assert mob
             assert len(f.content.mobs) == 0
 
             f.content.mobs.append(mob)
