@@ -266,6 +266,9 @@ class DirEntry(object):
         if self.storage.mode in ('r', 'rb'):
             return
 
+        if self.dir_id is None:
+            return
+
         self.storage.modified[self.dir_id] = self
         if len(self.storage.modified) > 128:
             self.storage.write_modified_dir_entries()
