@@ -27,7 +27,7 @@ from .cfb import (CompoundFileBinary, DirEntry)
 from .core import AAFObject
 from .properties import StrongRefProperty, StrongRefArrayProperty, StrongRefSetProperty
 from .metadict import MetaDictionary
-
+from .cache import LRUCacheDict
 
 class AAFFactory(object):
 
@@ -67,6 +67,7 @@ class AAFObjectManager(object):
     def __init__(self, root):
         self.root = root
         self.path_cache = weakref.WeakValueDictionary()
+        self.lru_cache = LRUCacheDict()
         # to hold onto modified objects
         self.modified = {}
 
@@ -76,14 +77,18 @@ class AAFObjectManager(object):
 
         path = obj.dir.path()
         self.modified[path] = obj
-        self.path_cache[path] = obj
+        self[path] = obj
 
     def pop(self, path, default=None):
         cached_obj = self.path_cache.pop(path, default)
         modified_obj = self.modified.pop(path, default)
+        if path in self.lru_cache:
+            del self.lru_cache[path]
+
         return modified_obj or cached_obj
 
     def __setitem__(self, key, value):
+        self.lru_cache[key] = value
         self.path_cache[key] = value
 
     def read_object(self, path):

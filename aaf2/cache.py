@@ -52,7 +52,7 @@ class LRUCacheDict(object):
     def __setitem__(self, key, value):
 
         if key in self.data:
-            node = self.table[key]
+            node = self.data[key]
             node.value = value
             self.make_first(node)
             self.head = node
