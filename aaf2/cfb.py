@@ -233,31 +233,42 @@ class Stream(object):
         pass
 
 class DirEntry(object):
-    __slots__ = ('name', 'type', 'color', 'left_id', 'right_id', 'child_id',
-                 'class_id', 'flags', 'create_time', 'modify_time', 'sector_id',
-                 'byte_size', 'storage', 'dir_id', 'parent', '__weakref__' )
 
     def __init__(self, storage, dir_id):
-        self.name = None
-        self.type = None
-        self.color = 'black'
 
-        self.left_id = None
-        self.right_id = None
-        self.child_id = None
+        d = self.__dict__
+        d['storage'] = storage
+        d['name'] = None
+        d['type'] = None
+        d['color'] = 'black'
 
-        self.class_id = None
-        self.flags = 0
+        d['left_id'] = None
+        d['right_id'] = None
+        d['child_id'] = None
 
-        self.create_time = 0
-        self.modify_time = 0
+        d['class_id'] = None
+        d['flags'] = 0
 
-        self.sector_id = None
-        self.byte_size = 0
+        d['create_time'] = 0
+        d['modify_time'] = 0
 
-        self.storage = storage
-        self.dir_id = dir_id
-        self.parent = None
+        d['sector_id'] = None
+        d['byte_size'] = 0
+
+        d['dir_id'] = dir_id
+        d['parent'] = None
+
+    def __setattr__(self, name, value):
+        super(DirEntry, self).__setattr__(name, value)
+        if name in ('parent',):
+            return
+
+        if self.storage.mode in ('r', 'rb'):
+            return
+
+        self.storage.modified[self.dir_id] = self
+        if len(self.storage.modified) > 128:
+            self.storage.write_modified_dir_entries()
 
     def __lt__(self, other):
         if isinstance(other, DirEntry):
@@ -477,33 +488,34 @@ class DirEntry(object):
         assert size == 128
 
     def read(self):
+        d = self.__dict__
         f = self.storage.f
         f.seek(self.storage.dir_entry_pos(self.dir_id))
         f = BytesIO(f.read(128))
 
         name_data = f.read(64)
         name_size = read_u16le(f)
-        self.name  = name_data[:name_size-2].decode("utf-16le")
+        d['name']  = name_data[:name_size-2].decode("utf-16le")
 
         dir_type = read_u8(f)
         color = read_u8(f)
         if color == 0x01:
-            self.color = 'black'
+            d['color'] = 'black'
         else:
-            self.color = 'red'
+            d['color'] = 'red'
 
-        self.type = dir_types.get(dir_type , "unknown")
-        self.left_id = read_sid(f)
-        self.right_id = read_sid(f)
-        self.child_id = read_sid(f)
+        d['type'] = dir_types.get(dir_type , "unknown")
+        d['left_id'] = read_sid(f)
+        d['right_id'] = read_sid(f)
+        d['child_id'] = read_sid(f)
 
-        self.class_id = read_uuid(f)
-        self.flags = read_u32le(f)
-        self.create_time = read_filetime(f)
-        self.modify_time = read_filetime(f)
+        d['class_id'] = read_uuid(f)
+        d['flags'] = read_u32le(f)
+        d['create_time'] = read_filetime(f)
+        d['modify_time'] = read_filetime(f)
 
-        self.sector_id = read_sid(f)
-        self.byte_size = read_u64le(f)
+        d['sector_id'] = read_sid(f)
+        d['byte_size'] = read_u64le(f)
 
     def __repr__(self):
         return self.name
@@ -526,11 +538,8 @@ class CompoundFileBinary(object):
 
         self.mini_stream_chain = []
 
-        if mode in ('r', 'rb'):
-            self.dir_cache = weakref.WeakValueDictionary()
-        else:
-            self.dir_cache = {}
-
+        self.modified = {}
+        self.dir_cache = weakref.WeakValueDictionary()
         self.children_cache = LRUCacheDict()
         self.dir_freelist = array(str('I'))
 
@@ -905,9 +914,13 @@ class CompoundFileBinary(object):
 
             assert f.tell() - pos == self.sector_size
 
-    def write_dir_entries(self):
-        for dir_id, entry in self.dir_cache.items():
+    def write_modified_dir_entries(self):
+        for entry in self.modified.values():
             entry.write()
+        self.modified = {}
+
+    def write_dir_entries(self):
+        self.write_modified_dir_entries()
 
         for dir_id in self.dir_freelist:
             # clear DirEntry
@@ -1233,6 +1246,24 @@ class CompoundFileBinary(object):
 
         return entry
 
+    def free_dir_entry(self, entry):
+
+        # add freelist
+        self.dir_freelist.append(entry.dir_id)
+
+        # remove from dir caches
+        if entry.dir_id in self.dir_cache:
+            del self.dir_cache[entry.dir_id]
+
+        if entry.dir_id in self.children_cache:
+            del self.children_cache[entry.dir_id]
+
+        if entry.dir_id in self.modified:
+            del self.modified[entry.dir_id]
+
+        entry.__dict__['dir_id'] = None
+
+
     def remove(self, path):
         """
         Removes both streams and storage DirEntry types from file.
@@ -1260,17 +1291,7 @@ class CompoundFileBinary(object):
         if entry.type == "stream":
             self.free_fat_chain(entry.sector_id, entry.byte_size < self.min_stream_max_size)
 
-        # add dir_id to free list
-        self.dir_freelist.append(entry.dir_id)
-
-        # remove from dir cache
-        if entry.dir_id in self.dir_cache:
-            del self.dir_cache[entry.dir_id]
-
-        if entry.dir_id in self.children_cache:
-            del self.children_cache[entry.dir_id]
-
-        entry.dir_id = None
+        self.free_dir_entry(entry)
 
 
     def rmtree(self, path):
@@ -1281,22 +1302,10 @@ class CompoundFileBinary(object):
 
             for item in streams:
                 self.free_fat_chain(item.sector_id, item.byte_size < self.min_stream_max_size)
-                self.dir_freelist.append(item.dir_id)
-                if item.dir_id in self.dir_cache:
-                    del self.dir_cache[item.dir_id]
-                if item.dir_id in self.children_cache:
-                    del self.children_cache[item.dir_id]
-
-                item.dir_id = None
+                self.free_dir_entry(item)
 
             for item in storage:
-                self.dir_freelist.append(item.dir_id)
-                if item.dir_id in self.dir_cache:
-                    del self.dir_cache[item.dir_id]
-                if item.dir_id in self.children_cache:
-                    del self.children_cache[item.dir_id]
-
-                item.dir_id = None
+                self.free_dir_entry(item)
 
             root.child_id = None
 
