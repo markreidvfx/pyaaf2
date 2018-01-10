@@ -25,14 +25,14 @@ Requirements
 TODO
 ----
 
-- Better memory management
-- Cleanup object attach/detach code
-- Sphinx docs
-- More helper classes
-- MXF linking helpers
-- Port pyaaf1 examples
+- More docs
 - More tests
-- CFB/Stream shrinking
+- More helper classes
+- Port pyaaf1 examples
+- MXF linking improvements
+- AMA linking improvements
+- CFB stream shrinking
+- CFB red black tree
 
 Have fun, `Read the Docs <http://pyaaf.readthedocs.io/>`_ and good luck!
 
