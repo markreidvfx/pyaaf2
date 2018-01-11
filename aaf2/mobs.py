@@ -15,6 +15,7 @@ from . utils import register_class, rescale
 from . import essence
 from . import video
 from . import audio
+from .fractions import AAFFraction
 
 class TaggedValueHelper(object):
     def __init__(self, poperty_vector):
@@ -129,6 +130,12 @@ class Mob(core.AAFObject):
         slot.segment = sequence
         return slot
 
+    def create_picture_slot(self, edit_rate=25):
+        return self.create_empty_sequence_slot(edit_rate, media_kind="picture")
+
+    def create_sound_slot(self, edit_rate=25):
+        return self.create_empty_sequence_slot(edit_rate, media_kind="sound")
+
     def create_source_clip(self, slot_id=None, start=None, length=None, media_kind=None):
         source_slot = self.slot_at(slot_id)
         if not media_kind:
@@ -227,7 +234,7 @@ class SourceMob(Mob):
         self.descriptor = self.root.create.TapeDescriptor()
 
         slot = self.create_empty_slot(edit_rate, media_kind, slot_id=1)
-        slot.segment.length = int(float(edit_rate) * 60 *60 * 12) # 12 hours
+        slot.segment.length = int(float(AAFFraction(edit_rate)) * 60 *60 * 12) # 12 hours
         timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame)
 
         return slot, timecode_slot

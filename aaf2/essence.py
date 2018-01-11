@@ -34,6 +34,10 @@ class EssenceData(core.AAFObject):
 class EssenceDescriptor(core.AAFObject):
     class_id = UUID("0d010101-0101-2400-060e-2b3402060101")
 
+    @property
+    def locator(self):
+        return self['Locator'].value
+
 @register_class
 class FileDescriptor(EssenceDescriptor):
     class_id = UUID("0d010101-0101-2500-060e-2b3402060101")
