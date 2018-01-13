@@ -16,6 +16,21 @@ def short_name(name):
         name = name.replace(s, "")
     return name
 
+def lookup_def(dictionary, name, instance_type, key):
+    if isinstance(name, instance_type):
+        return name
+    if not isinstance(name, UUID):
+        name = short_name(name).lower()
+
+    for key, value in dictionary[key].items():
+
+        if name == value.short_name.lower():
+            return value
+        if name == key:
+            return value
+
+    raise Exception("No Definition: %s" % str(name))
+
 @register_class
 class DefinitionObject(core.AAFObject):
     class_id = UUID("0d010101-0101-1a00-060e-2b3402060101")
@@ -24,7 +39,7 @@ class DefinitionObject(core.AAFObject):
         self.name = name
         self.description = description
         if uuid:
-            self.uuid = UUID(uuid)
+            self.uuid = UUID(str(uuid))
 
     @property
     def name(self):
@@ -77,9 +92,38 @@ class DataDef(DefinitionObject):
 class OperationDef(DefinitionObject):
     class_id = UUID("0d010101-0101-1c00-060e-2b3402060101")
 
+    @property
+    def datadef(self):
+        return self['DataDefinition'].value
+
+    @datadef.setter
+    def datadef(self, value):
+        self['DataDefinition'].value = value
+
+    @property
+    def media_kind(self):
+        datadef = self.datadef
+        if datadef:
+            return datadef.short_name
+
+    @media_kind.setter
+    def media_kind(self, value):
+        self.datadef = self.root.dictionary.lookup_datadef(value)
+
 @register_class
 class ParameterDef(DefinitionObject):
     class_id = UUID("0d010101-0101-1d00-060e-2b3402060101")
+    def __init__(self, uuid=None, name=None, description=None, typedef=None):
+        super(ParameterDef, self).__init__(uuid, name, description)
+        self.typedef = typedef
+
+    @property
+    def typedef(self):
+        return self['Type'].value
+
+    @typedef.setter
+    def typedef(self, value):
+        self['Type'].value = value
 
 @register_class
 class PluginDef(DefinitionObject):
@@ -110,65 +154,50 @@ class Dictionary(core.AAFObject):
     def __init__(self):
         super(Dictionary, self).__init__()
 
-        self.datadefs = {}
         for key, args in datadefs.DataDefs.items():
             d = self.root.create.DataDef(key, *args)
-            self.datadefs[d.uuid] = d
+            self['DataDefinitions'].append(d)
 
-        self.containerdefs = {}
         for key, args in datadefs.ContainerDefs.items():
             d = self.root.create.ContainerDef(key, *args)
-            self.containerdefs[d.uuid] = d
-
-        self['DataDefinitions'].value = self.datadefs
-        self['ContainerDefinitions'].value = self.containerdefs
+            self['ContainerDefinitions'].append(d)
 
     def setup_defaults(self):
-        self.codecdefs = {}
+
         for key, args in datadefs.CodecDefs.items():
             if len(args) > 2:
                 d = self.root.create.CodecDef(self, key, *args)
-                self.codecdefs[d.uuid] = d
+                self['CodecDefinitions'].append(d)
 
-        self['CodecDefinitions'].value = self.codecdefs
+    def register_def(self, defobject):
+
+        if isinstance(defobject, DataDef):
+            self['DataDefinitions'].append(defobject)
+        elif isinstance(defobject, ContainerDef):
+            self['ContainerDefinitions'].append(defobject)
+        elif isinstance(defobject, CodecDef):
+            self['CodecDefinitions'].append(defobject)
+        elif isinstance(defobject, ParameterDef):
+            self['ParameterDefinitions'].append(defobject)
+        elif isinstance(defobject, OperationDef):
+            self['OperationDefinitions'].append(defobject)
+        else:
+            raise ValueError("unknown definitions type: %s" % str(type(defobject)))
+
+    def lookup_typedef(self, name):
+        return self.root.metadict.lookup_typedef(name)
 
     def lookup_datadef(self, name):
-        if isinstance(name, DataDef):
-            return name
-
-        name = short_name(name)
-        for key, value in self['DataDefinitions'].items():
-            if name.lower() == value.short_name.lower():
-                return value
-            if name == key:
-                return value
-
-        raise Exception("No datadef: %s" % str(name))
+        return lookup_def(self, name, DataDef, 'DataDefinitions')
 
     def lookup_containerdef(self, name):
-        if isinstance(name, ContainerDef):
-            return name
-
-        name = short_name(name)
-        for key, value in self['ContainerDefinitions'].items():
-            if name.lower() == value.short_name.lower():
-                return value
-            if name == key:
-                return value
-
-        raise Exception("No ContainerDef: %s" % str(name))
+        return lookup_def(self, name, ContainerDef, 'ContainerDefinitions')
 
     def lookup_codecdef(self, name):
-        if isinstance(name, CodecDef):
-            return name
-        if not isinstance(name, UUID):
-            name = short_name(name).lower()
+        return lookup_def(self, name, CodecDef, 'CodecDefinitions')
 
-        for key, value in self['CodecDefinitions'].items():
+    def lookup_parameterdef(self, name):
+        return lookup_def(self, name, ParameterDef, 'ParameterDefinitions')
 
-            if name == value.short_name.lower():
-                return value
-            if name == key:
-                return value
-
-        raise Exception("No CodecDef: %s" % str(name))
+    def lookup_operationdef(self, name):
+        return lookup_def(self, name, OperationDef, 'OperationDefinitions')

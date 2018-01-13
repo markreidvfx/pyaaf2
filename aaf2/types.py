@@ -452,6 +452,10 @@ class TypeDefSet(TypeDef):
     def store_format(self):
         if self.element_typedef.store_format == properties.SF_STRONG_OBJECT_REFERENCE:
             return properties.SF_STRONG_OBJECT_REFERENCE_SET
+        elif self.element_typedef.store_format == properties.SF_WEAK_OBJECT_REFERENCE:
+            return properties.SF_WEAK_OBJECT_REFERENCE_SET
+        else:
+            raise AAFPropertyError("unkown store format: 0x%x" % self.element_typedef.store_format)
 
     def decode(self, data):
 

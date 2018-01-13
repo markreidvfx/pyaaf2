@@ -169,3 +169,20 @@ class Timecode(Segment):
     @drop.setter
     def drop(self, value):
         self['Drop'].value = value
+
+@register_class
+class OperationGroup(Segment):
+    class_id = UUID("0d010101-0101-0a00-060e-2b3402060101")
+
+    def __init__(self, operationdef, length=None):
+        super(OperationGroup, self).__init__(length=length)
+        self.operation = operationdef
+        self.media_kind = self.operation.media_kind
+
+    @property
+    def operation(self):
+        return self['Operation'].value
+
+    @operation.setter
+    def operation(self, value):
+        self['Operation'].value = value
