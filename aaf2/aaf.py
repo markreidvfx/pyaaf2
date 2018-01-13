@@ -135,12 +135,34 @@ class AAFObjectManager(object):
             self.modified.pop(path)
 
 class AAFFile(object):
+    """
+    AAF File Object. This is the entry point object for most of the API.
+    This object is designed to be like python's native open function.
+    It is recommended to create this object with the `aaf.open` alias.
+    It is also highly recommended to use the with statement.
+
+    For example. Opening existing AAF file readonly::
+
+        with aaf.open('/path/to/aaf_file.aaf', 'r') as f:
+
+    Opening new AAF file overwriting existing one::
+
+        with aaf.open('/path/to/aaf_file.aaf', 'w') as f:
+
+    Opening existing AAF in read and write::
+
+        with aaf.open('/path/to/aaf_file.aaf', 'rw') as f:
+
+    Opening in memory BytesIO file::
+
+        with aaf.open() as f:
+    """
 
     def __init__(self, path=None, mode='r'):
 
         if mode in ('r', 'rb'):
             mode = 'rb'
-        elif mode in ('r+', 'rb+'):
+        elif mode in ('r+', 'rb+', 'rw'):
             mode = 'rb+'
         elif mode in ('w', 'w+', 'wb+'):
             mode = 'wb+'
@@ -173,15 +195,24 @@ class AAFFile(object):
 
     @property
     def header(self):
+        """
+        :class:`aaf2.content.Header` object for AAF file.
+        """
         header_pid = 0x02
         return self.root.property_entries[header_pid].value
 
     @property
     def content(self):
+        """
+        :class:`aaf2.content.ContentStorage` object for AAF File. This has the Mob and EssenceData objects.
+        """
         return self.header['Content'].value
 
     @property
     def dictionary(self):
+        """
+        :class:`aaf2.dictionary.Dictionary` for AAF file.  The dictionary property has DefinitionObject objects.
+        """
         return self.header['Dictionary'].value
 
     def setup_empty(self):
@@ -292,6 +323,10 @@ class AAFFile(object):
         self.root.dump()
 
     def save(self):
+        """
+        Writes current changes to disk and flushes modified objects in the
+        AAFObjectManager
+        """
         if self.mode in ("wb+", 'rb+'):
             if not self.is_open:
                 raise IOError("file closed")
@@ -299,6 +334,9 @@ class AAFFile(object):
             self.manager.write_objects()
 
     def close(self):
+        """
+        Close the file. A closed file cannot be read or written any more.
+        """
         self.save()
         self.cfb.close()
         self.is_open = False

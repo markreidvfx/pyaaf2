@@ -75,10 +75,15 @@ Finally import the footage::
         mob.import_dnxhd_essence("sample.dnxhd", edit_rate, tape_clip)
         mob.import_audio_essence("sample.wav", edit_rate)
 
+API Reference
+=============
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   api/aaf
+   api/content
 
 
 
