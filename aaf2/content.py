@@ -14,6 +14,10 @@ from . import mxf
 from . import ama
 
 @register_class
+class Header(core.AAFObject):
+    class_id = UUID("0d010101-0101-2f00-060e-2b3402060101")
+
+@register_class
 class ContentStorage(core.AAFObject):
     class_id = UUID("0d010101-0101-1800-060e-2b3402060101")
 
