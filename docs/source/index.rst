@@ -1,7 +1,7 @@
 ..
 
 Welcome to PyAAF 2.0 Documentation!
-=================================
+===================================
 
 A python module for the reading and writing Advanced Authoring Format (AAF) files.
 
@@ -83,7 +83,13 @@ API Reference
    :caption: Contents:
 
    api/aaf
+   api/core
+   api/mobs
+   api/components
    api/content
+
+   api/cfb
+
 
 
 

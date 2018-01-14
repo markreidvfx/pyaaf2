@@ -170,4 +170,4 @@ texinfo_documents = [
 intersphinx_mapping = {'http://docs.python.org/': None}
 
 autodoc_member_order = 'bysource'
-autodoc_default_flags = ['undoc-members', 'show-inheritance']
+autodoc_default_flags = ['show-inheritance']

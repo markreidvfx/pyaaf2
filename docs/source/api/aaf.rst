@@ -7,5 +7,3 @@ AAFFile
 -------
    .. autoclass:: AAFFile
        :members:
-
-       .. automethod:: __init__

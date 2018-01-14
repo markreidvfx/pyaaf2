@@ -1,6 +1,8 @@
 ``aaf2.content``
 ==============
 
+.. automodule:: aaf2.content
+
 Header
 ------
    .. autoclass:: Header
