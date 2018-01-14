@@ -85,8 +85,14 @@ API Reference
    api/aaf
    api/core
    api/mobs
+   api/mobslots
+   api/mobid
    api/components
+   api/essence
    api/content
+   api/dictionary
+   api/metadict
+   api/types
 
    api/cfb
 

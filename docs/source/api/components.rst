@@ -21,12 +21,6 @@ Sequence
    .. autoclass:: Sequence
        :members:
 
-Sequence
---------
-
-  .. autoclass:: Sequence
-      :members:
-
 NestedScope
 -----------
 
