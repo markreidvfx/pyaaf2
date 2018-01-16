@@ -35,6 +35,19 @@ class CreatAAFTests(unittest.TestCase):
             assert f.header['Version'].value == {u'major': 1, u'minor': 1}
 
 
+    def test_empty_512(self):
+
+        result_file = common.get_test_file("empty_512.aaf")
+        with AAFFile(result_file, 'w', sector_size=512) as f:
+            pass
+
+
+        with AAFFile(result_file, 'r') as f:
+            assert f.metadict
+            assert f.content
+            assert f.header['ObjectModelVersion'].value == 1
+            assert f.header['Version'].value == {u'major': 1, u'minor': 1}
+
         # self.dump(result_file)
 
     def test_mobs(self):

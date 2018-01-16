@@ -524,7 +524,7 @@ class DirEntry(object):
         return self.name
 
 class CompoundFileBinary(object):
-    def __init__(self, file_object, mode='rb'):
+    def __init__(self, file_object, mode='rb', sector_size=4096):
 
         self.f = file_object
 
@@ -574,7 +574,7 @@ class CompoundFileBinary(object):
             if self.minifat_sector_count:
                 self.mini_stream_chain = self.get_fat_chain(self.root.sector_id)
         else:
-            self.setup_empty()
+            self.setup_empty(sector_size)
             self.write_header()
 
             logging.debug("pos: %d" % self.f.tell())
@@ -598,15 +598,21 @@ class CompoundFileBinary(object):
         self.is_open = False
 
 
-    def setup_empty(self):
+    def setup_empty(self, sector_size):
+        if sector_size not in (4096, 512):
+            raise ValueError("sectro size must be 4096 or 512")
 
-        self.class_id = uuid.UUID("0d010201-0200-0000-060e-2b3403020101")
+        if sector_size == 4096:
+            self.class_id = uuid.UUID("0d010201-0200-0000-060e-2b3403020101")
+        else:
+            self.class_id = uuid.UUID("42464141-000d-4d4f-060e-2b34010101ff")
+
         self.major_version = 4
         self.minor_version =  62
 
         self.byte_order = "le"
 
-        self.sector_size = 4096
+        self.sector_size = sector_size
         self.mini_stream_sector_size = 64
 
         self.dir_sector_count = 1
