@@ -562,6 +562,9 @@ class CompoundFileBinary(object):
 
             # create dir_fat_chain and read root dir entry
             self.dir_fat_chain = self.get_fat_chain(self.dir_sector_start)
+            if len(self.dir_fat_chain) != self.dir_sector_count:
+                logging.info("read dir_sector_count missmatch, using fat chain length")
+                self.dir_sector_count = len(self.dir_fat_chain)
 
             logging.debug("read %d dir sectors" % len(self.dir_fat_chain))
             self.root = self.read_dir_entry(0)
