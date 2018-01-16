@@ -31,6 +31,9 @@ def test_files_dir():
 def test_file_01():
     return os.path.join(test_files_dir(), "test_file_01.aaf")
 
+def test_file_512():
+    return os.path.join(test_files_dir(), "sector_size_512.aaf")
+
 def test_empty_file():
     return os.path.join(test_files_dir(), "empty.aaf")
 
