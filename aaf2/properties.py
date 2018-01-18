@@ -1021,13 +1021,13 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
     def pid_path(self):
         return self.typedef.element_typedef.pid_path
 
-    @property
-    def value(self):
-        items = []
+    def __len__(self):
+        return len(self.references)
+
+    def __iter__(self):
         for ref in self.references:
             r = resolve_weakref(self, ref)
-            items.append(r)
-        return items
+            yield r
 
     @writeonly
     def extend(self, values):
@@ -1061,6 +1061,13 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
     @writeonly
     def clear(self):
         self.references = []
+
+    @property
+    def value(self):
+        items = []
+        for item in self:
+            items.append(item)
+        return items
 
     @value.setter
     @writeonly
