@@ -599,13 +599,13 @@ class CompoundFileBinary(object):
 
 
     def setup_empty(self, sector_size):
-        if sector_size not in (4096, 512):
-            raise ValueError("sectro size must be 4096 or 512")
 
         if sector_size == 4096:
             self.class_id = uuid.UUID("0d010201-0200-0000-060e-2b3403020101")
-        else:
+        elif sector_size == 512:
             self.class_id = uuid.UUID("42464141-000d-4d4f-060e-2b34010101ff")
+        else:
+            raise ValueError("sectro size must be 4096 or 512")
 
         self.major_version = 4
         self.minor_version =  62
