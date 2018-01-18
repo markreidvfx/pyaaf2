@@ -605,7 +605,7 @@ class CompoundFileBinary(object):
         elif sector_size == 512:
             self.class_id = uuid.UUID("42464141-000d-4d4f-060e-2b34010101ff")
         else:
-            raise ValueError("sectro size must be 4096 or 512")
+            raise ValueError("sector size must be 4096 or 512")
 
         self.major_version = 4
         self.minor_version =  62
