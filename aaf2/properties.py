@@ -51,7 +51,7 @@ def writeonly(func):
 
     return func_wrapper
 
-class BaseProperty(object):
+class Property(object):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         self.pid = pid
         self.format = format
@@ -143,11 +143,6 @@ class BaseProperty(object):
             del self.parent.property_entries[self.pid]
 
     def __repr__(self):
-        return "0x%04X %s" % (self.pid, self.format_name())
-
-
-class Property(BaseProperty):
-    def __repr__(self):
         name = self.name
         if name:
             return "<%s %s>" % (name, str(self.typedef))
@@ -214,16 +209,7 @@ class StreamProperty(Property):
     def value(self):
         return self.parent.dir.get(self.stream_name)
 
-
-# abtract for refereneces
-class ObjectRefProperty(Property):
-    pass
-
-# abtract for referenece arrays
-class ObjectRefArrayProperty(ObjectRefProperty):
-    pass
-
-class StrongRefProperty(ObjectRefProperty):
+class StrongRefProperty(Property):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefProperty, self).__init__(parent, pid, format, version)
         self.ref = None
@@ -333,13 +319,7 @@ class StrongRefProperty(ObjectRefProperty):
         self.objectref = weakref.ref(obj)
 
 
-# abtract for referenece arrays
-class StrongRefArrayProperty(ObjectRefArrayProperty):
-    def encode(self, data):
-        return data.encode("utf-16le") + b"\x00" + b"\x00"
-
-
-class StrongRefVectorProperty(StrongRefArrayProperty):
+class StrongRefVectorProperty(Property):
 
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefVectorProperty, self).__init__(parent, pid, format, version)
@@ -389,6 +369,9 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
     @index_name.setter
     def index_name(self, value):
         self._index_name = value
+
+    def encode(self, data):
+        return data.encode("utf-16le") + b"\x00" + b"\x00"
 
     def decode(self):
         self.index_name = self.data[:-2].decode("utf-16le")
@@ -607,7 +590,7 @@ class StrongRefVectorProperty(StrongRefArrayProperty):
         return "<%s %s to %s %d items>" % (self.name, self.__class__.__name__, str(self.index_name), len(self.references))
 
 
-class StrongRefSetProperty(StrongRefArrayProperty):
+class StrongRefSetProperty(Property):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefSetProperty, self).__init__(parent, pid, format, version)
 
@@ -645,6 +628,9 @@ class StrongRefSetProperty(StrongRefArrayProperty):
             p.objects[key] = value.copy(dir_entry)
 
         return p
+
+    def encode(self, data):
+        return data.encode("utf-16le") + b"\x00" + b"\x00"
 
     def decode(self):
         self.index_name = self.data[:-2].decode("utf-16le")
@@ -871,7 +857,7 @@ def resolve_weakref(p, ref):
     else:
         return p.parent.root.resovle_weakref(p.weakref_index, p.key_pid, ref)
 
-class WeakRefProperty(ObjectRefProperty):
+class WeakRefProperty(Property):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(WeakRefProperty, self).__init__(parent, pid, format, version)
         self.weakref_index = None
@@ -946,7 +932,7 @@ class WeakRefProperty(ObjectRefProperty):
         self.data = self.encode()
         self.add_pid_entry()
 
-class WeakRefArrayProperty(ObjectRefArrayProperty):
+class WeakRefArrayProperty(Property):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(WeakRefArrayProperty, self).__init__(parent, pid, format, version)
         self.references = []
@@ -964,9 +950,10 @@ class WeakRefArrayProperty(ObjectRefArrayProperty):
         p.key_size = self.key_size
         return p
 
+    def encode(self, data):
+        return data.encode("utf-16le") + b"\x00" + b"\x00"
+
     def decode(self):
-        self.references = []
-        #null terminated
         self.index_name = self.data[:-2].decode("utf-16le")
 
     def read_index(self):

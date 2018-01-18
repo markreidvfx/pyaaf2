@@ -25,7 +25,6 @@ from .utils import (
 
 from .cfb import (CompoundFileBinary, DirEntry)
 from .core import AAFObject
-from .properties import StrongRefProperty, StrongRefArrayProperty, StrongRefSetProperty
 from .metadict import MetaDictionary
 from .cache import LRUCacheDict
 
