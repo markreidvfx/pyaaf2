@@ -83,14 +83,26 @@ class CreatAAFTests(unittest.TestCase):
             assert len(list(f.content.mobs)) == count
 
     def test_unque_key(self):
-        result_file = common.get_test_file('unque_key.aaf')
-        with AAFFile(result_file, 'w') as f:
+        with AAFFile() as f:
             mob = f.create.MasterMob()
             f.content.mobs.append(mob)
 
             new_mobid = MobID.new()
             with self.assertRaises(exceptions.AAFPropertyError):
                 mob.id = new_mobid
+
+    def test_abstract(self):
+
+        with AAFFile() as f:
+            # try and create some abstract classes
+            with self.assertRaises(ValueError):
+                f.create.Segment()
+
+            with self.assertRaises(ValueError):
+                f.create.Component()
+
+            with self.assertRaises(ValueError):
+                f.create.PhysicalDescriptor()
 
 
 if __name__ == "__main__":
