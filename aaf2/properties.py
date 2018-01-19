@@ -100,6 +100,10 @@ class Property(object):
                 self._propertydef = p
                 return p
     @property
+    def unique(self):
+        return self.propertydef.unique
+
+    @property
     def name(self):
         propertydef = self.propertydef
         if propertydef:
@@ -126,6 +130,9 @@ class Property(object):
     @value.setter
     @writeonly
     def value(self, value):
+        if self._data is not None and self.parent.dir and self.unique:
+            raise AAFPropertyError("cannot change unique property value of attached object")
+
         if value is None:
             self.remove_pid_entry()
             return

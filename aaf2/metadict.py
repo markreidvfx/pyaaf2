@@ -32,13 +32,19 @@ class PropertyDef(core.AAFObject):
         self.pid = pid
         self.typedef_name = typedef
         self.optional = optional
-        self.unique = unique
+        self._unique = unique
 
         return self
 
     @property
     def unique_key(self):
         return self.uuid
+
+    @property
+    def unique(self):
+        if self._unique is not None:
+            return self._unique
+        return False
 
     @property
     def typedef(self):
@@ -77,7 +83,7 @@ class PropertyDef(core.AAFObject):
         self.pid = read_u16le(BytesIO(self.property_entries[pid_pid].data))
         self.optional = self.property_entries[pid_optional].data == b"\x01"
         if pid_unique in self.property_entries:
-            self.unique = self.property_entries[pid_unique].data == b"\x01"
+            self._unique = self.property_entries[pid_unique].data == b"\x01"
 
     def __repr__(self):
         return "<%s PropertyDef" % self.property_name

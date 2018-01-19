@@ -8,6 +8,7 @@ import os
 from aaf2.aaf import AAFFile
 from aaf2.cfb import CompoundFileBinary
 from aaf2.mobid import MobID
+from aaf2 import exceptions
 
 import unittest
 
@@ -80,6 +81,16 @@ class CreatAAFTests(unittest.TestCase):
                 assert mob.name == mobs[mob.id]
 
             assert len(list(f.content.mobs)) == count
+
+    def test_unque_key(self):
+        result_file = common.get_test_file('unque_key.aaf')
+        with AAFFile(result_file, 'w') as f:
+            mob = f.create.MasterMob()
+            f.content.mobs.append(mob)
+
+            new_mobid = MobID.new()
+            with self.assertRaises(exceptions.AAFPropertyError):
+                mob.id = new_mobid
 
 
 if __name__ == "__main__":
