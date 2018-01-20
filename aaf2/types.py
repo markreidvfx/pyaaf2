@@ -15,7 +15,7 @@ from .exceptions import AAFPropertyError
 import datetime
 
 from struct import (unpack, pack)
-from .utils import register_class, decode_utf16le
+from .utils import register_class, decode_utf16le, encode_utf16le
 
 if sys.version_info.major >= 3:
     unicode = str
@@ -276,7 +276,7 @@ def iter_utf16_array(data):
 def encode_utf16_array(data):
     result = b""
     for item in data:
-        result += item.encode("utf-16le") + b"\x00" + b"\x00"
+        result += encode_utf16le(item)
     return result
 
 @register_class
@@ -498,7 +498,7 @@ class TypeDefString(TypeDef):
         return decode_utf16le(data)
 
     def encode(self, data):
-        return data.encode("utf-16le") + b'\x00' + b'\x00'
+        return encode_utf16le(data)
 
 @register_class
 class TypeDefStream(TypeDef):

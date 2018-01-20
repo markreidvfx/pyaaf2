@@ -75,6 +75,9 @@ def read_filetime(f):
 def decode_utf16le(data):
     return data.decode('utf-16le').rstrip('\x00')
 
+def encode_utf16le(data):
+    return data.encode("utf-16le") + b"\x00\x00"
+
 def write_filetime(f, value):
     write_u64le(f, value)
 

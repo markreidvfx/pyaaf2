@@ -18,6 +18,7 @@ from .utils import (
     write_u16le,
     write_u32le,
     decode_utf16le,
+    encode_utf16le,
     mangle_name,
     )
 from .mobid import MobID
@@ -186,7 +187,7 @@ class StreamProperty(Property):
         self.stream_name = decode_utf16le(self.data[1:])
 
     def encode(self, data):
-        return  b'\x55' + data.encode("utf-16le") + b"\x00" + b"\x00"
+        return  b'\x55' + encode_utf16le(data)
 
     def __repr__(self):
         return "<%s %s>" % (self.__class__.__name__, str(self.stream_name))
@@ -256,7 +257,7 @@ class StrongRefProperty(Property):
         self.ref = decode_utf16le(self.data)
 
     def encode(self, data):
-        return data.encode("utf-16le") + b"\x00" + b"\x00"
+        return encode_utf16le(data)
 
     def __repr__(self):
         return "<%s %s to %s>" % (self.name, self.__class__.__name__, str(self.ref))
@@ -378,7 +379,7 @@ class StrongRefVectorProperty(Property):
         self._index_name = value
 
     def encode(self, data):
-        return data.encode("utf-16le") + b"\x00" + b"\x00"
+        return encode_utf16le(data)
 
     def decode(self):
         self.index_name = decode_utf16le(self.data)
@@ -637,7 +638,7 @@ class StrongRefSetProperty(Property):
         return p
 
     def encode(self, data):
-        return data.encode("utf-16le") + b"\x00" + b"\x00"
+        return encode_utf16le(data)
 
     def decode(self):
         self.index_name = decode_utf16le(self.data)
@@ -958,7 +959,7 @@ class WeakRefArrayProperty(Property):
         return p
 
     def encode(self, data):
-        return data.encode("utf-16le") + b"\x00" + b"\x00"
+        return encode_utf16le(data)
 
     def decode(self):
         self.index_name = decode_utf16le(self.data)
@@ -985,9 +986,6 @@ class WeakRefArrayProperty(Property):
             else:
                 key = key = MobID(bytes_le=f.read(self.key_size))
             self.references.append(key)
-
-    def encode(self):
-        return self.index_name.encode("utf-16le") + b"\x00" + b"\x00"
 
     @writeonly
     def write_index(self):
@@ -1035,7 +1033,7 @@ class WeakRefArrayProperty(Property):
         if self.index_name is None:
             propdef = self.propertydef
             self.index_name = mangle_name(propdef.property_name, self.pid, 32)
-            self.data = self.encode()
+            self.data = self.encode(self.index_name)
 
         if self.weakref_index is None:
             self.weakref_index = self.parent.root.weakref_index(self.pid_path)
