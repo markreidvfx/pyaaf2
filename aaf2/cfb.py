@@ -21,7 +21,8 @@ from .utils import (
     read_filetime, read_sid, read_uuid,
     write_u8, write_u16le,
     write_u32le, write_u64le,
-    write_filetime, write_sid, write_uuid
+    write_filetime, write_sid, write_uuid,
+    decode_utf16le,
 )
 from .exceptions import CompoundFileBinaryError
 from .cache import LRUCacheDict
@@ -498,7 +499,7 @@ class DirEntry(object):
 
         name_data = f.read(64)
         name_size = read_u16le(f)
-        d['name']  = name_data[:name_size-2].decode("utf-16le")
+        d['name']  = decode_utf16le(name_data[:name_size])
 
         dir_type = read_u8(f)
         color = read_u8(f)

@@ -12,7 +12,7 @@ from .model import classdefs
 from .model import typedefs
 
 from . import core
-from .utils import (register_class, read_u16le, AAFClaseID_dict, AAFClassName_dict)
+from .utils import (register_class, read_u16le, decode_utf16le, AAFClaseID_dict, AAFClassName_dict)
 
 import uuid
 from uuid import UUID
@@ -77,7 +77,7 @@ class PropertyDef(core.AAFObject):
         pid_pid = 13
         pid_unique = 14
 
-        self.property_name = self.property_entries[pid_name].data[:-2].decode("utf-16le")
+        self.property_name = decode_utf16le(self.property_entries[pid_name].data)
         self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
         self.typedef_name = UUID(bytes_le=self.property_entries[pid_type].data)
         self.pid = read_u16le(BytesIO(self.property_entries[pid_pid].data))
@@ -212,7 +212,7 @@ class ClassDef(core.AAFObject):
         pid_abstract = 10
         pid_properties = 9
 
-        self.class_name = self.property_entries[pid_name].data[:-2].decode('utf-16le')
+        self.class_name = decode_utf16le(self.property_entries[pid_name].data)
         self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
         self.concrete = self.property_entries[pid_abstract].data == b'\x01'
 

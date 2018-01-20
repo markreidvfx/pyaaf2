@@ -17,6 +17,7 @@ from .utils import (
     write_u8,
     write_u16le,
     write_u32le,
+    decode_utf16le,
     mangle_name,
     )
 from .mobid import MobID
@@ -182,7 +183,7 @@ class StreamProperty(Property):
     def decode(self):
         # first byte is endianess
         assert self.data[0:1] == b'\x55' # unspecified
-        self.stream_name = self.data[1:-2].decode("utf-16-le")
+        self.stream_name = decode_utf16le(self.data[1:])
 
     def encode(self, data):
         return  b'\x55' + data.encode("utf-16le") + b"\x00" + b"\x00"
@@ -252,8 +253,7 @@ class StrongRefProperty(Property):
         return p
 
     def decode(self):
-        #null terminated
-        self.ref = self.data[:-2].decode("utf-16le")
+        self.ref = decode_utf16le(self.data)
 
     def encode(self, data):
         return data.encode("utf-16le") + b"\x00" + b"\x00"
@@ -381,7 +381,7 @@ class StrongRefVectorProperty(Property):
         return data.encode("utf-16le") + b"\x00" + b"\x00"
 
     def decode(self):
-        self.index_name = self.data[:-2].decode("utf-16le")
+        self.index_name = decode_utf16le(self.data)
 
     def read_index(self):
         index_name = self.index_name + " index"
@@ -640,7 +640,7 @@ class StrongRefSetProperty(Property):
         return data.encode("utf-16le") + b"\x00" + b"\x00"
 
     def decode(self):
-        self.index_name = self.data[:-2].decode("utf-16le")
+        self.index_name = decode_utf16le(self.data)
 
     def read_index(self):
         index_name = self.index_name + " index"
@@ -961,7 +961,7 @@ class WeakRefArrayProperty(Property):
         return data.encode("utf-16le") + b"\x00" + b"\x00"
 
     def decode(self):
-        self.index_name = self.data[:-2].decode("utf-16le")
+        self.index_name = decode_utf16le(self.data)
 
     def read_index(self):
         index_name = self.index_name + " index"

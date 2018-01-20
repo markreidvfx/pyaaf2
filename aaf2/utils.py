@@ -72,6 +72,9 @@ def write_uuid(f, value):
 def read_filetime(f):
     return read_u64le(f)
 
+def decode_utf16le(data):
+    return data.decode('utf-16le').rstrip('\x00')
+
 def write_filetime(f, value):
     write_u64le(f, value)
 
