@@ -19,8 +19,14 @@ class EssenceTests(unittest.TestCase):
         mob_id.int = 1
 
         with aaf2.open(new_file, 'w') as f:
+            mob = f.create.SourceMob()
+            mob.id = mob_id
+            mob.descriptor = f.create.TapeDescriptor()
+            f.content.mobs.append(mob)
+
             e = f.create.EssenceData()
-            e.id = mob_id
+            e.mob = mob
+
             f.content.essencedata.append(e)
             stream = e.open("w")
             stream.write(test_data)
@@ -30,6 +36,9 @@ class EssenceTests(unittest.TestCase):
             assert e.id == mob_id
             stream = e.open("r")
             assert stream.read() == test_data
+            mob = e.mob
+            assert mob
+
 
 
 

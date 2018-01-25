@@ -27,6 +27,17 @@ class EssenceData(core.AAFObject):
     def id(self, value):
         self['MobID'].value = value
 
+    @property
+    def mob(self):
+        mob_id = self.id
+        if mob_id:
+            return self.root.content.mobs.get(mob_id, None)
+        return None
+
+    @mob.setter
+    def mob(self, value):
+        self.id = value.id
+
     def open(self, mode='r'):
         return self['Data'].open(mode)
 
