@@ -82,14 +82,6 @@ class CreatAAFTests(unittest.TestCase):
 
             assert len(list(f.content.mobs)) == count
 
-    def test_unque_key(self):
-        with AAFFile() as f:
-            mob = f.create.MasterMob()
-            f.content.mobs.append(mob)
-
-            new_mobid = MobID.new()
-            with self.assertRaises(exceptions.AAFPropertyError):
-                mob.id = new_mobid
 
     def test_abstract(self):
 

@@ -47,15 +47,20 @@ class AAFObject(object):
         return self.__class__.__name__
 
     @property
-    def unique_key(self):
+    def unique_property(self):
         classdef = self.classdef
         if classdef:
             pid = self.classdef.unique_key_pid
             if pid:
                 p = self.property_entries.get(pid, None)
                 if p:
-                    return p.value
-        raise AAFPropertyError("Object has no unique key")
+                    return p
+
+        raise AAFPropertyError("Object has no unique property")
+
+    @property
+    def unique_key(self):
+        self.unique_property.value
 
     def read_properties(self):
         stream = self.dir.get('properties')

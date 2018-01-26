@@ -174,6 +174,21 @@ class ImportTests(unittest.TestCase):
 
             assert child_count == original_child_count
 
+    def test_mob_id_swap(self):
+        new_file = os.path.join(common.sandbox(), 'swap_id.aaf')
+        test_file = common.test_file_01()
+        shutil.copy(test_file, new_file)
+        new_mobid =aaf2.mobid.MobID.new()
+        with aaf2.open(new_file, 'rw') as f:
+            comp = next(f.content.compositionmobs())
+            comp.id = new_mobid
+
+        with aaf2.open(new_file, 'r') as f:
+            comp = next(f.content.compositionmobs())
+            assert comp.id == new_mobid
+
+
+
 if __name__ == "__main__":
     import logging
     # logging.basicConfig(level=logging.DEBUG)

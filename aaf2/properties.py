@@ -133,7 +133,12 @@ class Property(object):
     @writeonly
     def value(self, value):
         if self._data is not None and self.parent.dir and self.unique:
-            raise AAFPropertyError("cannot change unique property value of attached object")
+            if self.propertydef.uuid == UUID("01011510-0000-0000-060e-2b3401010101"):
+                self.parent.root.content.mobs.swap_unique_key(self.value, value)
+            elif self.propertydef.uuid == UUID("06010106-0100-0000-060e-2b3401010102"):
+                self.parent.root.content.essencedata.swap_unique_key(self.value, value)
+            else:
+                raise AAFPropertyError("cannot change unique property value of attached object")
 
         if value is None:
             self.remove_pid_entry()
@@ -738,6 +743,22 @@ class StrongRefSetProperty(Property):
         if result is None:
             raise KeyError(key)
         return result
+
+    @writeonly
+    def swap_unique_key(self, old_key, new_key):
+        obj = self.get(old_key)
+
+        if obj is None:
+            raise ValueError("invalid key: %s" % str(old_key))
+
+        # remove reference
+        self.objects.pop(old_key)
+        local_key = self.references.pop(old_key)
+
+        self.references[new_key] = local_key
+        self.objects[new_key] = obj
+
+        obj.unique_property.data = new_key.bytes_le
 
     @writeonly
     def extend(self, values):
