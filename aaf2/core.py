@@ -23,7 +23,7 @@ from . import properties
 from .properties import property_formats
 
 class AAFObject(object):
-    class_id = None
+    __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
 
     def __new__(cls, *args, **kwargs):
         self = super(AAFObject, cls).__new__(cls)

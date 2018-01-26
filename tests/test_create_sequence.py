@@ -33,6 +33,8 @@ class TestCreateSequence(unittest.TestCase):
             timecode_fps = 30
             mob_count += 1
 
+            test_path = "some_path.mov"
+
             for i in range(10):
 
                 # Make the Tape MOB
@@ -48,7 +50,7 @@ class TestCreateSequence(unittest.TestCase):
 
                 # Make a locator
                 loc = f.create.NetworkLocator()
-                loc.path = "some_path.mov"
+                loc['URLString'].value = test_path
 
                 file_description = f.create.CDCIDescriptor()
                 file_description.locator.append(loc)

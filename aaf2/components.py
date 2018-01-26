@@ -14,6 +14,7 @@ from . dictionary import DataDef
 
 class Component(core.AAFObject):
     class_id = UUID("0d010101-0101-0200-060e-2b3402060101")
+    __slots__ = ()
     def __init__(self, media_kind=None, length=None):
         self.media_kind = media_kind or 'picture'
         self.length = length or 0
@@ -46,10 +47,12 @@ class Component(core.AAFObject):
 
 class Segment(Component):
     class_id = UUID("0d010101-0101-0300-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class Sequence(Segment):
     class_id = UUID("0d010101-0101-0f00-060e-2b3402060101")
+    __slots__ = ()
 
     @property
     def components(self):
@@ -58,9 +61,11 @@ class Sequence(Segment):
 @register_class
 class NestedScope(Segment):
     class_id = UUID("0d010101-0101-0b00-060e-2b3402060101")
+    __slots__ = ()
 
 class SourceReference(Segment):
     class_id = UUID("0d010101-0101-1000-060e-2b3402060101")
+    __slots__ = ()
 
     @property
     def mob_id(self):
@@ -104,6 +109,7 @@ class SourceReference(Segment):
 @register_class
 class SourceClip(SourceReference):
     class_id = UUID("0d010101-0101-1100-060e-2b3402060101")
+    __slots__ = ()
 
     def __init__(self, start=None, length=None, mob_id=None, slot_id=None, media_kind=None):
         super(SourceClip, self).__init__(media_kind=media_kind, length=length)
@@ -122,22 +128,27 @@ class SourceClip(SourceReference):
 @register_class
 class Filler(Segment):
     class_id = UUID("0d010101-0101-0900-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class EssenceGroup(Segment):
     class_id = UUID("0d010101-0101-0500-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class Pulldown(Segment):
     class_id = UUID("0d010101-0101-0c00-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class ScopeReference(Segment):
     class_id = UUID("0d010101-0101-0d00-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class Timecode(Segment):
     class_id = UUID("0d010101-0101-1400-060e-2b3402060101")
+    __slots__ = ()
 
     def __init__(self, fps=25, drop=False):
         length = fps * 60 * 60 * 12 # 12 hours
@@ -173,6 +184,7 @@ class Timecode(Segment):
 @register_class
 class OperationGroup(Segment):
     class_id = UUID("0d010101-0101-0a00-060e-2b3402060101")
+    __slots__ = ()
 
     def __init__(self, operationdef, length=None):
         super(OperationGroup, self).__init__(length=length)

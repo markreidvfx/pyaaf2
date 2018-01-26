@@ -14,6 +14,7 @@ from .utils import register_class
 @register_class
 class EssenceData(core.AAFObject):
     class_id = UUID("0d010101-0101-2300-060e-2b3402060101")
+    __slots__ = ()
 
     @property
     def unique_key(self):
@@ -44,6 +45,7 @@ class EssenceData(core.AAFObject):
 @register_class
 class EssenceDescriptor(core.AAFObject):
     class_id = UUID("0d010101-0101-2400-060e-2b3402060101")
+    __slots__ = ()
 
     @property
     def locator(self):
@@ -52,6 +54,7 @@ class EssenceDescriptor(core.AAFObject):
 @register_class
 class FileDescriptor(EssenceDescriptor):
     class_id = UUID("0d010101-0101-2500-060e-2b3402060101")
+    __slots__ = ()
 
     @property
     def length(self):
@@ -63,14 +66,17 @@ class FileDescriptor(EssenceDescriptor):
 @register_class
 class DigitalImageDescriptor(FileDescriptor):
     class_id = UUID("0d010101-0101-2700-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class CDCIDescriptor(DigitalImageDescriptor):
     class_id = UUID("0d010101-0101-2800-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class RGBADescriptor(DigitalImageDescriptor):
     class_id = UUID("0d010101-0101-2900-060e-2b3402060101")
+    __slots__ = ()
 
     @property
     def pixel_layout(self):
@@ -79,27 +85,34 @@ class RGBADescriptor(DigitalImageDescriptor):
 @register_class
 class TapeDescriptor(EssenceDescriptor):
     class_id = UUID("0d010101-0101-2e00-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class SoundDescriptor(FileDescriptor):
     class_id = UUID("0d010101-0101-4200-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class DataEssenceDescriptor(FileDescriptor):
     class_id = UUID("0d010101-0101-4300-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class MultipleDescriptor(FileDescriptor):
     class_id = UUID("0d010101-0101-4400-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class PCMDescriptor(SoundDescriptor):
     class_id = UUID("0d010101-0101-4800-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class PhysicalDescriptor(EssenceDescriptor):
     class_id = UUID("0d010101-0101-4900-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class ImportDescriptor(PhysicalDescriptor):
     class_id = UUID("0d010101-0101-4a00-060e-2b3402060101")
+    __slots__ = ()

@@ -12,6 +12,7 @@ from .utils import register_class
 @register_class
 class MobSlot(core.AAFObject):
     class_id = UUID("0d010101-0101-3800-060e-2b3402060101")
+    __slots__ = ()
 
     def __init__(self, slot_id=None, name=None, segment=None):
         super(MobSlot, self).__init__()
@@ -73,10 +74,12 @@ class MobSlot(core.AAFObject):
 @register_class
 class EventMobSlot(MobSlot):
     class_id = UUID( "0d010101-0101-3900-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class TimelineMobSlot(MobSlot):
     class_id = UUID("0d010101-0101-3b00-060e-2b3402060101")
+    __slots__ = ()
     def __init__(self, slot_id=None, name=None, segment=None, origin=None, edit_rate=None):
         super(TimelineMobSlot, self).__init__(slot_id, name, segment)
         self.origin = origin or 0

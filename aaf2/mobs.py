@@ -53,6 +53,7 @@ class TaggedValueHelper(object):
 @register_class
 class Mob(core.AAFObject):
     class_id = UUID("0d010101-0101-3400-060e-2b3402060101")
+    __slots__ = ()
 
     def __init__(self, name=None):
         self.name = name or "Mob"
@@ -158,10 +159,12 @@ class Mob(core.AAFObject):
 @register_class
 class CompositionMob(Mob):
     class_id = UUID("0d010101-0101-3500-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class MasterMob(Mob):
     class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
+    __slots__ = ()
 
     def import_dnxhd_essence(self, path, edit_rate, tape=None):
 
@@ -200,6 +203,7 @@ class MasterMob(Mob):
 @register_class
 class SourceMob(Mob):
     class_id = UUID("0d010101-0101-3700-060e-2b3402060101")
+    __slots__ = ()
 
     @property
     def descriptor(self):
