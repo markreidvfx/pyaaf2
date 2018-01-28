@@ -32,10 +32,10 @@ class MXFTests(unittest.TestCase):
             assert len(f.content.mobs) == 2
             for mob in f.content.mobs:
                 if isinstance(mob, mobs.MasterMob):
-                    assert mob.id == video_mob_id
+                    assert mob.mob_id == video_mob_id
                 elif isinstance(mob, mobs.SourceMob):
                     if isinstance(mob.descriptor, essence.CDCIDescriptor):
-                        assert mob.id == video_source_mob_id
+                        assert mob.mob_id == video_source_mob_id
 
     def test_basic_audio_link(self):
 
@@ -60,10 +60,10 @@ class MXFTests(unittest.TestCase):
             assert len(f.content.mobs) == 2
             for mob in f.content.mobs:
                 if isinstance(mob, mobs.MasterMob):
-                    assert mob.id == audio_mob_id
+                    assert mob.mob_id == audio_mob_id
                 elif isinstance(mob, mobs.SourceMob):
                     if isinstance(mob.descriptor, essence.PCMDescriptor):
-                        assert mob.id == audio_source_mob_id
+                        assert mob.mob_id == audio_source_mob_id
 
 
 if __name__ == "__main__":

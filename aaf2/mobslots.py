@@ -16,7 +16,7 @@ class MobSlot(core.AAFObject):
 
     def __init__(self, slot_id=None, name=None, segment=None):
         super(MobSlot, self).__init__()
-        self.id = slot_id
+        self.slot_id = slot_id
         self.name = name
         if slot_id is not None and name is None:
             self.name = "Track-%03d" % slot_id
@@ -51,16 +51,16 @@ class MobSlot(core.AAFObject):
             return segment.media_kind
 
     @property
-    def id(self):
+    def slot_id(self):
         return self['SlotID'].value
 
-    @id.setter
-    def id(self, value):
+    @slot_id.setter
+    def slot_id(self, value):
         self['SlotID'].value = value
 
     def __repr__(self):
         name = self.name
-        slot_id = self.id
+        slot_id = self.slot_id
         s = "%s.%s" % (self.__class__.__module__,
                        self.__class__.__name__)
 

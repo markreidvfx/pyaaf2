@@ -18,26 +18,26 @@ class EssenceData(core.AAFObject):
 
     @property
     def unique_key(self):
-        return self.id
+        return self.mob_id
 
     @property
-    def id(self):
+    def mob_id(self):
         return self['MobID'].value
 
-    @id.setter
-    def id(self, value):
+    @mob_id.setter
+    def mob_id(self, value):
         self['MobID'].value = value
 
     @property
     def mob(self):
-        mob_id = self.id
+        mob_id = self.mob_id
         if mob_id:
             return self.root.content.mobs.get(mob_id, None)
         return None
 
     @mob.setter
     def mob(self, value):
-        self.id = value.id
+        self.mob_id = value.mob_id
 
     def open(self, mode='r'):
         return self['Data'].open(mode)

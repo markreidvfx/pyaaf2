@@ -64,7 +64,7 @@ class CreatAAFTests(unittest.TestCase):
                 mob_id = MobID.new()
                 m = f.create.MasterMob()
                 m.name = "TestMob%d" %i
-                m.id = mob_id
+                m.mob_id = mob_id
                 m['LastModified'].value = now
                 m['CreationTime'].value = now
                 m['Slots'].value = []
@@ -77,8 +77,8 @@ class CreatAAFTests(unittest.TestCase):
             # file_mobs = f.content['Mobs'].value
 
             for mob in f.content.mobs:
-                assert mob.id in mobs
-                assert mob.name == mobs[mob.id]
+                assert mob.mob_id in mobs
+                assert mob.name == mobs[mob.mob_id]
 
             assert len(list(f.content.mobs)) == count
 

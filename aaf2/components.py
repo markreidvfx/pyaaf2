@@ -92,7 +92,7 @@ class SourceReference(Segment):
 
     @mob.setter
     def mob(self, value):
-        self.mob_id = value.id
+        self.mob_id = value.mob_id
 
     @property
     def slot(self):
@@ -104,7 +104,7 @@ class SourceReference(Segment):
 
     @slot.setter
     def slot(self, value):
-        self.slot_id = value.id
+        self.slot_id = value.slot_id
 
 @register_class
 class SourceClip(SourceReference):

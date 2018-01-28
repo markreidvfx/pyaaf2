@@ -232,13 +232,13 @@ class MXFPackage(MXFObject):
             self.data['UsageCode'] = decode_uuid(data) # doesn't appear reversed...
 
     @property
-    def id(self):
+    def mob_id(self):
         return self.data.get('MobID', None)
 
     def link(self):
         mob = self.create_aaf_instance()
 
-        mob.id = self.id
+        mob.mob_id = self.mob_id
         self.root.aaf.content.mobs.append(mob)
 
         name = self.data.get('Name', None)
@@ -719,7 +719,7 @@ class MXFNetworkLocator(MXFLocator):
 
     def link(self):
         n = self.create_aaf_instance()
-        n['URLString'].value = self.data['URLString']
+        n['slot_id'].value = self.data['URLString']
         return n
 
 @register_mxf_class
@@ -825,7 +825,7 @@ class MXFFile(object):
         self.aaf = f
         mobs = []
         for package in self.packages():
-            if package.id in f.content.mobs:
+            if package.mob_id in f.content.mobs:
                 continue
 
             mobs.append(package.link())

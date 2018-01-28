@@ -20,7 +20,7 @@ class ImportTests(unittest.TestCase):
         with aaf2.open(result_file, 'w') as f:
 
             mob = f.create.MasterMob()
-            mob_id = mob.id
+            mob_id = mob.mob_id
             f.content.mobs.append(mob)
 
             with self.assertRaises(exceptions.AAFAttachError):
@@ -90,7 +90,7 @@ class ImportTests(unittest.TestCase):
 
             assert original_child_count > len(mobs)
 
-            mob_ids = [m.id for m in mobs]
+            mob_ids = [m.mob_id for m in mobs]
             f.content['Mobs'].value = []
 
             child_count = 0
@@ -141,7 +141,7 @@ class ImportTests(unittest.TestCase):
 
             assert original_child_count > len(mobs)
 
-            mob_ids = [m.id for m in mobs]
+            mob_ids = [m.mob_id for m in mobs]
             f.content['Mobs'].value = []
 
             child_count = 0
@@ -181,11 +181,11 @@ class ImportTests(unittest.TestCase):
         new_mobid =aaf2.mobid.MobID.new()
         with aaf2.open(new_file, 'rw') as f:
             comp = next(f.content.compositionmobs())
-            comp.id = new_mobid
+            comp.mob_id = new_mobid
 
         with aaf2.open(new_file, 'r') as f:
             comp = next(f.content.compositionmobs())
-            assert comp.id == new_mobid
+            assert comp.mob_id == new_mobid
 
 
 

@@ -171,7 +171,7 @@ class ImportTests(unittest.TestCase):
                 edit_length = duration * frame_rate
                 assert mob.slots[0].segment.length == edit_length
                 assert mob.slots[0].segment.start == start_time
-                assert mob.slots[0].segment.mob_id == tape_mob.id
+                assert mob.slots[0].segment.mob_id == tape_mob.mob_id
 
     def test_multi(self):
         frame_rate = 30.0
@@ -194,7 +194,7 @@ class ImportTests(unittest.TestCase):
             # create a tape
             tape_mob = f.create.SourceMob()
             tape_mob.create_tape_slots("mulit-import", frame_rate, timecode_fps)
-            tape_id = tape_mob.id
+            tape_id = tape_mob.mob_id
             f.content.mobs.append(tape_mob)
 
             for i, profile_name in enumerate(['dnxhr_lb', 'dnxhr_sq', 'dnxhr_hq'], 1):
@@ -212,13 +212,13 @@ class ImportTests(unittest.TestCase):
                 mob.comments['profile'] = profile_name
                 mob.comments['integer'] = 100
                 mob.comments['integer'] = i
-                mastermobs[mob.id] = (profile_name, i)
+                mastermobs[mob.mob_id] = (profile_name, i)
 
                 v_dump_path = os.path.join(common.sample_dir(),'%s-multi-import-dump.wav' % profile_name)
                 a_dump_path = os.path.join(common.sample_dir(),'%s-multi-import-dump.dnxhd' % profile_name)
 
-                samples[vs_mob.id] = (sample, v_dump_path, start_time)
-                samples[as_mob.id] = (audio_sample, a_dump_path, start_time)
+                samples[vs_mob.mob_id] = (sample, v_dump_path, start_time)
+                samples[as_mob.mob_id] = (audio_sample, a_dump_path, start_time)
 
                 start_time += 100
 

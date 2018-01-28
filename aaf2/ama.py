@@ -249,7 +249,7 @@ def create_ama_link(f, path, metadata):
             nul_ref.length = tape_length
             tape_slot.segment.components.append(nul_ref)
 
-            tape_clip = tape_mob.create_source_clip(tape_slot.id)
+            tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
             tape_clip.length = length
             tape_clip.media_kind = 'picture'
 
@@ -260,7 +260,7 @@ def create_ama_link(f, path, metadata):
             # src_slot = src_mob.create_empty_slot(edit_rate, media_kind='picture')
             # src_slot.segment.length = length
 
-            clip = src_mob.create_source_clip(src_slot.id)
+            clip = src_mob.create_source_clip(src_slot.slot_id)
             clip.length = length
             clip.media_kind = 'picture'
 
@@ -282,7 +282,7 @@ def create_ama_link(f, path, metadata):
                 nul_ref.length = tape_length
                 tape_slot.segment.components.append(nul_ref)
 
-                tape_clip = tape_mob.create_source_clip(tape_slot.id)
+                tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
                 tape_clip.length = length
                 tape_clip.media_kind = 'sound'
 
@@ -294,7 +294,7 @@ def create_ama_link(f, path, metadata):
                 # src_slot =  src_mob.create_empty_slot(edit_rate, media_kind='sound')
                 # src_slot.segment.length = length
 
-                clip = src_mob.create_source_clip(src_slot.id)
+                clip = src_mob.create_source_clip(src_slot.slot_id)
                 clip.length = length
                 clip.media_kind = 'sound'
 

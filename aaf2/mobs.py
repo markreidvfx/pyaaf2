@@ -57,7 +57,7 @@ class Mob(core.AAFObject):
 
     def __init__(self, name=None):
         self.name = name or "Mob"
-        self.id = MobID.new()
+        self.mob_id = MobID.new()
 
         now = datetime.now()
         self['CreationTime'].value = now
@@ -67,7 +67,7 @@ class Mob(core.AAFObject):
 
     @property
     def unique_key(self):
-        return self.id
+        return self.mob_id
 
     @property
     def name(self):
@@ -78,11 +78,11 @@ class Mob(core.AAFObject):
         self['Name'].value = value
 
     @property
-    def id(self):
+    def mob_id(self):
         return self['MobID'].value
 
-    @id.setter
-    def id(self, value):
+    @mob_id.setter
+    def mob_id(self, value):
         self['MobID'].value = value
 
     @property
@@ -102,12 +102,12 @@ class Mob(core.AAFObject):
 
     def slot_at(self, slot_id):
         for slot in self.slots:
-            if slot.id == slot_id:
+            if slot.slot_id == slot_id:
                 return slot
         raise IndexError("No SlotID: %s" % str(slot_id))
 
     def create_timeline_slot(self, edit_rate, slot_id=None):
-        slots = [slot.id for slot in self.slots]
+        slots = [slot.slot_id for slot in self.slots]
         slots.sort()
         if slot_id is None:
             start = 1
@@ -152,7 +152,7 @@ class Mob(core.AAFObject):
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,
                        self.__class__.__name__)
-        s += ' "%s" %s' % (self.name or "", str(self.id))
+        s += ' "%s" %s' % (self.name or "", str(self.mob_id))
 
         return '<%s at 0x%x>' % (s, id(self))
 
@@ -177,7 +177,7 @@ class MasterMob(Mob):
 
         # create slot and clip that references source_mob slot
         slot = self.create_timeline_slot(edit_rate=edit_rate)
-        slot.segment = source_mob.create_source_clip(source_slot.id, media_kind='picture')
+        slot.segment = source_mob.create_source_clip(source_slot.slot_id, media_kind='picture')
 
         # set clip length
         slot.segment.length = source_slot.segment.length
@@ -194,7 +194,7 @@ class MasterMob(Mob):
         # create slot and clip that references source_mob slot
         edit_rate = edit_rate or source_slot.edit_rate
         slot = self.create_timeline_slot(edit_rate=edit_rate)
-        slot.segment = source_mob.create_source_clip(source_slot.id, media_kind='sound')
+        slot.segment = source_mob.create_source_clip(source_slot.slot_id, media_kind='sound')
 
         # set clip length
         slot.segment.length = source_slot.segment.length
@@ -216,7 +216,7 @@ class SourceMob(Mob):
         # NOTE: appears like a SourceMob can only link to 1 essence and it must be slot 1
         slot = self.create_empty_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=1)
         essencedata = self.root.create.EssenceData()
-        essencedata.id = self.id
+        essencedata.mob_id = self.mob_id
         self.root.content.essencedata.append(essencedata)
         return essencedata, slot
 
@@ -360,4 +360,4 @@ class SourceMob(Mob):
 
     @property
     def essence(self):
-        return self.root.content.essencedata.get(self.id, None)
+        return self.root.content.essencedata.get(self.mob_id, None)
