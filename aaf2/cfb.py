@@ -1515,6 +1515,8 @@ class CompoundFileBinary(object):
             if not self.exists(root):
                 self.makedir(root)
 
+        return self.find(path)
+
     def move(self, src, dst):
         src_entry = self.find(src)
         if src_entry is None:
