@@ -7,6 +7,10 @@ from __future__ import (
 from aaf2.cfb import CompoundFileBinary
 import os
 import io
+
+import common
+import shutil
+
 base = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 test_dir = os.path.join(base, 'results')
 if not os.path.exists(test_dir):
@@ -179,6 +183,157 @@ class StreamTests(unittest.TestCase):
             assert s.dir.byte_size == seek_size  + len(data)
             s.close()
             ss.close()
+
+    def test_move(self):
+        path = os.path.join(test_dir, "move_test.aaf")
+
+        src = "/path/to/item"
+        dst = "/dest/path/moved_item"
+
+        stream_data = b'move stream data'
+
+        steam_list = [
+        "/path/to/item/child1/sub/sub/stream",
+        "/path/to/item/stream",
+        "/path/to/item2/stream"
+        ]
+
+        dir_list = [
+        "/path/to/item/child1/sub/sub",
+        "/path/to/item/child2",
+        "/path/to/item/child3/more_stuff",
+        "/path/to/item1/child1",
+        "/path/to/item2/child2/sub/sub",
+        "/path/to/item2/child2",
+        "/dest/path/",
+        ]
+
+        result_dirs = [
+        "/dest",
+        "/dest/path",
+        "/dest/path/moved_item",
+        "/dest/path/moved_item/child1",
+        "/dest/path/moved_item/child1/sub",
+        "/dest/path/moved_item/child1/sub/sub",
+        "/dest/path/moved_item/child3",
+        "/path",
+        "/path/to",
+        "/path/to/item1",
+        "/path/to/item2",
+        "/path/to/item2/child2",
+        "/path/to/item2/child2/sub",
+        ]
+
+        result_streams = [
+            "/dest/path/moved_item/child1/sub/sub/stream",
+            "/dest/path/moved_item/stream",
+            '/dest/path/moved_item/child3/stream'
+        ]
+
+        with open(path, 'wb+') as f:
+            cfb = CompoundFileBinary(f, 'wb+')
+            for p in dir_list:
+                cfb.makedirs(p)
+
+            for p in steam_list:
+                s = cfb.open(p, 'w')
+                s.write(stream_data)
+
+            cfb.move(src, dst)
+            with self.assertRaises(ValueError):
+                cfb.move('/path/to/item2/stream', '/dest/path/moved_item/child3')
+
+            cfb.move('/path/to/item2/stream', '/dest/path/moved_item/child3/')
+
+            with self.assertRaises(ValueError):
+                cfb.move('/path/that/doesnt/exist', '/dest/path/moved_item/')
+
+
+            with self.assertRaises(ValueError):
+                cfb.move('/path/to/item2/child2', '/path/that/doesnt/exist')
+
+
+            for p in result_dirs:
+                assert cfb.exists(p)
+                entry = cfb.find(p)
+                assert entry.isdir()
+
+            for p in result_streams:
+                assert cfb.exists(p)
+                entry = cfb.find(p)
+                assert entry.isfile()
+                assert entry.open('r').read() == stream_data
+
+            cfb.close()
+
+        with open(path, 'rb') as f:
+            cfb = CompoundFileBinary(f, 'rb')
+
+            for root, storage_items, streams in cfb.walk():
+                pass
+                # print(root.path(), streams)
+
+            for p in result_dirs:
+                assert cfb.exists(p)
+                entry = cfb.find(p)
+                assert entry.isdir()
+
+            for p in result_streams:
+                assert cfb.exists(p)
+                entry = cfb.find(p)
+                assert entry.isfile()
+
+                assert entry.open('r').read() == stream_data
+
+    def test_move2(self):
+        src_file = common.test_file_01()
+        test_file = os.path.join(test_dir, "move2_test.aaf")
+        shutil.copy(src_file, test_file)
+
+        dir_list = []
+        stream_list = []
+        move_root = "/Header-2/Content-3b03"
+
+        with open(test_file, 'rb+') as f:
+            cfb = CompoundFileBinary(f, 'rb+')
+            for root, storage_items, streams in cfb.walk(move_root):
+
+                for item in storage_items:
+                    dir_list.append(item.path())
+                for item in streams:
+                    stream_list.append(item.path())
+
+            cfb.makedir('/tmp')
+            cfb.move(move_root, '/tmp/')
+
+            for item in dir_list:
+                assert not cfb.exists(item)
+                new_path = item.replace(move_root, '/tmp/Content-3b03')
+                assert cfb.exists(new_path)
+                assert cfb.find(new_path).isdir()
+
+            for item in stream_list:
+                assert not cfb.exists(item)
+                new_path = item.replace(move_root, '/tmp/Content-3b03')
+                assert cfb.exists(new_path)
+                assert cfb.find(new_path).isfile()
+
+            cfb.close()
+
+        with open(test_file, 'rb') as f:
+            cfb = CompoundFileBinary(f, 'rb')
+            for item in dir_list:
+                assert not cfb.exists(item)
+                new_path = item.replace(move_root, '/tmp/Content-3b03')
+                assert cfb.exists(new_path)
+                assert cfb.find(new_path).isdir()
+
+            for item in stream_list:
+                assert not cfb.exists(item)
+                new_path = item.replace(move_root, '/tmp/Content-3b03')
+                assert cfb.exists(new_path)
+                assert cfb.find(new_path).isfile()
+
 
 
 if __name__ == "__main__":

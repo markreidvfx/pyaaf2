@@ -347,6 +347,51 @@ class DirEntry(object):
             item.color = 'black'
             self.add_child(item)
 
+    def pop(self):
+        """
+        remove self from binary search tree
+        """
+        entry = self
+        parent = self.parent
+
+        root = parent.child()
+
+        if root.dir_id == entry.dir_id:
+            parent.child_id = None
+
+        else:
+            # find dir entry pointing to self
+            while True:
+                if entry < root:
+                    if root.left_id == entry.dir_id:
+                        root.left_id = None
+                        break
+                    root = root.left()
+                else:
+                    if root.right_id == entry.dir_id:
+                        # root right is pointing to self
+                        root.right_id = None
+                        break
+                    root = root.right()
+
+
+        left = entry.left()
+        right = entry.right()
+
+        # clear from cache
+        if parent.dir_id in self.storage.children_cache:
+            self.storage.children_cache[parent.dir_id].remove(entry)
+
+        if left is not None:
+            parent.add_child(left)
+        if right is not None:
+            parent.add_child(right)
+
+        # clear parent and left and right
+        self.left_id = None
+        self.right_id = None
+        self.parent = None
+
     def insert(self, entry):
 
         root = self
@@ -367,6 +412,7 @@ class DirEntry(object):
                     root = left
                 else:
                     root.left_id = entry.dir_id
+                    entry.parent = self.parent
                     break
             else:
                 right = root.right()
@@ -374,6 +420,7 @@ class DirEntry(object):
                     root = right
                 else:
                     root.right_id = entry.dir_id
+                    entry.parent = self.parent
                     break
             count += 1
 
@@ -1460,6 +1507,58 @@ class CompoundFileBinary(object):
 
     def makedir(self, path, class_id=None):
         return self.create_dir_entry(path, dir_type='storage', class_id=class_id)
+
+    def makedirs(self, path):
+        root = ""
+
+        assert path.startswith('/')
+        p = path.strip('/')
+        for item in p.split('/'):
+            root += "/" + item
+            if not self.exists(root):
+                self.makedir(root)
+
+    def move(self, src, dst):
+        src_entry = self.find(src)
+        if src_entry is None:
+            raise ValueError("src path does not exist: %s" % src)
+
+        if dst.endswith('/'):
+            dst += src_entry.name
+
+        if self.exists(dst):
+            raise ValueError("dst path already exist: %s" % dst)
+
+        if dst == '/' or src == '/':
+            raise ValueError("cannot overwrite root dir")
+
+        split_path = dst.strip('/').split('/')
+        dst_basename = split_path[-1]
+        dst_dirname = '/' + '/'.join(split_path[:-1])
+
+        print(dst)
+        print(dst_basename, dst_dirname)
+
+        dst_entry = self.find(dst_dirname)
+        if dst_entry is None:
+            raise ValueError("src path does not exist: %s" % dst_dirname)
+
+        if not dst_entry.isdir():
+            raise ValueError("dst dirname cannot be stream: %s" % dst_dirname)
+
+        # src_entry.parent.remove_child(src_entry)
+
+        src_entry.pop()
+
+        src_entry.parent = None
+        src_entry.name = dst_basename
+        print(src_entry)
+        dst_entry.add_child(src_entry)
+
+        self.children_cache[dst_entry.dir_id].append(src_entry)
+
+        # print(src_entry.path())
+
 
     def open(self, path, mode='r'):
         """open stream."""
