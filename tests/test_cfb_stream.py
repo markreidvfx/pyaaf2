@@ -335,6 +335,54 @@ class StreamTests(unittest.TestCase):
                 assert cfb.find(new_path).isfile()
 
 
+    def test_rmtree(self):
+        src_file = common.test_file_01()
+        test_file = os.path.join(test_dir, "move2_test.aaf")
+        shutil.copy(src_file, test_file)
+
+        remove_list = []
+        remove_root = "/Header-2/Content-3b03"
+
+        property_streams = []
+
+        with open(test_file, 'rb+') as f:
+            cfb = CompoundFileBinary(f, 'rb+')
+            # for root, storage_items, streams in cfb.walk():
+            #     for item in streams:
+            #         print("!!", item.path())
+
+            for root, storage_items, streams in cfb.walk(remove_root):
+
+                for item in storage_items:
+                    remove_list.append(item.path())
+                for item in streams:
+                    remove_list.append(item.path())
+
+            cfb.rmtree('/Header-2/Content-3b03')
+
+            for item in remove_list:
+                assert not cfb.exists(item)
+
+            for root, storage_items, streams in cfb.walk():
+                for item in streams:
+                    if item.name == 'properties':
+                        property_streams.append(item.path())
+
+            for item in property_streams:
+                cfb.remove(item)
+
+            for item in property_streams:
+                assert not cfb.exists(item)
+
+            cfb.close()
+
+        with open(test_file, 'rb') as f:
+            cfb = CompoundFileBinary(f, 'rb')
+            for item in remove_list:
+                assert not cfb.exists(item)
+
+            for item in property_streams:
+                assert not cfb.exists(item)
 
 if __name__ == "__main__":
     import logging

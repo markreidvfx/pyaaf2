@@ -319,6 +319,7 @@ class DirEntry(object):
 
     def add_child(self, entry):
         entry.parent = self
+        entry.color = 'black'
         child = self.child()
         if child:
             child.insert(entry)
@@ -327,25 +328,6 @@ class DirEntry(object):
 
         if self.dir_id in self.storage.children_cache:
             self.storage.children_cache[self.dir_id].append(entry)
-
-
-    def remove_child(self, entry):
-        # NOTE: this is really ineffecient
-        children = []
-        for item in self.storage.listdir(self):
-            if item.dir_id == entry.dir_id:
-                continue
-            children.append(item)
-
-        self.child_id = None
-        self.storage.children_cache[self.dir_id] = []
-
-        # construct a new child list
-        for item in children:
-            item.left_id = None
-            item.right_id = None
-            item.color = 'black'
-            self.add_child(item)
 
     def pop(self):
         """
@@ -362,7 +344,6 @@ class DirEntry(object):
 
         if root.dir_id == entry.dir_id:
             parent.child_id = None
-
         else:
             # find dir entry pointing to self
             while True:
@@ -390,6 +371,10 @@ class DirEntry(object):
         # clear from cache
         if parent.dir_id in self.storage.children_cache:
             self.storage.children_cache[parent.dir_id].remove(entry)
+            if left:
+                self.storage.children_cache[parent.dir_id].remove(left)
+            if right:
+                self.storage.children_cache[parent.dir_id].remove(right)
 
         if left is not None:
             parent.add_child(left)
@@ -409,6 +394,7 @@ class DirEntry(object):
         max_dirs_entries = self.storage.dir_sector_count * dir_per_sector
 
         count = 0
+        entry.color = 'black'
 
         # avoids recursion
         while True:
@@ -1310,6 +1296,12 @@ class CompoundFileBinary(object):
         entry.type = dir_type
         entry.class_id = class_id
 
+        # TODO: Implement a Red Black tree
+        # all new DirEntries are black, so there is no tree balancing.
+        # AAF Low-Level Container Specification says its alright to do this.
+
+        entry.color = 'black'
+
         root.add_child(entry)
         self.dir_cache[dir_id] = entry
 
@@ -1349,12 +1341,8 @@ class CompoundFileBinary(object):
 
         if entry.type == "storage" and not entry.child_id is None:
             raise ValueError("storage contains children")
-        try:
-            entry.parent.remove_child(entry)
-        except:
-            for item in self.listdir(entry.parent):
-                 item
-            raise
+
+        entry.pop()
 
         # remove stream data
         if entry.type == "stream":
@@ -1545,8 +1533,8 @@ class CompoundFileBinary(object):
         dst_basename = split_path[-1]
         dst_dirname = '/' + '/'.join(split_path[:-1])
 
-        print(dst)
-        print(dst_basename, dst_dirname)
+        # print(dst)
+        # print(dst_basename, dst_dirname)
 
         dst_entry = self.find(dst_dirname)
         if dst_entry is None:
@@ -1561,7 +1549,6 @@ class CompoundFileBinary(object):
 
         src_entry.parent = None
         src_entry.name = dst_basename
-        print(src_entry)
         dst_entry.add_child(src_entry)
 
         self.children_cache[dst_entry.dir_id].append(src_entry)
