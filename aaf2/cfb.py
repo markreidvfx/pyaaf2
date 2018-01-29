@@ -356,12 +356,19 @@ class DirEntry(object):
 
         root = parent.child()
 
+        dir_per_sector = self.storage.sector_size // 128
+        max_dirs_entries = self.storage.dir_sector_count * dir_per_sector
+        count = 0
+
         if root.dir_id == entry.dir_id:
             parent.child_id = None
 
         else:
             # find dir entry pointing to self
             while True:
+                if count > max_dirs_entries:
+                    raise CompoundFileBinaryError("max dir entries limit reached")
+
                 if entry < root:
                     if root.left_id == entry.dir_id:
                         root.left_id = None
@@ -373,6 +380,8 @@ class DirEntry(object):
                         root.right_id = None
                         break
                     root = root.right()
+
+                count += 1
 
 
         left = entry.left()
