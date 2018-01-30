@@ -234,9 +234,16 @@ class StreamProperty(Property):
                 return self.dir.open(mode)
 
     def detach(self):
-        stream = self.parent.dir.get(self.stream_name).path()
+        if self.stream_name is None:
+            raise AAFAttachError("stream has no name")
+
+        stream = self.parent.dir.get(self.stream_name)
+        if not stream:
+            raise AAFAttachError("stream doesn't exists")
+
+        stream_path = stream.path()
         tmp = self.parent.root.manager.create_temp_dir().path()
-        self.dir = self.parent.root.cfb.move(stream, tmp + "/")
+        self.dir = self.parent.root.cfb.move(stream_path, tmp + "/" + self.stream_name)
 
     def attach(self):
         if self.dir is None:
@@ -245,13 +252,15 @@ class StreamProperty(Property):
         if self.parent.dir is None:
             raise AAFAttachError("stream parent not attached")
 
+        if self.stream_name is None:
+            raise AAFAttachError("stream has no name")
+
         stream = self.parent.dir.get(self.stream_name)
         if stream:
-            raise Exception()
+            raise AAFAttachError("dest stream already exists")
 
-        self.setup_stream()
-        property_path = self.parent.dir.path() + "/" + self.stream_name
-        self.parent.root.cfb.move(self.dir.path(), property_path)
+        stream_path = self.parent.dir.path() + "/" + self.stream_name
+        self.parent.root.cfb.move(self.dir.path(), stream_path)
 
         self.dir = None
 
