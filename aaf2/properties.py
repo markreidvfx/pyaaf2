@@ -167,6 +167,7 @@ class StreamProperty(Property):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StreamProperty, self).__init__(parent, pid, format, version)
         self.stream_name = None
+        self.dir = None
 
     def copy(self, parent):
         p = super(StreamProperty, self).copy(parent)
@@ -209,15 +210,50 @@ class StreamProperty(Property):
         self.setup_stream()
 
         if mode == 'r':
-            stream = self.parent.dir.get(self.stream_name)
+            if self.attached:
+                stream = self.parent.dir.get(self.stream_name)
+            else:
+                stream = self.dir
+
             if not stream:
-                raise AAFPropertyError("cannot find stream: %s" % index_name)
+                raise AAFPropertyError("cannot find stream: %s" % self.stream_name)
             return stream.open(mode)
         else:
             if not self.writeable:
                 raise AAFPropertyError("file readonly")
 
-            return self.parent.dir.touch(self.stream_name).open(mode)
+            if self.attached:
+                return self.parent.dir.touch(self.stream_name).open(mode)
+            else:
+                if self.dir is None:
+                    tmp_dir = self.parent.root.manager.create_temp_dir()
+                    stream = tmp_dir.touch(self.stream_name).open(mode)
+                    self.dir = stream.dir
+                    return stream
+
+                return self.dir.open(mode)
+
+    def detach(self):
+        stream = self.parent.dir.get(self.stream_name).path()
+        tmp = self.parent.root.manager.create_temp_dir().path()
+        self.dir = self.parent.root.cfb.move(stream, tmp + "/")
+
+    def attach(self):
+        if self.dir is None:
+            return
+
+        if self.parent.dir is None:
+            raise AAFAttachError("stream parent not attached")
+
+        stream = self.parent.dir.get(self.stream_name)
+        if stream:
+            raise Exception()
+
+        self.setup_stream()
+        property_path = self.parent.dir.path() + "/" + self.stream_name
+        self.parent.root.cfb.move(self.dir.path(), property_path)
+
+        self.dir = None
 
     @property
     def value(self):
@@ -784,6 +820,7 @@ class StrongRefSetProperty(Property):
 
         for item in values:
             key = item.unique_key
+            assert key is not None
             self.references[key] = self.next_free_key
             current = self.objects.get(key, None)
             if current:

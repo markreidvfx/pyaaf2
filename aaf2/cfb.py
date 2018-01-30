@@ -1555,8 +1555,7 @@ class CompoundFileBinary(object):
 
         self.children_cache[dst_entry.dir_id].append(src_entry)
 
-        # print(src_entry.path())
-
+        return src_entry
 
     def open(self, path, mode='r'):
         """open stream."""

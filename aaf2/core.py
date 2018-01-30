@@ -173,7 +173,8 @@ class AAFObject(object):
             for pid, p in item.property_entries.items():
                 if isinstance(p, (properties.StrongRefProperty,
                                   properties.StrongRefVectorProperty,
-                                  properties.StrongRefSetProperty)):
+                                  properties.StrongRefSetProperty,
+                                  properties.StreamProperty)):
                     # converts all internal weakrefs to strongrefs
                     p.detach()
 
@@ -207,7 +208,8 @@ class AAFObject(object):
         for pid, p in self.property_entries.items():
             if isinstance(p, (properties.StrongRefProperty,
                               properties.StrongRefVectorProperty,
-                              properties.StrongRefSetProperty)):
+                              properties.StrongRefSetProperty,
+                              properties.StreamProperty)):
 
                 p.attach()
 

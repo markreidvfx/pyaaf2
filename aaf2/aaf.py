@@ -73,6 +73,13 @@ class AAFObjectManager(object):
         # to hold onto modified objects
         self.modified = {}
 
+    def create_temp_dir(self):
+        return self.root.cfb.makedirs("/tmp/" + str(uuid4()).replace('-', '/'))
+
+    def remove_temp(self):
+        if self.root.cfb.exists("/tmp"):
+            self.root.cfb.rmtree("/tmp")
+
     def add_modified(self, obj):
         if self.root.mode == 'rb':
             raise ValueError("cannot modify read only file")
@@ -340,6 +347,7 @@ class AAFFile(object):
         Close the file. A closed file cannot be read or written any more.
         """
         self.save()
+        self.manager.remove_temp()
         self.cfb.close()
         self.is_open = False
         self.f.close()

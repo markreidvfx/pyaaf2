@@ -13,6 +13,23 @@ import common
 import aaf2
 from aaf2 import exceptions
 
+import binascii
+
+def stream_checksum(s):
+    crc = 0
+    f = s.open('r')
+    while True:
+        data = f.read(4092)
+        if not data:
+            break
+
+        crc = binascii.crc32(data, crc) & 0xffffffff
+
+    path = f.dir.path()
+
+    return path, crc
+
+
 class ImportTests(unittest.TestCase):
 
     def test_attach(self):
@@ -80,6 +97,8 @@ class ImportTests(unittest.TestCase):
         mob_ids = []
         original_child_count = 0
 
+        checksums = {}
+
         with aaf2.open(new_file, 'r+') as f:
             mobs = f.content['Mobs'].value
 
@@ -87,6 +106,11 @@ class ImportTests(unittest.TestCase):
                 for item, streams in m.walk_references():
                     assert item.dir is not None
                     original_child_count += 1
+
+                    for item in streams:
+                        path, crc = stream_checksum(item)
+                        path = path.replace(m.dir.path(), str(m.mob_id))
+                        checksums[path] = crc
 
             assert original_child_count > len(mobs)
 
@@ -107,6 +131,10 @@ class ImportTests(unittest.TestCase):
                 for item, streams in m.walk_references():
                     assert item.dir is not None
                     child_count += 1
+                    for item in streams:
+                        path, crc = stream_checksum(item)
+                        path = path.replace(m.dir.path(), str(m.mob_id))
+                        assert checksums[path] == crc
 
             assert child_count == original_child_count
 
@@ -120,6 +148,11 @@ class ImportTests(unittest.TestCase):
                 for item, streams in m.walk_references():
                     assert item.dir is not None
                     child_count += 1
+
+                    for item in streams:
+                        path, crc = stream_checksum(item)
+                        path = path.replace(m.dir.path(), str(m.mob_id))
+                        assert checksums[path] == crc
 
             assert child_count == original_child_count
 

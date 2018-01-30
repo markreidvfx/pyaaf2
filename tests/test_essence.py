@@ -44,6 +44,46 @@ class EssenceTests(unittest.TestCase):
             mob = e.mob
             assert mob
 
+    def test_write_dettached(self):
+        new_file = os.path.join(common.sandbox(), 'create_essence.aaf')
+        test_data = b"Essence Data!!"
+        mob_id =  aaf2.mobid.MobID()
+        mob_id.int = 1
+
+        with aaf2.open(new_file, 'w') as f:
+            e = f.create.EssenceData()
+            e.mob_id = mob_id
+            stream = e.open("w")
+            stream.write(test_data)
+
+            f.content.essencedata.append(e)
+
+            stream = e.open('r')
+            assert stream.read() == test_data
+
+        with aaf2.open(new_file, 'r') as f:
+            e = next(f.content.essencedata.values())
+            stream = e.open("r")
+            assert stream.read() == test_data
+
+            assert not f.cfb.exists("/tmp")
+
+    def test_write_dettached_clean(self):
+        new_file = os.path.join(common.sandbox(), 'create_essence.aaf')
+        test_data = b"Essence Data!!"
+        mob_id =  aaf2.mobid.MobID()
+        mob_id.int = 1
+
+        with aaf2.open(new_file, 'w') as f:
+            e = f.create.EssenceData()
+            e.mob_id = mob_id
+            stream = e.open("w")
+            stream.write(test_data)
+
+        with aaf2.open(new_file, 'r') as f:
+            assert not f.cfb.exists("/tmp")
+
+
 
 if __name__ == "__main__":
     import logging
