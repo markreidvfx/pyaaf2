@@ -7,7 +7,7 @@ from __future__ import (
 
 from uuid import UUID
 import os
-from .fractions import AAFFraction
+from .rational import AAFRational
 from . import video
 from . import audio
 from . import mxf
@@ -170,7 +170,7 @@ def guess_edit_rate(metadata):
     for st in metadata['streams']:
         codec_type = st['codec_type']
         if codec_type == 'video':
-            return AAFFraction(st['avg_frame_rate'])
+            return AAFRational(st['avg_frame_rate'])
 
 def guess_length(metadata, edit_rate):
     for st in metadata['streams']:

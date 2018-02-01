@@ -15,7 +15,7 @@ from . utils import register_class, rescale
 from . import essence
 from . import video
 from . import audio
-from .fractions import AAFFraction
+from .rational import AAFRational
 
 class TaggedValueHelper(object):
     def __init__(self, poperty_vector):
@@ -238,7 +238,7 @@ class SourceMob(Mob):
         self.descriptor = self.root.create.TapeDescriptor()
 
         slot = self.create_empty_slot(edit_rate, media_kind, slot_id=1)
-        slot.segment.length = int(float(AAFFraction(edit_rate)) * 60 *60 * 12) # 12 hours
+        slot.segment.length = int(float(AAFRational(edit_rate)) * 60 *60 * 12) # 12 hours
         timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame)
 
         return slot, timecode_slot

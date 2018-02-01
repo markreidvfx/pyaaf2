@@ -14,7 +14,7 @@ Rational = numbers.Rational
 if sys.version_info.major >= 3:
     unicode = str
 
-class AAFFraction(Fraction):
+class AAFRational(Fraction):
     """
     Subclass of fractions.Fraction from the standard library. Behaves exactly the same, except
     doesn't round to the Greatest Common Divisor at the end.
@@ -22,7 +22,7 @@ class AAFFraction(Fraction):
 
     def __new__(cls, numerator=0, denominator=None):
 
-        self = super(AAFFraction, cls).__new__(cls)
+        self = super(AAFRational, cls).__new__(cls)
 
         if denominator is None:
             if isinstance(numerator, Rational):

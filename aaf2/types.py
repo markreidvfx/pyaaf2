@@ -9,7 +9,7 @@ from uuid import UUID
 from . import core
 from . import properties
 from .mobid import MobID
-from .fractions import AAFFraction
+from .rational import AAFRational
 from .exceptions import AAFPropertyError
 
 import datetime
@@ -594,7 +594,7 @@ class TypeDefRecord(TypeDef):
 
         # Rational
         if self.auid == UUID("03010100-0000-0000-060e-2b3401040101"):
-            r = AAFFraction(result['Numerator'], result['Denominator'])
+            r = AAFRational(result['Numerator'], result['Denominator'])
             return r
 
         return result
@@ -642,7 +642,7 @@ class TypeDefRecord(TypeDef):
 
         # Rational
         if self.auid == UUID("03010100-0000-0000-060e-2b3401040101"):
-            r = AAFFraction(data)
+            r = AAFRational(data)
             data = {'Numerator': r.numerator, 'Denominator':r.denominator }
 
         for key, typedef_name in self.fields:
