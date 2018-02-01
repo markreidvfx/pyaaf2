@@ -9,7 +9,7 @@ import uuid
 import struct
 from .utils import (int_from_bytes, bytes_from_int)
 
-MOBID_STRUCT = struct.Struct(''.join(( '<',
+MOBID_STRUCT = struct.Struct(str(''.join(( '<',
    '12B',  # UInt8Array12   SMPTELabel
    'B',    # UInt8          length
    'B',    # UInt8          instanceHigh
@@ -19,7 +19,7 @@ MOBID_STRUCT = struct.Struct(''.join(( '<',
    'H',    # UInt16         Data2
    'H',    # UInt16         Data3
    '8B',   # UInt8Array8    Data4
- )))
+ ))))
 
 # ---
 # Excerpt from SMPTE ST 330 (Focus on Basic UMID)
