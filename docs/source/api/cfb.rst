@@ -12,7 +12,7 @@ CompoundFileBinary
 DirEntry
 --------
 
-.. autoclass:: CompoundFileBinary
+.. autoclass:: DirEntry
     :members:
 
 Stream
