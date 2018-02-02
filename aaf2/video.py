@@ -166,11 +166,11 @@ def read_dnx_frame_header(dnx_header):
         raise ValueError("Invalid DNxHD frame: unknown prefix: 0x%012X" % prefix)
 
     #NOTE Stored height then width...
-    height, width = unpack(">24xhh", dnx_header[:28])
-    cid = unpack(">40xi", dnx_header[:44])[0]
+    height, width = unpack(b">24xhh", dnx_header[:28])
+    cid = unpack(b">40xi", dnx_header[:44])[0]
 
-    interlaced =  unpack('B', dnx_header[5:6])[0] & 2 != 0
-    bitdepth = unpack('B', dnx_header[33:34])[0] >> 5
+    interlaced =  unpack(b'B', dnx_header[5:6])[0] & 2 != 0
+    bitdepth = unpack(b'B', dnx_header[33:34])[0] >> 5
     if bitdepth == 1:
         bitdepth = 8
     elif bitdepth == 2:
@@ -182,7 +182,7 @@ def read_dnx_frame_header(dnx_header):
 
     horizontal_subsampling = 2
     # 444 HorizontalSubsampling
-    if (unpack('B', dnx_header[44:45])[0] >> 6) & 1 != 0:
+    if (unpack(b'B', dnx_header[44:45])[0] >> 6) & 1 != 0:
         raise NotImplementedError("444 not tested")
         horizontal_subsampling = 4
 

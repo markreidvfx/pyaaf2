@@ -891,7 +891,7 @@ class CompoundFileBinary(object):
             logging.warn("fat sector count missmatch difat: %d header: %d" % (len(fat_sectors), self.fat_sector_count))
             self.fat_sector_count = len(fat_sectors)
 
-        st = Struct('<%dI' % (self.sector_size // 4))
+        st = Struct(b'<%dI' % (self.sector_size // 4))
         for sid in fat_sectors:
 
             pos = (sid + 1) *  self.sector_size
@@ -942,7 +942,7 @@ class CompoundFileBinary(object):
     def read_minifat(self):
         f = self.f
         sector_count = 0
-        st = Struct('<%dI' % (self.sector_size // 4))
+        st = Struct(b'<%dI' % (self.sector_size // 4))
         for sid in self.get_fat_chain(self.minifat_sector_start):
             self.minifat_chain.append(sid)
 

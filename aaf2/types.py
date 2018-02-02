@@ -92,7 +92,7 @@ class TypeDefInt(TypeDef):
         if self.signed:
             fmt = fmt.lower()
 
-        return fmt
+        return str(fmt)
 
     def decode(self, data):
         assert len(data) == self.size

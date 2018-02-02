@@ -205,7 +205,7 @@ class MobID(object):
         self.Data1 = value.time_low
         self.Data2 = value.time_mid
         self.Data3 = value.time_hi_version
-        self.Data4 = list(struct.unpack("8B", value.bytes[8:]))
+        self.Data4 = list(struct.unpack(b"8B", value.bytes[8:]))
 
     @property
     def bytes_le(self):
