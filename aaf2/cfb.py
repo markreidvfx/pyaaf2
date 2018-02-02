@@ -1372,7 +1372,8 @@ class CompoundFileBinary(object):
 
     def listdir(self, path = None):
         """
-        returns list DirEntries in path
+        Return a list containing the ``DirEntry`` objects in the directory
+        given by path.
         """
 
         if path is None:
@@ -1422,6 +1423,10 @@ class CompoundFileBinary(object):
         return result
 
     def find(self, path):
+        """
+        find a ``DirEntry`` located at *path*. Returns ``None`` if path
+        does not exist.
+        """
 
         if isinstance(path, DirEntry):
             return path
@@ -1450,6 +1455,9 @@ class CompoundFileBinary(object):
                 return None
 
     def walk(self, path = None, topdown=True):
+        """
+        Similar to :func:`os.walk`, yeields a 3-tuple ``(root, storage_items, stream_items)``
+        """
 
         if path is None:
             path = self.root
@@ -1498,14 +1506,23 @@ class CompoundFileBinary(object):
 
 
     def exists(self, path):
+        """
+        Return ``True`` if path refers to a existing path.
+        """
         if self.find(path) is None:
             return False
         return True
 
     def makedir(self, path, class_id=None):
+        """
+        Create a storage DirEntry name path
+        """
         return self.create_dir_entry(path, dir_type='storage', class_id=class_id)
 
     def makedirs(self, path):
+        """
+        Recursive storage DirEntry creation function.
+        """
         root = ""
 
         assert path.startswith('/')
@@ -1518,6 +1535,9 @@ class CompoundFileBinary(object):
         return self.find(path)
 
     def move(self, src, dst):
+        """
+        Moves ``DirEntry`` from src to dst
+        """
         src_entry = self.find(src)
         if src_entry is None:
             raise ValueError("src path does not exist: %s" % src)
@@ -1558,7 +1578,7 @@ class CompoundFileBinary(object):
         return src_entry
 
     def open(self, path, mode='r'):
-        """open stream."""
+        """Open stream, returning ``Stream`` object"""
 
         entry = self.find(path)
         if entry is None:
