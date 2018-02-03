@@ -8,8 +8,14 @@ Mob
     .. autoclass:: Mob
         :members:
 
+CompositionMob
+--------------
+
+    .. autoclass:: CompositionMob
+        :members:
+
 MasterMob
---------
+---------
 
     .. autoclass:: MasterMob
         :members:

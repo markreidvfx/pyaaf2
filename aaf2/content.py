@@ -44,7 +44,7 @@ class ContentStorage(core.AAFObject):
 
     def mastermobs(self):
         """
-        Convenience generator method that yields only :class:`aaf2.mobs.MasterMob`` objects.
+        Convenience generator method that yields only :class:`aaf2.mobs.MasterMob` objects.
         """
         for mob in self.mobs:
             if isinstance(mob, mobs.MasterMob):
