@@ -52,6 +52,10 @@ class TaggedValueHelper(object):
 
 @register_class
 class Mob(core.AAFObject):
+    """
+    Base Class for All Mob Objects
+    """
+
     class_id = UUID("0d010101-0101-3400-060e-2b3402060101")
     __slots__ = ()
 
@@ -79,6 +83,9 @@ class Mob(core.AAFObject):
 
     @property
     def mob_id(self):
+        """
+        The unique Mob ID associated with this mob. Get Returns :class:`aaf2.mobid.MobID` Object
+        """
         return self['MobID'].value
 
     @mob_id.setter
@@ -167,6 +174,9 @@ class MasterMob(Mob):
     __slots__ = ()
 
     def import_dnxhd_essence(self, path, edit_rate, tape=None):
+        """
+        Import video essence from raw DNxHD/DNxHR stream
+        """
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
@@ -184,6 +194,9 @@ class MasterMob(Mob):
         return source_mob
 
     def import_audio_essence(self, path, edit_rate=None, tape=None):
+        """
+        Import audio essence from wav file
+        """
 
         # create sourceMob and essencedata
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
@@ -244,6 +257,9 @@ class SourceMob(Mob):
         return slot, timecode_slot
 
     def import_dnxhd_essence(self, path, edit_rate, tape=None):
+        """
+        Import video essence from raw DNxHD/DNxHR stream
+        """
 
         essencedata, slot = self.create_essence(edit_rate, 'picture')
 
