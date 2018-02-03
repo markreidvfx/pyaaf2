@@ -20,29 +20,50 @@ class Header(core.AAFObject):
 
 @register_class
 class ContentStorage(core.AAFObject):
+    """
+    This object has all ``Mob`` and ``EssenceData`` objects in the file
+    """
+
     class_id = UUID("0d010101-0101-1800-060e-2b3402060101")
     __slots__ = ()
 
     @property
     def mobs(self):
+        """
+        Access to all the ``Mobs`` objects in the aaf file.
+        """
         return self['Mobs']
 
     def toplevel(self):
+        """
+        Convenience generator method that yields only TopLevel :class:`aaf2.mobs.CompositionMob` objects.
+        """
         for mob in self.compositionmobs():
             if mob.usage == 'Usage_TopLevel':
                 yield mob
 
     def mastermobs(self):
+        """
+        Convenience generator method that yields only :class:`aaf2.mobs.MasterMob`` objects.
+        """
         for mob in self.mobs:
             if isinstance(mob, mobs.MasterMob):
                 yield mob
 
     def compositionmobs(self):
+        """
+        Convenience generator method that yields only :class:`aaf2.mobs.CompositionMob` objects.
+        """
+
         for mob in self.mobs:
             if isinstance(mob, mobs.CompositionMob):
                 yield mob
 
     def sourcemobs(self):
+        """
+        Convenience generator method that yields only :class:`aaf2.mobs.SourceMob` objects.
+        """
+
         for mob in self.mobs:
             if isinstance(mob, mobs.SourceMob):
                 yield mob
@@ -58,4 +79,7 @@ class ContentStorage(core.AAFObject):
 
     @property
     def essencedata(self):
+        """
+        Access to :class:`aaf2.essence.EssenceData` objects in the aaf file.
+        """
         return self["EssenceData"]
