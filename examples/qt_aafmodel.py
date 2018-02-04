@@ -35,10 +35,11 @@ class TreeItem(object):
         elif isinstance(self.item, aaf2.properties.StrongRefVectorProperty):
             item = self.item.get(row)
             t = TreeItem(item ,self, row)
+        else:
+            return None
         print row, item
         self.children[row] = t
         return t
-
 
     def childNumber(self):
         self.setup()
@@ -176,7 +177,6 @@ class AAFModel(QtCore.QAbstractItemModel):
                 return item
         return self.rootItem
 
-
 if __name__ == "__main__":
 
     from PyQt4 import QtGui
@@ -226,11 +226,13 @@ if __name__ == "__main__":
     model = AAFModel(root)
 
     tree = QtGui.QTreeView()
-
+    # tree = QtGui.QColumnView()
     tree.setModel(model)
 
     tree.resize(700,600)
     tree.setAlternatingRowColors(True)
+    tree.setUniformRowHeights(True)
+
     tree.expandToDepth(1)
     tree.resizeColumnToContents(0)
     tree.resizeColumnToContents(1)
