@@ -5,38 +5,56 @@ import aaf2
 
 class TreeItem(object):
 
-    def __init__(self, item, parent=None):
+    def __init__(self, item, parent=None, index = 0):
         self.parentItem = parent
         self.item = item
-        self.childItems = []
+        self.children = {}
+        self.children_count = 0
         self.properties = {}
         self.loaded = False
+        self.index = index
+        self.references = []
         #self.getData()
     def columnCount(self):
         return 1
 
     def childCount(self):
         self.setup()
-        return len(self.childItems)
+        return self.children_count
 
     def child(self,row):
         self.setup()
-        return self.childItems[row]
+        if row in self.children:
+            return self.children[row]
+
+        if isinstance(self.item, aaf2.properties.StrongRefSetProperty):
+            key = self.references[row]
+            item = self.item.get(key)
+            t = TreeItem(item ,self, row)
+
+        elif isinstance(self.item, aaf2.properties.StrongRefVectorProperty):
+            item = self.item.get(row)
+            t = TreeItem(item ,self, row)
+        print row, item
+        self.children[row] = t
+        return t
+
 
     def childNumber(self):
         self.setup()
-        if self.parentItem != None:
-            return self.parentItem.childItems.index(self)
-        return 0
+        return self.index
 
     def parent(self):
         self.setup()
         return self.parentItem
 
-    def extendChildItems(self, items):
+    def extend(self, items):
         for i in items:
-            t = TreeItem(i,self)
-            self.childItems.append(t)
+            index = self.children_count
+            t = TreeItem(i,self, index)
+
+            self.children[index] = t
+            self.children_count += 1
 
     def name(self):
         item = self.item
@@ -62,17 +80,21 @@ class TreeItem(object):
 
         item = self.item
         if isinstance(item, list):
-            self.extendChildItems(item)
+            self.extend(item)
 
         if isinstance(item, aaf2.core.AAFObject):
-            self.extendChildItems(list(item.properties()))
+            self.extend(list(item.properties()))
 
         elif isinstance(item, aaf2.properties.StrongRefProperty):
-            self.extendChildItems([item.value])
+            self.extend([item.value])
 
-        elif isinstance(item, (aaf2.properties.StrongRefSetProperty,
-                               aaf2.properties.StrongRefVectorProperty)):
-            self.extendChildItems(list(item))
+        elif isinstance(item, aaf2.properties.StrongRefVectorProperty):
+            self.children_count = len(item)
+
+        elif isinstance(item, aaf2.properties.StrongRefSetProperty):
+            self.children_count = len(item)
+            self.references = list(item.references.keys())
+            self.references.sort()
 
         elif isinstance(item, (aaf2.properties.Property)):
             self.properties['Value'] = str(item.value)
@@ -208,6 +230,7 @@ if __name__ == "__main__":
     tree.setModel(model)
 
     tree.resize(700,600)
+    tree.setAlternatingRowColors(True)
     tree.expandToDepth(1)
     tree.resizeColumnToContents(0)
     tree.resizeColumnToContents(1)
