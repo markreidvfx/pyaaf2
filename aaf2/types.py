@@ -454,6 +454,8 @@ class TypeDefSet(TypeDef):
             return properties.SF_STRONG_OBJECT_REFERENCE_SET
         elif self.element_typedef.store_format == properties.SF_WEAK_OBJECT_REFERENCE:
             return properties.SF_WEAK_OBJECT_REFERENCE_SET
+        elif self.element_typedef.store_format == properties.SF_DATA:
+            return properties.SF_DATA
         else:
             raise AAFPropertyError("unkown store format: 0x%x" % self.element_typedef.store_format)
 
@@ -469,6 +471,16 @@ class TypeDefSet(TypeDef):
             v = typedef.decode(data[start:end])
             result.add(v)
             start = end
+
+        return result
+
+    def encode(self, data):
+        typedef = self.element_typedef
+
+        set_data = set(data)
+        result = b""
+        for item in set_data:
+            result += typedef.encode(item)
 
         return result
 
