@@ -39,7 +39,7 @@ classdefs = {
 ),
 "CommentMarker"  : ( "0d010101-0101-0800-060e-2b3402060101" , "Event" , True , {
      "CommentMarkerColor" : ( "e96e6d44-c383-11d3-a069-006094eb75cb" ,  0xFFDE ,  "RGBColor" , True ,  False ),
-     "CommentMarkerUSer" : ( "c4c45d9a-0967-11d4-a08a-006094eb75cb" ,  0xFFDD ,  "aafString" , True ,  False ),
+     "CommentMarkerUser" : ( "c4c45d9a-0967-11d4-a08a-006094eb75cb" ,  0xFFDD ,  "aafString" , True ,  False ),
      "CommentMarkerTime" : ( "c4c45d9c-0967-11d4-a08a-006094eb75cb" ,  0xFFDB ,  "aafString" , True ,  False ),
      "CommentMarkerIcon" : ( "c4c45d9d-0967-11d4-a08a-006094eb75cb" ,  0xFFD9 ,  "aafInt32" , True ,  False ),
      "CommentMarkerStatus" : ( "c4c45d9e-0967-11d4-a08a-006094eb75cb" ,  0xFFD8 ,  "aafInt32" , True ,  False ),
