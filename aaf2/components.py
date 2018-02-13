@@ -198,3 +198,21 @@ class OperationGroup(Segment):
     @operation.setter
     def operation(self, value):
         self['Operation'].value = value
+
+@register_class
+class Event(Segment):
+    class_id = UUID("0d010101-0101-0600-060e-2b3402060101")
+    __slots__ = ()
+
+    def __init__(self):
+        super(Event, self).__init__(media_kind='DescriptiveMetadata')
+
+@register_class
+class CommentMarker(Event):
+    class_id = UUID("0d010101-0101-0800-060e-2b3402060101")
+    __slots__ = ()
+
+@register_class
+class DescriptiveMarker(CommentMarker):
+    class_id = UUID("0d010101-0101-4100-060e-2b3402060101")
+    __slots__ = ()

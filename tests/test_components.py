@@ -12,7 +12,7 @@ import unittest
 import common
 import datetime
 
-class CreatAAFTests(unittest.TestCase):
+class ComponentAAFTests(unittest.TestCase):
 
 
     def test_marker(self):
@@ -23,24 +23,36 @@ class CreatAAFTests(unittest.TestCase):
             ems = f.create.EventMobSlot()
             ems['EditRate'].value = '25'
             ems['SlotID'].value = 1000
+            # doesn't work in avid unless you specify
+            # the same PhysicalTrackNumber as the target TimelineMobSlot.
+            ems['PhysicalTrackNumber'].value = 1
 
             sequence = f.create.Sequence("DescriptiveMetadata")
             marker = f.create.DescriptiveMarker()
             marker['DescribedSlots'].value = described_slots
             marker['Position'].value = 100
-            marker['DataDefinition'].value = f.dictionary.lookup_datadef("DescriptiveMetadata")
+            marker['Comment'].value = "This is a comment"
+            marker['CommentMarkerUser'].value = "username"
 
             sequence.components.append(marker)
             ems.segment = sequence
 
-            mob = f.create.MasterMob()
+            mob = f.create.CompositionMob()
+            mob.name = "marker_sequence"
+            p_slot = mob.create_picture_slot()
+            filler  = f.create.Filler()
+            filler.media_kind = "picture"
+            filler.length = 500
+            p_slot.segment.components.append(filler)
+            p_slot['PhysicalTrackNumber'].value = 1
+
             mob.slots.append(ems)
             f.content.mobs.append(mob)
 
         with aaf2.open(result_file, 'r') as f:
 
             mob = next(f.content.mobs.values())
-            slot = mob.slots.value[0]
+            slot = mob.slots.value[1]
             marker = slot.segment.components.value[0]
 
             assert marker['DescribedSlots'].value == described_slots
