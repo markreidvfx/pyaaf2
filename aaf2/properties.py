@@ -47,8 +47,7 @@ def writeonly(func):
         if not self.writeable:
             raise AAFPropertyError("file readonly")
         result = func(self, *args, **kwargs)
-        if self.attached:
-            self.parent.root.manager.add_modified(self.parent)
+        self.mark_modified()
         return result
 
     return func_wrapper
@@ -87,6 +86,10 @@ class Property(object):
 
     def decode(self):
         pass
+
+    def mark_modified(self):
+        if self.attached:
+            self.parent.root.manager.add_modified(self.parent)
 
     @property
     def propertydef(self):

@@ -755,19 +755,27 @@ class TypeDefExtEnum(TypeDef):
 class TypeDefIndirect(TypeDef):
     class_id = UUID("0d010101-0221-0000-060e-2b3402060101")
 
-    def decode(self, data):
+    def decode_typedef(self, data):
         byte_order = data[0:1]
         assert byte_order == b'\x4c' # little endian
         type_uuid = UUID(bytes_le=data[1:17])
-        typedef = self.root.metadict.lookup_typedef(type_uuid)
+        return self.root.metadict.lookup_typedef(type_uuid)
 
-        # print("???", typedef, typedef.auid)
+    def decode(self, data):
+        typedef = self.decode_typedef(data)
         result = typedef.decode(data[17:])
         return result
 
-    def encode(self, data):
+    def encode(self, data, data_typedef=None):
         byte_order = b'\x4c'
-        if isinstance(data, (str, unicode)):
+        typedef = None
+        if data_typedef is not None:
+            typedef = self.root.metadict.lookup_typedef(data_typedef)
+            if typedef is None:
+                raise AAFPropertyError("unable to find typedef: %s" % (str(data_typedef)))
+            type_uuid = typedef.auid
+
+        elif isinstance(data, (str, unicode)):
             # aafString
             type_uuid = UUID("01100200-0000-0000-060e-2b3401040101")
 
@@ -777,7 +785,8 @@ class TypeDefIndirect(TypeDef):
         else:
             raise NotImplementedError("Indirect type for: %s", str(type(data)))
 
-        typedef = self.root.metadict.lookup_typedef(type_uuid)
+        if typedef is None:
+            typedef = self.root.metadict.lookup_typedef(type_uuid)
         result = byte_order
         result += type_uuid.bytes_le
         result += typedef.encode(data)
