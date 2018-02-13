@@ -67,3 +67,21 @@ OperationGroup
 
   .. autoclass:: OperationGroup
       :members:
+
+Event
+-----
+
+  .. autoclass:: Event
+      :members:
+
+CommentMarker
+-------------
+
+  .. autoclass:: CommentMarker
+      :members:
+
+DescriptiveMarker
+-----------------
+
+  .. autoclass:: DescriptiveMarker
+      :members:

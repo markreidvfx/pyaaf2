@@ -22,3 +22,9 @@ TimelineMobSlot
 
     .. autoclass:: TimelineMobSlot
         :members:
+
+StaticMobSlot
+-------------
+
+    .. autoclass:: StaticMobSlot
+        :members:

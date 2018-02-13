@@ -90,6 +90,7 @@ API Reference
    api/mobid
    api/components
    api/essence
+   api/misc
    api/dictionary
    api/metadict
    api/types
