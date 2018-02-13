@@ -136,6 +136,11 @@ class EssenceGroup(Segment):
     __slots__ = ()
 
 @register_class
+class EdgeCode(Segment):
+    class_id = UUID("0d010101-0101-0400-060e-2b3402060101")
+    __slots__ = ()
+
+@register_class
 class Pulldown(Segment):
     class_id = UUID("0d010101-0101-0c00-060e-2b3402060101")
     __slots__ = ()
@@ -143,6 +148,11 @@ class Pulldown(Segment):
 @register_class
 class ScopeReference(Segment):
     class_id = UUID("0d010101-0101-0d00-060e-2b3402060101")
+    __slots__ = ()
+
+@register_class
+class Selector(Segment):
+    class_id = UUID("0d010101-0101-0e00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
@@ -199,7 +209,6 @@ class OperationGroup(Segment):
     def operation(self, value):
         self['Operation'].value = value
 
-@register_class
 class Event(Segment):
     class_id = UUID("0d010101-0101-0600-060e-2b3402060101")
     __slots__ = ()

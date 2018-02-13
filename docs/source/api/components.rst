@@ -45,6 +45,12 @@ EssenceGroup
 .. autoclass:: EssenceGroup
     :members:
 
+EdgeCode
+--------
+
+.. autoclass:: EdgeCode
+    :members:
+
 Pulldown
 --------
 
@@ -55,6 +61,12 @@ ScopeReference
 --------------
 
 .. autoclass:: ScopeReference
+    :members:
+
+Selector
+--------
+
+.. autoclass:: Selector
     :members:
 
 Timecode
