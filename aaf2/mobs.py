@@ -12,43 +12,11 @@ import io
 from . import core
 from . mobid import MobID
 from . utils import register_class, rescale
+from . misc import TaggedValueHelper
 from . import essence
 from . import video
 from . import audio
 from .rational import AAFRational
-
-class TaggedValueHelper(object):
-    def __init__(self, poperty_vector):
-        self.p = poperty_vector
-
-    def get(self, key, default=None):
-        for item in self.p:
-            if item['Name'].value == key:
-                return item
-        return default
-
-    def __contains__(self, key):
-        return not self.get(key, None) is None
-
-    def __getitem__(self, key):
-        p = self.get(key, None)
-        if p:
-            return p['Value'].value
-
-        raise IndexError(key)
-
-    def items(self):
-        for item in self.p:
-            yield item['Name'].value, item["Value"].value
-
-    def __setitem__(self, key, value):
-        tag = self.get(key, None)
-        if tag is None:
-            tag = self.p.parent.root.create.TaggedValue()
-            tag['Name'].value = key
-            self.p.append(tag)
-
-        tag['Value'].value = value
 
 @register_class
 class Mob(core.AAFObject):

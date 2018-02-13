@@ -79,6 +79,12 @@ class TestCreateSequence(unittest.TestCase):
                 master_mob = f.create.MasterMob()
                 master_mob.name = "Master Mob %i" % i
 
+                master_mob.comments['Test'] = 'Value'
+                master_mob.comments.append(f.create.TaggedValue("Test2", 42))
+
+                assert master_mob.comments['Test'] == "Value"
+                assert master_mob.comments['Test2'] == 42
+
                 clip = file_mob.create_source_clip(slot_id=1, length=length)
                 slot = master_mob.create_picture_slot(video_rate)
                 slot.segment.components.append(clip)

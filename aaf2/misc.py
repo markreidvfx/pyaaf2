@@ -12,6 +12,42 @@ import io
 from . import core
 from . utils import register_class
 
+class TaggedValueHelper(object):
+    def __init__(self, poperty_vector):
+        self.p = poperty_vector
+
+    def get(self, key, default=None):
+        for item in self.p:
+            if item['Name'].value == key:
+                return item
+        return default
+
+    def __contains__(self, key):
+        return not self.get(key, None) is None
+
+    def __getitem__(self, key):
+        p = self.get(key, None)
+        if p:
+            return p['Value'].value
+
+        raise IndexError(key)
+
+    def items(self):
+        for item in self.p:
+            yield item['Name'].value, item["Value"].value
+
+    def append(self, value):
+        self.p.append(value)
+
+    def __setitem__(self, key, value):
+        tag = self.get(key, None)
+        if tag is None:
+            tag = self.p.parent.root.create.TaggedValue()
+            tag['Name'].value = key
+            self.p.append(tag)
+
+        tag['Value'].value = value
+
 @register_class
 class TaggedValue(core.AAFObject):
     class_id = UUID("0d010101-0101-3f00-060e-2b3402060101")
