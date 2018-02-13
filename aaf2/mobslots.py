@@ -99,3 +99,8 @@ class TimelineMobSlot(MobSlot):
     @edit_rate.setter
     def edit_rate(self, value):
         self['EditRate'].value = value
+
+@register_class
+class StaticMobSlot(MobSlot):
+    class_id = UUID("0d010101-0101-3a00-060e-2b3402060101")
+    __slots__ = ()
