@@ -379,7 +379,8 @@ class TypeDefVarArray(TypeDef):
 
         element_typedef = self.element_typedef
 
-        if element_typedef.type_name == "Character":
+        #aafCharacter
+        if element_typedef.auid == UUID("01100100-0000-0000-060e-2b3401040101"):
             return list(iter_utf16_array(data))
 
 

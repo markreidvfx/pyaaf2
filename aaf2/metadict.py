@@ -308,24 +308,23 @@ class MetaDictionary(core.AAFObject):
         for name, args in typedefs.sets.items():
             self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
 
+        for name, args in typedefs.weakref_sets.items():
+            self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
+
+        for name, args in typedefs.strongref_sets.items():
+            self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
+
+        for name, args in typedefs.strongref_vectors.items():
+            self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
+
         for name, args in typedefs.strongrefs.items():
             self.typedefs_by_name[name] = types.TypeDefStrongRef(self.root, name, *args)
-
-        # need to look more into these
-        # for name, args in typedefs.strongref_sets.items():
-        #     self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
-
-        # for name, args in typedefs.strongref_vectors.items():
-        #     self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
 
         for name, args in typedefs.weakrefs.items():
             self.typedefs_by_name[name] = types.TypeDefWeakRef(self.root, name, *args)
 
-        # for name, args in typedefs.weakref_sets.items():
-        #     self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
-
-        # for name, args in typedefs.weakref_vectors.items():
-        #     self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
+        for name, args in typedefs.weakref_vectors.items():
+            self.typedefs_by_name[name] = types.TypeDefVarArray(self.root, name, *args)
 
         for name, auid in typedefs.streams.items():
             self.typedefs_by_name[name] = types.TypeDefStream(self.root, name, auid)
