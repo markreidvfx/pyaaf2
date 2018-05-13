@@ -27,7 +27,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 #define AAF_TYPE_DEFINITION_STRING(name, id, type) \
    MY_AAF_TYPE(name, id, aaf##name)
 #define AAF_TYPE_DEFINITION_EXTENDIBLE_ENUMERATION(name, id) \
-   MY_AAF_TYPE(name, id, aaf##name)
+   MY_AAF_TYPE(name, id, name)
 #define AAF_TYPE_DEFINITION_CHARACTER(name, id) \
    MY_AAF_TYPE(name, id, aaf##name)
 #define AAF_TYPE_DEFINITION_SET(name, id, type) \

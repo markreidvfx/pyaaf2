@@ -144,7 +144,7 @@ classdefs = {
     "DataDefinition"        : ("05300509-0000-0000-060e-2b3401010102", 0x1e01, "DataDefinitionWeakReference", False, False),
     "IsTimeWarp"            : ("05300503-0000-0000-060e-2b3401010101", 0x1e02, "Boolean", True, False),
     "DegradeTo"             : ("06010104-0401-0000-060e-2b3401010102", 0x1e03, "kAAFTypeID_OperationDefinitionWeakReferenceVector", True, False),
-    "OperationCategory"     : ("0530050a-0000-0000-060e-2b3401010102", 0x1e06, "aafOperationCategoryType", True, False),
+    "OperationCategory"     : ("0530050a-0000-0000-060e-2b3401010102", 0x1e06, "OperationCategoryType", True, False),
     "NumberInputs"          : ("05300504-0000-0000-060e-2b3401010101", 0x1e07, "aafInt32", False, False),
     "Bypass"                : ("05300505-0000-0000-060e-2b3401010101", 0x1e08, "aafUInt32", True, False),
     "ParametersDefined"     : ("06010104-0302-0000-060e-2b3401010102", 0x1e09, "kAAFTypeID_ParameterDefinitionWeakReferenceSet", True, False),
@@ -156,7 +156,7 @@ classdefs = {
     }
 ),
 "PluginDefinition"      : ("0d010101-0101-1e00-060e-2b3402060101", "DefinitionObject", True, {
-    "PluginCategory"        : ("05200901-0000-0000-060e-2b3401010102", 0x2203, "aafPluginCategoryType", False, False),
+    "PluginCategory"        : ("05200901-0000-0000-060e-2b3401010102", 0x2203, "PluginCategoryType", False, False),
     "VersionNumber"         : ("03030301-0300-0000-060e-2b3401010102", 0x2204, "VersionType", False, False),
     "VersionString"         : ("03030301-0201-0000-060e-2b3401010102", 0x2205, "aafString", True, False),
     "Manufacturer"          : ("010a0101-0101-0000-060e-2b3401010102", 0x2206, "aafString", True, False),
@@ -240,9 +240,9 @@ classdefs = {
     "VideoLineMap"          : ("04010302-0500-0000-060e-2b3401010102", 0x320d, "aafInt32Array", False, False),
     "ImageAspectRatio"      : ("04010101-0100-0000-060e-2b3401010101", 0x320e, "Rational", False, False),
     "AlphaTransparency"     : ("05200102-0000-0000-060e-2b3401010102", 0x320f, "AlphaTransparencyType", True, False),
-    "TransferCharacteristic": ("04010201-0101-0200-060e-2b3401010102", 0x3210, "aafTransferCharacteristicType", True, False),
-    "ColorPrimaries"        : ("04010201-0106-0100-060e-2b3401010109", 0x3219, "aafColorPrimariesType", True, False),
-    "CodingEquations"       : ("04010201-0103-0100-060e-2b3401010102", 0x321a, "aafCodingEquationsType", True, False),
+    "TransferCharacteristic": ("04010201-0101-0200-060e-2b3401010102", 0x3210, "TransferCharacteristicType", True, False),
+    "ColorPrimaries"        : ("04010201-0106-0100-060e-2b3401010109", 0x3219, "ColorPrimariesType", True, False),
+    "CodingEquations"       : ("04010201-0103-0100-060e-2b3401010102", 0x321a, "CodingEquationsType", True, False),
     "ImageAlignmentFactor"  : ("04180101-0000-0000-060e-2b3401010102", 0x3211, "aafUInt32", True, False),
     "FieldDominance"        : ("04010301-0600-0000-060e-2b3401010102", 0x3212, "FieldNumber", True, False),
     "FieldStartOffset"      : ("04180102-0000-0000-060e-2b3401010102", 0x3213, "aafUInt32", True, False),
@@ -360,7 +360,7 @@ classdefs = {
     "UserComments"          : ("03020102-0c00-0000-060e-2b3401010102", 0x4406, "kAAFTypeID_TaggedValueStrongReferenceVector", True, False),
     "KLVData"               : ("03010210-0300-0000-060e-2b3401010102", 0x4407, "kAAFTypeID_KLVDataStrongReferenceVector", True, False),
     "Attributes"            : ("03010210-0700-0000-060e-2b3401010107", 0x4409, "kAAFTypeID_TaggedValueStrongReferenceVector", True, False),
-    "UsageCode"             : ("05010108-0000-0000-060e-2b3401010107", 0x4408, "aafUsageType", True, False),
+    "UsageCode"             : ("05010108-0000-0000-060e-2b3401010107", 0x4408, "UsageType", True, False),
     }
 ),
 "CompositionMob"        : ("0d010101-0101-3500-060e-2b3402060101", "Mob", True, {

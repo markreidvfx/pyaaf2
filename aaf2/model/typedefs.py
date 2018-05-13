@@ -362,11 +362,11 @@ opaques = {
 }
 
 extenums = {
-"aafOperationCategoryType": ("02020101-0000-0000-060e-2b3401040101", {
+"OperationCategoryType": ("02020101-0000-0000-060e-2b3401040101", {
     "0d010102-0101-0100-060e-2b3404010101" : "OperationCategory_Effect",
     }
 ),
-"aafTransferCharacteristicType": ("02020102-0000-0000-060e-2b3401040101", {
+"TransferCharacteristicType": ("02020102-0000-0000-060e-2b3401040101", {
     "04010101-0101-0000-060e-2b3404010101" : "TransferCharacteristic_ITU470_PAL",
     "04010101-0102-0000-060e-2b3404010101" : "TransferCharacteristic_ITU709",
     "04010101-0103-0000-060e-2b3404010101" : "TransferCharacteristic_SMPTE240M",
@@ -375,13 +375,13 @@ extenums = {
     "04010101-0106-0000-060e-2b3404010101" : "TransferCharacteristic_linear",
     }
 ),
-"aafPluginCategoryType": ("02020103-0000-0000-060e-2b3401040101", {
+"PluginCategoryType": ("02020103-0000-0000-060e-2b3401040101", {
     "0d010102-0101-0200-060e-2b3404010101" : "PluginCategory_Effect",
     "0d010102-0101-0300-060e-2b3404010101" : "PluginCategory_Codec",
     "0d010102-0101-0400-060e-2b3404010101" : "PluginCategory_Interpolation",
     }
 ),
-"aafUsageType"        : ("02020104-0000-0000-060e-2b3401040101", {
+"UsageType"        : ("02020104-0000-0000-060e-2b3401040101", {
     "0d010102-0101-0500-060e-2b3404010101" : "Usage_SubClip",
     "0d010102-0101-0600-060e-2b3404010101" : "Usage_AdjustedClip",
     "0d010102-0101-0700-060e-2b3404010101" : "Usage_TopLevel",
@@ -389,13 +389,13 @@ extenums = {
     "0d010102-0101-0900-060e-2b3404010101" : "Usage_Template",
     }
 ),
-"aafColorPrimariesType": ("02020105-0000-0000-060e-2b3401040101", {
+"ColorPrimariesType": ("02020105-0000-0000-060e-2b3401040101", {
     "04010101-0301-0000-060e-2b3404010106" : "ColorPrimaries_SMPTE170M",
     "04010101-0302-0000-060e-2b3404010106" : "ColorPrimaries_ITU470_PAL",
     "04010101-0303-0000-060e-2b3404010106" : "ColorPrimaries_ITU709",
     }
 ),
-"aafCodingEquationsType": ("02020106-0000-0000-060e-2b3401040101", {
+"CodingEquationsType": ("02020106-0000-0000-060e-2b3401040101", {
     "04010101-0201-0000-060e-2b3404010101" : "CodingEquations_ITU601",
     "04010101-0202-0000-060e-2b3404010101" : "CodingEquations_ITU709",
     "04010101-0203-0000-060e-2b3404010101" : "CodingEquations_SMPTE240M",
