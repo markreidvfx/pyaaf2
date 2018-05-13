@@ -91,6 +91,11 @@ typedef_cats= ("ints", "enums", "records", "fixed_arrays", "var_arrays",
                "renames", "strings", "streams", "opaques", "extenums",
                "chars", "indirects", "sets", "strongrefs", "weakrefs")
 
+root_class = (UUID('b3b398a5-1c90-11d4-8053-080036210804'), None, True, {
+    "Header"              : (UUID('0d010301-0102-0100-060e-2b3401010102'), 0x0002, "HeaderStrongRefence", False, False),
+    "MetaDictionary"      : (UUID('0d010301-0101-0100-060e-2b3401010102'), 0x0001, "MetaDictionaryStrongReference", False, False),
+    })
+
 def read_properties(entry):
     stream = entry.get('properties')
     if stream is None:
@@ -214,7 +219,7 @@ def read_typedef(entry, types):
     p  = read_properties(entry)
     name = decode_utf16le(p[NAME_PID])
     identification = UUID(bytes_le=p[IDENTIFICATION_PID])
-
+    types['all'][identification] = name
     # description = decode_utf16le(p[DESCRIPTION_PID])
     # print(name, description)
 
@@ -300,7 +305,7 @@ def read_typedef(entry, types):
     elif entry.class_id == TypeDefCharacter:
         types['chars'][name] = data
     else:
-        raise Exception()
+        raise ValueError("Unknown TypeDef: " + str(entry.class_id))
 
 def read_propertdef(entry):
     p  = read_properties(entry)
@@ -316,6 +321,8 @@ def read_propertdef(entry):
     if PropertyDef_IsUniqueIdentifier in p:
         is_unique = p[PropertyDef_IsUniqueIdentifier]  == b"\x01"
         data.append(is_unique)
+    else:
+        data.append(False)
 
     return name, data
 
@@ -339,6 +346,97 @@ def read_classdef(entry):
     data.append(properties)
 
     return name, data
+
+def resolve_refs(typedefs, classdefs):
+
+    for name, data in root_class[3].items():
+        classdefs['prop_ids'][data[0]] = name
+
+    new_enums  = {}
+    for name, data in typedefs['enums'].items():
+        typedef_name = typedefs['all'][data[1]]
+        new_enums[name] = (data[0], typedef_name, data[2])
+    typedefs['enums'] = new_enums
+
+    new_records = {}
+    for name, data in typedefs['records'].items():
+        members = []
+        for item in data[1]:
+            typedef_name = typedefs['all'][item[1]]
+            members.append((item[0], typedef_name))
+
+        new_records[name] = [data[0], members]
+
+    typedefs['records'] = new_records
+
+    new_fixed_arrays = {}
+    for name, data in typedefs['fixed_arrays'].items():
+        typedef_name = typedefs['all'][data[1]]
+        new_fixed_arrays[name] = (data[0], typedef_name, data[2])
+    typedefs['fixed_arrays'] = new_fixed_arrays
+
+    new_var_arrays = {}
+    for name, data in typedefs['var_arrays'].items():
+        typedef_name = typedefs['all'][data[1]]
+        new_var_arrays[name] = (data[0], typedef_name)
+    typedefs['var_arrays'] = new_var_arrays
+
+    new_renames = {}
+    for name, data in typedefs['renames'].items():
+        typedef_name = typedefs['all'][data[1]]
+        new_renames[name] = (data[0], typedef_name)
+    typedefs['renames'] = new_renames
+
+    new_strings = {}
+    for name, data in typedefs['strings'].items():
+        typedef_name = typedefs['all'][data[1]]
+        new_strings[name] = (data[0], typedef_name)
+    typedefs['strings'] = new_strings
+
+    new_sets = {}
+    for name, data in typedefs['sets'].items():
+        typedef_name = typedefs['all'][data[1]]
+        new_sets[name] = (data[0], typedef_name)
+    typedefs['sets'] = new_sets
+
+    new_strongrefs = {}
+    for name, data in typedefs['strongrefs'].items():
+        ref_name = classdefs['ids'][data[1]]
+        new_strongrefs[name] = (data[0], ref_name)
+    typedefs['strongrefs'] = new_strongrefs
+
+    new_weakrefs = {}
+    for name, data in typedefs['weakrefs'].items():
+        ref_name = classdefs['ids'][data[1]]
+
+        p_path = []
+        for item in data[2]:
+            p_name = classdefs['prop_ids'].get(item, item)
+            p_path.append(p_name)
+        new_weakrefs[name] = (data[0], ref_name, p_path)
+        # print(name, p_path)
+
+    typedefs['weakrefs'] = new_weakrefs
+
+    new_classdefs = {}
+    for name, data in classdefs['names'].items():
+        parent = classdefs['ids'][data[1]]
+        if parent == name:
+            parent = None
+        propdefs = {}
+        for p_name, p_data in data[3].items():
+            typedef_id = p_data[2]
+            typedef_name = typedefs['all'].get(typedef_id, typedef_id)
+
+            if typedef_name == typedef_id:
+                raise ValueError("cannot resolve typedef for %s.%s : " %(name, p_name, str(typedef_id) ))
+            #     print(name, p_name, typedef_name)
+            new_p_data = (p_data[0], p_data[1], typedef_name, p_data[3], p_data[4])
+            propdefs[p_name] = new_p_data
+
+        new_classdefs[name] = (data[0], parent, data[2], propdefs)
+
+    classdefs['names'] = new_classdefs
 
 
 def dump_model(path):
@@ -369,27 +467,32 @@ def dump_model(path):
         for key in typedef_cats:
             typedefs[key] = {}
 
-        for key, local_key in class_reference_keys:
+        typedefs['all'] = {}
+
+        for key, local_key in type_reference_keys:
             dirname = "%s{%x}" % (index_name, local_key)
             read_typedef(metadict.get(dirname), typedefs)
 
-        # for cat in typedef_cats:
-        #     print(cat, "= ")
-        #     pprint.pprint(typedefs[cat])
         #
         #ClassDefinitions
         index_name = mangle_name("ClassDefinitions", CLASSDEFINITIONS_PID, 32-10)
 
-        classdefs = {}
+        classdefs = {'names': {}, 'ids':{}, 'prop_ids': {}}
         for key, local_key in class_reference_keys:
             dirname = "%s{%x}" % (index_name, local_key)
             class_name, class_data = read_classdef(metadict.get(dirname))
-            classdefs[class_name] = class_data
+            classdefs['names'][class_name] = class_data
+            classdefs['ids'][class_data[0]] = class_name
 
-        pprint.pprint(classdefs)
+            for p_name, p_data in class_data[3].items():
+                classdefs['prop_ids'][p_data[0]] = p_name
 
+        resolve_refs(typedefs, classdefs)
+        # for cat in typedef_cats:
+        #     print(cat, "= ")
+        #     pprint.pprint(typedefs[cat])
 
-
+        pprint.pprint(classdefs['names'])
 
 
 
