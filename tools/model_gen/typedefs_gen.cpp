@@ -118,6 +118,38 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
     cout <<  id << ", " << type << "),"; \
     cout << endl;
 
+#include "AAFMetaDictionary.h"
+
+// StrongRefVector
+
+#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
+auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
+
+#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
+#define AAF_TYPE(name) NAME_##name##StrongReference
+
+#define AAF_TYPE_DEFINITION_STRONG_REFERENCE_VECTOR(name, id, type) \
+    cout << name << PAD(60, name) << " : ("; \
+    cout << id << ", "; \
+    cout << type; \
+    cout << " )," <<endl;
+
+#include "AAFMetaDictionary.h"
+
+// WeakRefVector
+
+#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
+auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
+
+#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
+#define AAF_TYPE(name) NAME_##name##WeakReference
+
+#define AAF_TYPE_DEFINITION_WEAK_REFERENCE_VECTOR(name, id, type) \
+    cout << name << PAD(55, name) << " : ("; \
+    cout << id << ", "; \
+    cout << type; \
+    cout << " )," <<endl;
+
 #define AAF_TYPE_TABLE_END() \
     cout << "}" << endl << endl;
 
@@ -255,6 +287,38 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
     cout <<  id << ", " << type << "),"; \
     cout << endl;
 
+#include "AAFMetaDictionary.h"
+
+// StrongRefSet
+
+#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
+auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
+
+#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
+#define AAF_TYPE(name) NAME_##name##StrongReference
+
+#define AAF_TYPE_DEFINITION_STRONG_REFERENCE_SET(name, id, type) \
+    cout << name << PAD(60, name) << " : ("; \
+    cout << id << ", "; \
+    cout << type; \
+    cout << " )," <<endl;
+
+#include "AAFMetaDictionary.h"
+
+// WeakRefSet
+
+#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
+auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
+
+#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
+#define AAF_TYPE(name) NAME_##name##WeakReference
+
+#define AAF_TYPE_DEFINITION_WEAK_REFERENCE_SET(name, id, type) \
+    cout << name << PAD(55, name) << " : ("; \
+    cout << id << ", "; \
+    cout << type; \
+    cout << " )," <<endl;
+
 #define AAF_TYPE_TABLE_END() \
     cout << "}" << endl << endl;
 
@@ -273,50 +337,6 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_TYPE_DEFINITION_STRONG_REFERENCE(name, id, type) \
     cout << name << PAD(55, name) << " : ("; \
-    cout << id << ", "; \
-    cout << type; \
-    cout << " )," <<endl;
-
-#define AAF_TYPE_TABLE_END() \
-    cout << "}" << endl << endl;
-
-#include "AAFMetaDictionary.h"
-
-// TypeDefStrongRefSet
-
-#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
-auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
-
-#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
-#define AAF_TYPE(name) NAME_##name##StrongReference
-
-#define AAF_TYPE_TABLE_BEGIN() \
-    cout << "strongref_sets = {" << endl;
-
-#define AAF_TYPE_DEFINITION_STRONG_REFERENCE_SET(name, id, type) \
-    cout << name << PAD(60, name) << " : ("; \
-    cout << id << ", "; \
-    cout << type; \
-    cout << " )," <<endl;
-
-#define AAF_TYPE_TABLE_END() \
-    cout << "}" << endl << endl;
-
-#include "AAFMetaDictionary.h"
-
-// TypeDefStrongRefVector
-
-#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
-auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
-
-#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
-#define AAF_TYPE(name) NAME_##name##StrongReference
-
-#define AAF_TYPE_TABLE_BEGIN() \
-    cout << "strongref_vectors = {" << endl;
-
-#define AAF_TYPE_DEFINITION_STRONG_REFERENCE_VECTOR(name, id, type) \
-    cout << name << PAD(60, name) << " : ("; \
     cout << id << ", "; \
     cout << type; \
     cout << " )," <<endl;
@@ -347,50 +367,6 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_TYPE_DEFINITION_WEAK_REFERENCE_END(name, id, type) \
     cout << ")"<< endl << ")," << endl;;
-
-#define AAF_TYPE_TABLE_END() \
-    cout << "}" << endl << endl;
-
-#include "AAFMetaDictionary.h"
-
-// TypeDefWeakRefSet
-
-#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
-auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
-
-#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
-#define AAF_TYPE(name) NAME_##name##WeakReference
-
-#define AAF_TYPE_TABLE_BEGIN() \
-    cout << "weakref_sets = {" << endl;
-
-#define AAF_TYPE_DEFINITION_WEAK_REFERENCE_SET(name, id, type) \
-    cout << name << PAD(55, name) << " : ("; \
-    cout << id << ", "; \
-    cout << type; \
-    cout << " )," <<endl;
-
-#define AAF_TYPE_TABLE_END() \
-    cout << "}" << endl << endl;
-
-#include "AAFMetaDictionary.h"
-
-// TypeDefWeakRefVector
-
-#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
-auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
-
-#define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
-#define AAF_TYPE(name) NAME_##name##WeakReference
-
-#define AAF_TYPE_TABLE_BEGIN() \
-    cout << "weakref_vectors = {" << endl;
-
-#define AAF_TYPE_DEFINITION_WEAK_REFERENCE_VECTOR(name, id, type) \
-    cout << name << PAD(55, name) << " : ("; \
-    cout << id << ", "; \
-    cout << type; \
-    cout << " )," <<endl;
 
 #define AAF_TYPE_TABLE_END() \
     cout << "}" << endl << endl;
