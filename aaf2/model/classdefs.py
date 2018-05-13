@@ -324,8 +324,8 @@ classdefs = {
     "IdentificationList"    : ("06010104-0604-0000-060e-2b3401010102", 0x3b06, "kAAFTypeID_IdentificationStrongReferenceVector", False, False),
     "ObjectModelVersion"    : ("03010201-0400-0000-060e-2b3401010102", 0x3b07, "aafUInt32", True, False),
     "OperationalPattern"    : ("01020203-0000-0000-060e-2b3401010105", 0x3b09, "AUID", True, False),
-    "EssenceContainers"     : ("01020210-0201-0000-060e-2b3401010105", 0x3b0a, "kAAFTypeID_AUIDSet", True, False),
-    "DescriptiveSchemes"    : ("01020210-0202-0000-060e-2b3401010105", 0x3b0b, "kAAFTypeID_AUIDSet", True, False),
+    "EssenceContainers"     : ("01020210-0201-0000-060e-2b3401010105", 0x3b0a, "AUIDSet", True, False),
+    "DescriptiveSchemes"    : ("01020210-0202-0000-060e-2b3401010105", 0x3b0b, "AUIDSet", True, False),
     }
 ),
 "Identification"        : ("0d010101-0101-3000-060e-2b3402060101", "InterchangeObject", True, {
@@ -423,7 +423,7 @@ classdefs = {
     }
 ),
 "DescriptiveMarker"     : ("0d010101-0101-4100-060e-2b3402060101", "CommentMarker", True, {
-    "DescribedSlots"        : ("01070105-0000-0000-060e-2b3401010104", 0x6102, "kAAFTypeID_UInt32Set", True, False),
+    "DescribedSlots"        : ("01070105-0000-0000-060e-2b3401010104", 0x6102, "UInt32Set", True, False),
     "Description"           : ("06010104-020c-0000-060e-2b3401010105", 0x6101, "kAAFTypeID_DescriptiveFrameworkStrongReference", True, False),
     }
 ),
@@ -447,7 +447,7 @@ classdefs = {
     }
 ),
 "DescriptiveClip"       : ("0d010101-0101-4500-060e-2b3402060101", "SourceClip", True, {
-    "DescribedSlotIDs"      : ("01070106-0000-0000-060e-2b3401010105", 0x6103, "kAAFTypeID_UInt32Set", True, False),
+    "DescribedSlotIDs"      : ("01070106-0000-0000-060e-2b3401010105", 0x6103, "UInt32Set", True, False),
     }
 ),
 "PCMDescriptor"         : ("0d010101-0101-4800-060e-2b3402060101", "SoundDescriptor", True, {

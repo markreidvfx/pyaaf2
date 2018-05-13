@@ -283,7 +283,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
     cout << "sets = {" << endl;
 
 #define AAF_TYPE_DEFINITION_SET(name, id, type) \
-    cout << QUOTE(kAAFTypeID_##name) << ": ("; \
+    cout << NAME_##name << ": ("; \
     cout <<  id << ", " << type << "),"; \
     cout << endl;
 

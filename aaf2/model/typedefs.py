@@ -412,8 +412,8 @@ indirects = {
 }
 
 sets = {
-"kAAFTypeID_AUIDSet": ("04030100-0000-0000-060e-2b3401040101", "AUID"),
-"kAAFTypeID_UInt32Set": ("04030200-0000-0000-060e-2b3401040101", "aafUInt32"),
+"AUIDSet": ("04030100-0000-0000-060e-2b3401040101", "AUID"),
+"UInt32Set": ("04030200-0000-0000-060e-2b3401040101", "aafUInt32"),
 "kAAFTypeID_ClassDefinitionStrongReferenceSet"           : ("05050100-0000-0000-060e-2b3401040101", "kAAFTypeID_ClassDefinitionStrongReference" ),
 "kAAFTypeID_CodecDefinitionStrongReferenceSet"           : ("05050200-0000-0000-060e-2b3401040101", "kAAFTypeID_CodecDefinitionStrongReference" ),
 "kAAFTypeID_ContainerDefinitionStrongReferenceSet"       : ("05050300-0000-0000-060e-2b3401040101", "kAAFTypeID_ContainerDefinitionStrongReference" ),
