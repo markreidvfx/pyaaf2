@@ -78,6 +78,9 @@ def decode_utf16le(data):
 def encode_utf16le(data):
     return data.encode("utf-16le") + b"\x00\x00"
 
+def encode_u16le(value):
+    return pack(b"<H", value)
+
 def write_filetime(f, value):
     write_u64le(f, value)
 

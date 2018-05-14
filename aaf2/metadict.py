@@ -10,31 +10,48 @@ from .exceptions import AAFPropertyError
 from . import types
 from .model import classdefs
 from .model import typedefs as base_typedefs
+from . import properties
 
 from . import core
-from .utils import (register_class, read_u16le, decode_utf16le, AAFClaseID_dict, AAFClassName_dict)
+from .utils import (register_class, read_u16le, decode_utf16le, encode_utf16le, AAFClaseID_dict, AAFClassName_dict)
 
 import uuid
 from uuid import UUID
 
+PID_NAME      = 0x0006
+PID_UUID      = 0x0005
+PID_TYPE      = 0x000B
+PID_OPTIONAL  = 0x000C
+PID_PID       = 0x000D
+PID_UNIQUE    = 0x000E
+
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
+    __slots__ = ('typedef_name')
 
     def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         self = super(PropertyDef, cls).__new__(cls)
 
         self.root = root
-        self.property_name = name
-        self.uuid = None
-        if uuid:
-            self.uuid = UUID(uuid)
-        self.pid = pid
+        self.property_entries[PID_NAME]     = properties.string_property(self, PID_NAME, name)
+        self.property_entries[PID_OPTIONAL] = properties.bool_property(self, PID_OPTIONAL, optional)
+        self.property_entries[PID_UNIQUE]   = properties.bool_property(self, PID_UNIQUE, unique)
+        self.property_entries[PID_PID]      = properties.u16le_property(self, PID_PID, pid)
+        self.property_entries[PID_UUID]     = properties.uuid_property(self, PID_UUID, uuid)
         self.typedef_name = typedef
-        self.optional = optional
-        self._unique = unique
 
         return self
+
+    @property
+    def property_name(self):
+        data = self.property_entries[PID_NAME].data
+        if data is not None:
+            return decode_utf16le(data)
+
+    @property_name.setter
+    def property_name(self, value):
+       self.property_entries[PID_NAME].data = encode_utf16le(value)
 
     @property
     def unique_key(self):
@@ -42,48 +59,38 @@ class PropertyDef(core.AAFObject):
 
     @property
     def unique(self):
-        if self._unique is not None:
-            return self._unique
+        if PID_UNIQUE in self.property_entries:
+            return self.property_entries[PID_UNIQUE].data == b"\x01"
         return False
+
+    @property
+    def pid(self):
+        return read_u16le(BytesIO(self.property_entries[PID_PID].data))
+
+    @property
+    def uuid(self):
+        data = self.property_entries[PID_UUID].data
+        if data is not None:
+            return UUID(bytes_le=self.property_entries[PID_UUID].data)
+
+    @property
+    def optional(self):
+        return self.property_entries[PID_OPTIONAL].data == b"\x01"
 
     @property
     def typedef(self):
         return self.root.metadict.lookup_typedef(self.typedef_name)
-        # else:
-        #     return self['Type'].value
+
     @property
     def store_format(self):
         return self.typedef.store_format
 
     def setup_defaults(self):
-        self['Name'].value = self.property_name
-        self['Identification'].value = self.uuid
         self['Type'].value = self.typedef.auid
-        self['LocalIdentification'].value = self.pid
-        self['IsOptional'].value = self.optional
-
-        if not self.unique is None:
-            self['IsUniqueIdentifier'].value = self.unique or False
 
     def read_properties(self):
         super(PropertyDef, self).read_properties()
-
-        # print(self.property_entries)
-
-        pid_name = 6
-        pid_uuid = 5
-        pid_type = 11
-        pid_optional = 12
-        pid_pid = 13
-        pid_unique = 14
-
-        self.property_name = decode_utf16le(self.property_entries[pid_name].data)
-        self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
-        self.typedef_name = UUID(bytes_le=self.property_entries[pid_type].data)
-        self.pid = read_u16le(BytesIO(self.property_entries[pid_pid].data))
-        self.optional = self.property_entries[pid_optional].data == b"\x01"
-        if pid_unique in self.property_entries:
-            self._unique = self.property_entries[pid_unique].data == b"\x01"
+        self.typedef_name = UUID(bytes_le=self.property_entries[PID_TYPE].data)
 
     def __repr__(self):
         return "<%s PropertyDef" % self.property_name

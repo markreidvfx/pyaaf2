@@ -19,6 +19,7 @@ from .utils import (
     write_u32le,
     decode_utf16le,
     encode_utf16le,
+    encode_u16le,
     mangle_name,
     )
 from .mobid import MobID
@@ -1171,3 +1172,31 @@ SF_WEAK_OBJECT_REFERENCE_STORED_OBJECT_ID  : WeakRefPropertyId,
 SF_UNIQUE_OBJECT_ID                        : UniqueIdProperty,
 SF_OPAQUE_STREAM                           : OpaqueStreamProperty
 }
+
+def string_property(root, pid, value):
+    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+    if value:
+        p.data = encode_utf16le(value)
+    return p
+
+def bool_property(root, pid, value):
+    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+    if value:
+        p.data = b"\x01"
+    else:
+        p.data = b"\x00"
+    return p
+
+def u16le_property(root, pid, value):
+    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+    if value is not None:
+        p.data = encode_u16le(value)
+    return p
+
+def uuid_property(root, pid, value):
+    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+    if value is None:
+        p.data = b'\0' * 16
+    else:
+        p.data = UUID(value).bytes_le
+    return p
