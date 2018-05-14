@@ -310,6 +310,13 @@ def read_typedef(entry, types):
 def read_propertdef(entry):
     p  = read_properties(entry)
     name = decode_utf16le(p[NAME_PID])
+    #hacks for now, should really be property aliases
+    if name == 'MediaStreamPluginGUID':
+        name = 'MediaContainerGUID'
+
+    if name == 'CommentMarkerUSer':
+        name = 'CommentMarkerUser'
+
     identification = UUID(bytes_le=p[IDENTIFICATION_PID])
 
     typedef =  UUID(bytes_le=p[PropertyDef_Type])
@@ -438,6 +445,307 @@ def resolve_refs(typedefs, classdefs):
 
     classdefs['names'] = new_classdefs
 
+def extract_extensions(typedefs, classdefs):
+    from aaf2 import model
+
+    typedef_ext = {}
+
+    model_typedefs = {}
+    for cat in typedef_cats:
+        for name, data in model.typedefs.__dict__[cat].items():
+            if isinstance(data, str):
+                type_id = UUID(data)
+            else:
+                type_id = UUID(data[0])
+
+            model_typedefs[type_id] = (name, data)
+
+    for cat in typedef_cats:
+        typedef_ext[cat] = {}
+        for name, data in typedefs[cat].items():
+            if data[0] in model_typedefs:
+                new_extenum_members = {}
+                new_enum_members = {}
+                if cat == 'extenums':
+                    model_data = model_typedefs[data[0]][1]
+                    member_data = {}
+                    for key, value in model_data[1].items():
+                        member_data[UUID(key)] = value
+                    for key, value in data[1].items():
+                        if key in member_data:
+                            continue
+                        new_extenum_members[key] = value
+
+                elif cat == 'enums':
+                    model_data = model_typedefs[data[0]][1]
+                    member_data = model_data[2]
+                    for key, value in data[2].items():
+                        if key in member_data:
+                            continue
+                        raise ValueError(value)
+
+                if new_extenum_members:
+                    data = [data[0], new_extenum_members]
+                else:
+                    continue
+
+            typedef_ext[cat][name] = data
+            # print(cat, name)
+
+    property_defs = {}
+    class_ids = {}
+    for name, data in model.classdefs.classdefs.items():
+        # print(name)
+        class_ids[UUID(data[0])] = name
+        for p_name, p_data in data[3].items():
+            # print ("  ", p_name)
+            property_defs[UUID(p_data[0])] = p_name
+
+    classdef_ext = {}
+    for name, data in classdefs['names'].items():
+        if data[0] not in class_ids:
+            classdef_ext[name] = data
+            continue
+
+        pdef_ext = {}
+        for p_name, p_data in data[3].items():
+            p_id = p_data[0]
+
+            if p_id in property_defs:
+                continue
+
+            pdef_ext[p_name] = p_data
+
+        if pdef_ext:
+            classdef_ext[name] = (data[0], data[1], data[2], pdef_ext)
+            # print(name)
+            # for key, value in pdef_ext.items():
+            #     print("  ", key)
+
+    return typedef_ext, classdef_ext
+
+def PAD(size, name):
+    return max((size - len(name)), 0)
+
+def write_typedefs(typedefs, path='typedefs.py'):
+
+    # typedef_cats= ( "", "", "",
+    #                "", "", "", "", "")
+    with open(path, 'w') as f:
+
+        f.write("ints = {\n")
+        for name, data in typedefs['ints'].items():
+
+            pad = PAD(15, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", {}, {}),\n'
+            s = s.format(name, ':', data[0], data[1], data[2])
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("enums = {\n")
+        for name, data in typedefs['enums'].items():
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}",'
+            s = s.format(name, ':', data[0], data[1])
+            s += '{\n'
+            for key, value in data[2].items():
+                m = '   {:>4} : "{}",\n'.format(key, value)
+                s += m
+            s += '   }\n),\n'
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("records = {\n")
+        for name, data in typedefs['records'].items():
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", (\n'
+            s = s.format(name, ':', data[0],)
+
+            for item in data[1]:
+                pad = PAD(20, item[0])
+                m = '   ("{}"{:>' + str(pad) +  '}"{}"),\n'
+                m = m.format(item[0], ',', item[1])
+                s += m
+            s += '   ),\n),\n'
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("fixed_arrays = {\n")
+        for name, data in sorted(typedefs['fixed_arrays'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}", {}),\n'
+            s = s.format(name, ':', data[0], data[1], data[2])
+
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n\n")
+
+        f.write("var_arrays = {\n")
+        for name, data in sorted(typedefs['var_arrays'].items()):
+            pad = PAD(50, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}"),\n'
+            s = s.format(name, ':', data[0], data[1],)
+
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n\n")
+
+        f.write("renames = {\n")
+
+        for name, data in sorted(typedefs['renames'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}"),\n'
+            s = s.format(name, ':', data[0], data[1],)
+
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("strings = {\n")
+        for name, data in sorted(typedefs['strings'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}"),\n'
+            s = s.format(name, ':', data[0], data[1],)
+
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("streams = {\n")
+
+        for name, data in sorted(typedefs['streams'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} "{}",\n'
+            s = s.format(name, ':', data[0])
+
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n\n")
+
+        f.write("opaques = {\n")
+        for name, data in sorted(typedefs['opaques'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} "{}",\n'
+            s = s.format(name, ':', data[0])
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("extenums = {\n")
+        for name, data in sorted(typedefs['extenums'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", '
+            s = s.format(name, ':', data[0],)
+            s += '{\n'
+
+            for key, value in sorted(data[1].items()):
+                m = '   "{}"{}"{}",\n'
+                m = m.format(key, ' : ', value)
+                s += m
+            s += '   },\n),\n'
+            print(s, end="")
+            f.write(s)
+
+
+        f.write("}\n\n")
+
+        f.write("chars = {\n")
+        for name, data in sorted(typedefs['chars'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} "{}",\n'
+            s = s.format(name, ':', data[0])
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n\n")
+
+        f.write("indirects = {\n")
+        for name, data in sorted(typedefs['indirects'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} "{}",\n'
+            s = s.format(name, ':', data[0])
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("sets = {\n")
+        for name, data in sorted(typedefs['sets'].items()):
+            pad = PAD(50, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}"),\n'
+            s = s.format(name, ':', data[0], data[1],)
+
+            print(s, end="")
+            f.write(s)
+        f.write("}\n\n")
+
+        f.write("strongrefs = {\n")
+        for name, data in sorted(typedefs['strongrefs'].items()):
+            pad = PAD(50, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}"),\n'
+            s = s.format(name, ':', data[0], data[1],)
+
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n\n")
+
+        f.write("weakrefs = {\n")
+        for name, data in sorted(typedefs['weakrefs'].items()):
+            pad = PAD(50, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}",\n'
+            s = s.format(name, ':', data[0], data[1],)
+
+            m = ', '.join(['"{}"'.format(item) for item in data[2] ])
+
+            s += "    ({})),\n".format(m)
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n")
+
+def write_classdefs(classdefs, path='classdefs.py'):
+
+    aliases = {}
+    with open(path, 'w') as f:
+        f.write("classdefs = {\n")
+        for name, data in classdefs.items():
+            if name.count(" "):
+                aliases[name.replace(" ", '_')] = name
+            pad = PAD(40, name)
+            s = '"{}" {:>' + str(pad) + '} ("{}", "{}", {}, '
+            s = s.format(name, ':', data[0], data[1], data[2])
+            s += "{\n"
+
+             # "04020301-0b00-0000-060e-2b3401010108" ,  0x3D2E ,  "aafUInt32" , True ,  False )
+            for p_name, p_data in sorted(data[3].items()):
+                pad = PAD(40, p_name)
+                m = '    "{}"{:>' + str(pad) +  '}'
+                m +=  ' ("{}", 0x{:04X}, "{}", {}, {}),\n'
+                m = m.format(p_name, ':', p_data[0], p_data[1], p_data[2], p_data[3], p_data[4])
+                s+=m
+
+            s += "    }\n),\n"
+
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n\n")
+
+
+        f.write("aliases = {\n")
+        for name, value in aliases.items():
+            pad = PAD(40, name)
+            s = '"{}" {:>' + str(pad) + '} "{}",\n'
+            s = s.format(name, ':', value)
+            f.write(s)
+
+        f.write("}\n")
 
 def dump_model(path):
 
@@ -489,11 +797,22 @@ def dump_model(path):
 
         resolve_refs(typedefs, classdefs)
         # for cat in typedef_cats:
+        # #     print(cat, "= ")
+        # #     pprint.pprint(typedefs[cat])
+
+        # pprint.pprint(classdefs['names'])
+
+        typedef_ext, classdef_ext = extract_extensions(typedefs, classdefs)
+
+        write_typedefs(typedef_ext)
+
+        write_classdefs(classdef_ext)
+
+        # for cat in typedef_cats:
         #     print(cat, "= ")
-        #     pprint.pprint(typedefs[cat])
+        #     pprint.pprint(typedef_ext[cat])
 
-        pprint.pprint(classdefs['names'])
-
+        # pprint.pprint(classdef_ext)
 
 
 if __name__ == "__main__":

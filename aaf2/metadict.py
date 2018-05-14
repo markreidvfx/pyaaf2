@@ -9,7 +9,7 @@ from io import BytesIO
 from .exceptions import AAFPropertyError
 from . import types
 from .model import classdefs
-from .model import typedefs
+from .model import typedefs as base_typedefs
 
 from . import core
 from .utils import (register_class, read_u16le, decode_utf16le, AAFClaseID_dict, AAFClassName_dict)
@@ -267,6 +267,18 @@ class MetaDictionary(core.AAFObject):
             t = types.TypeDefStrongRef(self.root, name, *args)
             self.typedefs_by_name[name] = t
 
+        self._register_typedefs(base_typedefs)
+        self.register_extensions()
+
+        for name, typedef in self.typedefs_by_name.items():
+            if typedef.auid is None:
+                continue
+
+            self.typedefs_by_uuid[typedef.auid] = typedef
+            self.typedefs_classes[typedef.auid] = typedef.__class__
+
+    def _register_typedefs(self, typedefs):
+
         for name, args in typedefs.ints.items():
             t = types.TypeDefInt(self.root, name, *args)
             self.typedefs_by_name[name] = t
@@ -294,7 +306,13 @@ class MetaDictionary(core.AAFObject):
             self.typedefs_by_name[name] = types.TypeDefString(self.root, name, *args)
 
         for name, args in typedefs.extenums.items():
-            self.typedefs_by_name[name] = types.TypeDefExtEnum(self.root, name, *args)
+            # add new enums if already exists
+            if name in self.typedefs_by_name:
+                typedef = self.typedefs_by_name[name]
+                for key,value in args[1].items():
+                    typedef._elements[UUID(key)] = value
+            else:
+                self.typedefs_by_name[name] = types.TypeDefExtEnum(self.root, name, *args)
 
         for name, auid in typedefs.chars.items():
             self.typedefs_by_name[name] = types.TypeDefCharacter(self.root, name, auid)
@@ -317,14 +335,6 @@ class MetaDictionary(core.AAFObject):
         for name, auid in typedefs.streams.items():
             self.typedefs_by_name[name] = types.TypeDefStream(self.root, name, auid)
 
-        for name, typedef in self.typedefs_by_name.items():
-            if typedef.auid is None:
-                continue
-
-            self.typedefs_by_uuid[typedef.auid] = typedef
-            self.typedefs_classes[typedef.auid] = typedef.__class__
-
-
     def setup_defaults(self):
 
         self['TypeDefinitions'].value = self.typedefs_by_uuid.values()
@@ -341,8 +351,6 @@ class MetaDictionary(core.AAFObject):
         for name, typedef in self.typedefs_by_uuid.items():
             typedef.setup_defaults()
 
-
-
         done = set(["Root"])
         for c in classes:
             # print c.class_name
@@ -357,8 +365,24 @@ class MetaDictionary(core.AAFObject):
         # for c in classes:
         #     c.setup_defaults()
 
+    def register_extensions(self):
+        from .model.ext import classdefs as ext_classdefs
+        from .model.ext import typedefs as ext_typedefs
+
+        for name, args in ext_classdefs.classdefs.items():
+            self.add_classdef(name, *args)
+
+        for alias, name in ext_classdefs.aliases.items():
+            self.classdefs_by_name[alias]= self.classdefs_by_name[name]
+
+        self._register_typedefs(ext_typedefs)
+
+
     def add_classdef(self, name, *args):
-        c = ClassDef(self.root, name, *args[:3])
+        if name in self.classdefs_by_name:
+            c = self.classdefs_by_name[name]
+        else:
+            c = ClassDef(self.root, name, *args[:3])
 
         for prop_name, prop_args in args[3].items():
             p = PropertyDef(self.root, prop_name, *prop_args)
