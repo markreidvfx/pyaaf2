@@ -81,6 +81,9 @@ def encode_utf16le(data):
 def encode_u16le(value):
     return pack(b"<H", value)
 
+def encode_u8(value):
+    return pack(b"B", value)
+
 def write_filetime(f, value):
     write_u64le(f, value)
 

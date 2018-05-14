@@ -23,6 +23,9 @@ if sys.version_info.major >= 3:
 PID_NAME      = 0x0006
 PID_UUID      = 0x0005
 
+PID_INT_SIZE   = 0x000F
+PID_INT_SIGNED = 0x0010
+
 @register_class
 class TypeDef(core.AAFObject):
     class_id = UUID("0d010101-0203-0000-060e-2b3402060101")
@@ -67,21 +70,23 @@ class TypeDef(core.AAFObject):
 @register_class
 class TypeDefInt(TypeDef):
     class_id = UUID("0d010101-0204-0000-060e-2b3402060101")
+    __slots__ = ()
     def __new__(cls, root=None, name=None, auid=None, size=None, signed=None):
         self = super(TypeDefInt, cls).__new__(cls, root, name, auid)
-        self.size = size
-        self.signed = signed
+        self.property_entries[PID_INT_SIZE] = properties.u8_property(self, PID_INT_SIZE, size)
+        self.property_entries[PID_INT_SIGNED] = properties.bool_property(self, PID_INT_SIGNED, signed)
         return self
 
-    def setup_defaults(self):
-        super(TypeDefInt, self).setup_defaults()
-        self['Size'].value = self.size
-        self['IsSigned'].value = self.signed
+    @property
+    def signed(self):
+        return self.property_entries[PID_INT_SIGNED].data == b"\x01"
 
-    def read_properties(self):
-        super(TypeDefInt, self).read_properties()
-        self.size = self['Size'].value
-        self.signed = self['IsSigned'].value
+    @property
+    def size(self):
+        data  = self.property_entries[PID_INT_SIZE].data
+        if data is not None:
+            return unpack('B', data)[0]
+        raise ValueError("%s No Size" % str(self.type_name))
 
     @property
     def byte_size(self):

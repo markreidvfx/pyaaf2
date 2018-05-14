@@ -20,6 +20,7 @@ from .utils import (
     decode_utf16le,
     encode_utf16le,
     encode_u16le,
+    encode_u8,
     mangle_name,
     )
 from .mobid import MobID
@@ -1191,6 +1192,13 @@ def u16le_property(root, pid, value):
     p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
     if value is not None:
         p.data = encode_u16le(value)
+    return p
+
+def u8_property(root, pid, value):
+
+    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+    if value is not None:
+        p.data = encode_u8(value)
     return p
 
 def uuid_property(root, pid, value):
