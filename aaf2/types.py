@@ -20,22 +20,36 @@ from .utils import register_class, decode_utf16le, encode_utf16le
 if sys.version_info.major >= 3:
     unicode = str
 
+PID_NAME      = 0x0006
+PID_UUID      = 0x0005
+
 @register_class
 class TypeDef(core.AAFObject):
     class_id = UUID("0d010101-0203-0000-060e-2b3402060101")
+    __slots__ = ()
 
     def __new__(cls, root=None, name=None, auid=None, *args, **kwargs):
         self = super(TypeDef, cls).__new__(cls)
         self.root = root
-        self.type_name = name
-        self.auid = None
-        if auid:
-            self.auid = UUID(auid)
+        self.property_entries[PID_NAME] = properties.string_property(self, PID_NAME, name)
+        self.property_entries[PID_UUID] = properties.uuid_property(self, PID_UUID, auid)
         return self
 
     @property
     def unique_key(self):
         return self.auid
+
+    @property
+    def auid(self):
+        data = self.property_entries[PID_UUID].data
+        if data is not None:
+            return UUID(bytes_le=self.property_entries[PID_UUID].data)
+
+    @property
+    def type_name(self):
+        data = self.property_entries[PID_NAME].data
+        if data is not None:
+            return decode_utf16le(data)
 
     @property
     def store_format(self):
@@ -46,12 +60,9 @@ class TypeDef(core.AAFObject):
 
     def read_properties(self):
         super(TypeDef, self).read_properties()
-        self.type_name = self['Name'].value
-        self.auid = self['Identification'].value
 
     def setup_defaults(self):
-        self['Name'].value = self.type_name
-        self['Identification'].value = self.auid
+        return
 
 @register_class
 class TypeDefInt(TypeDef):
