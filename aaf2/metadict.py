@@ -13,7 +13,8 @@ from .model import typedefs as base_typedefs
 from . import properties
 
 from . import core
-from .utils import (register_class, read_u16le, decode_utf16le, encode_utf16le, AAFClaseID_dict, AAFClassName_dict)
+from .utils import (register_class, read_u16le, decode_utf16le,
+                    encode_utf16le, AAFClaseID_dict, AAFClassName_dict)
 
 import uuid
 from uuid import UUID
@@ -24,6 +25,10 @@ PID_TYPE      = 0x000B
 PID_OPTIONAL  = 0x000C
 PID_PID       = 0x000D
 PID_UNIQUE    = 0x000E
+
+PID_PARENT     = 0x0008
+PID_PROPERTIES = 0x0009
+PID_CONCRETE   = 0x000A
 
 @register_class
 class PropertyDef(core.AAFObject):
@@ -98,21 +103,38 @@ class PropertyDef(core.AAFObject):
 @register_class
 class ClassDef(core.AAFObject):
     class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
+    __slots__ = ('parent_name', '_propertydefs')
 
     def __new__(cls, root=None, name=None, uuid=None, parent=None, concrete=None):
         self = super(ClassDef, cls).__new__(cls)
         self.root = root
-        self.class_name = name
-        self.uuid = None
-        if uuid:
-            self.uuid = UUID(uuid)
+
+        self.property_entries[PID_NAME]     = properties.string_property(self, PID_NAME, name)
+        self.property_entries[PID_UUID]     = properties.uuid_property(self, PID_UUID, uuid)
+        self.property_entries[PID_CONCRETE] = properties.bool_property(self, PID_CONCRETE, concrete)
+
         self.parent_name = parent
-        self.concrete = concrete
         self._propertydefs = []
         return self
 
     def __eq__(self, other):
         self.uuid == other.uuid
+
+    @property
+    def uuid(self):
+        data = self.property_entries[PID_UUID].data
+        if data is not None:
+            return UUID(bytes_le=self.property_entries[PID_UUID].data)
+
+    @property
+    def concrete(self):
+        return self.property_entries[PID_CONCRETE].data == b"\x01"
+
+    @property
+    def class_name(self):
+        data = self.property_entries[PID_NAME].data
+        if data is not None:
+            return decode_utf16le(data)
 
     @property
     def unique_key(self):
@@ -133,10 +155,6 @@ class ClassDef(core.AAFObject):
         return 16
 
     def setup_defaults(self):
-        self['Name'].value = self.class_name
-        self['Identification'].value = self.uuid
-        self['IsConcrete'].value = self.concrete
-
 
         for p in self._propertydefs:
             p.setup_defaults()
@@ -200,7 +218,6 @@ class ClassDef(core.AAFObject):
             yield root
             root = root.parent
 
-
     def all_propertydefs(self):
         for classdef in self.relatives():
 
@@ -214,20 +231,9 @@ class ClassDef(core.AAFObject):
     def read_properties(self):
         super(ClassDef, self).read_properties()
 
-        pid_name = 6
-        pid_uuid = 5
-        pid_abstract = 10
-        pid_properties = 9
-
-        self.class_name = decode_utf16le(self.property_entries[pid_name].data)
-        self.uuid = UUID(bytes_le=self.property_entries[pid_uuid].data)
-        self.concrete = self.property_entries[pid_abstract].data == b'\x01'
-
-        if pid_properties in self.property_entries:
-            for key,value in self.property_entries[pid_properties].items():
+        if PID_PROPERTIES in self.property_entries:
+            for key,value in self.property_entries[PID_PROPERTIES].items():
                 self._propertydefs.append(value)
-
-
 
     def __repr__(self):
         return "<%s %s>" % (self.class_name, "ClassDef")
