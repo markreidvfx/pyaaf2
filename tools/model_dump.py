@@ -438,7 +438,7 @@ def resolve_refs(typedefs, classdefs):
             if typedef_name == typedef_id:
                 raise ValueError("cannot resolve typedef for %s.%s : " %(name, p_name, str(typedef_id) ))
             #     print(name, p_name, typedef_name)
-            new_p_data = (p_data[0], p_data[1], typedef_name, p_data[3], p_data[4])
+            new_p_data = (p_data[0], p_data[1], typedef_id, p_data[3], p_data[4])
             propdefs[p_name] = new_p_data
 
         new_classdefs[name] = (data[0], parent, data[2], propdefs)

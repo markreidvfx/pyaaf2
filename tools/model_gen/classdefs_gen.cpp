@@ -39,8 +39,8 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 #define AAF_TABLE_END() \
     cout << "    }"<< endl << ")}" << endl << endl;
 
-#define AAF_TYPE(name) NAME_##name
-#define AAF_REFERENCE_TYPE(type, target) NAME_##target##type
+#define AAF_TYPE(name) ID_##name
+#define AAF_REFERENCE_TYPE(type, target) ID_##target##type
 
 #include "AAFMetaDictionary.h"
 

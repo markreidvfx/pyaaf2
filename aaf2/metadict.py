@@ -44,7 +44,9 @@ class PropertyDef(core.AAFObject):
         self.property_entries[PID_UNIQUE]   = properties.bool_property(self, PID_UNIQUE, unique)
         self.property_entries[PID_PID]      = properties.u16le_property(self, PID_PID, pid)
         self.property_entries[PID_UUID]     = properties.uuid_property(self, PID_UUID, uuid)
-        self.typedef_name = typedef
+        self.typedef_name = None
+        if typedef is not None:
+            self.typedef_name = UUID(typedef)
 
         return self
 
@@ -239,18 +241,17 @@ class ClassDef(core.AAFObject):
         return "<%s %s>" % (self.class_name, "ClassDef")
 
 root_classes = {
-#Hack property ids are class ids
 'Root' : ('b3b398a5-1c90-11d4-8053-080036210804', None, True, {
-    "Header"              : ('0d010301-0102-0100-060e-2b3401010102', 0x0002, "HeaderStrongRefence", False, False),
-    "MetaDictionary"      : ('0d010301-0101-0100-060e-2b3401010102', 0x0001, "MetaDictionaryStrongReference", False, False),
+    "Header"              : ('0d010301-0102-0100-060e-2b3401010102', 0x0002, '05022800-0000-0000-060E-2B3401040101', False, False),
+    "MetaDictionary"      : ('0d010301-0101-0100-060e-2b3401010102', 0x0001, '05022700-0000-0000-060E-2B3401040101', False, False),
 })
 }
 
+
 root_types = {
-"HeaderStrongRefence"             : (None, "Header"),
-"MetaDictionaryStrongReference"   : (None, "MetaDictionary"),
+"HeaderStrongRefence"             : ('05022800-0000-0000-060E-2B3401040101', "Header"),
+"MetaDictionaryStrongReference"   : ('05022700-0000-0000-060E-2B3401040101', "MetaDictionary"),
 }
-# 0d010301-0101-0100-060e-2b3401010102
 
 @register_class
 class MetaDictionary(core.AAFObject):
