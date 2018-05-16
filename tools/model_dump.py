@@ -427,9 +427,11 @@ def resolve_refs(typedefs, classdefs):
 
     new_classdefs = {}
     for name, data in classdefs['names'].items():
-        parent = classdefs['ids'][data[1]]
-        if parent == name:
-            parent = None
+        parent_id = data[1]
+        parent_name = classdefs['ids'][data[1]]
+
+        if parent_name == name:
+            parent_id = None
         propdefs = {}
         for p_name, p_data in data[3].items():
             typedef_id = p_data[2]
@@ -441,7 +443,7 @@ def resolve_refs(typedefs, classdefs):
             new_p_data = (p_data[0], p_data[1], typedef_id, p_data[3], p_data[4])
             propdefs[p_name] = new_p_data
 
-        new_classdefs[name] = (data[0], parent, data[2], propdefs)
+        new_classdefs[name] = (data[0], parent_id, data[2], propdefs)
 
     classdefs['names'] = new_classdefs
 

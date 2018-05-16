@@ -1,5 +1,5 @@
 classdefs = {
-"CommentMarker"                           : ("0d010101-0101-0800-060e-2b3402060101", "Event", True, {
+"CommentMarker"                           : ("0d010101-0101-0800-060e-2b3402060101", "0d010101-0101-0600-060e-2b3402060101", True, {
     "CommentMarkerAnnotationList"            : ("6d64dd66-e5c7-488f-b0e4-272c932378a6", 0xFFDA, "01100200-0000-0000-060e-2b3401040101", True, False),
     "CommentMarkerAttributeList"             : ("c72cc817-aac5-499b-af34-bc47fec1eaa8", 0xFFD7, "05060800-0000-0000-060e-2b3401040101", True, False),
     "CommentMarkerColor"                     : ("e96e6d44-c383-11d3-a069-006094eb75cb", 0xFFDE, "e96e6d43-c383-11d3-a069-006094eb75cb", True, False),
@@ -10,21 +10,21 @@ classdefs = {
     "CommentMarkerUser"                      : ("c4c45d9a-0967-11d4-a08a-006094eb75cb", 0xFFDD, "01100200-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"TapeDescriptor"                          : ("0d010101-0101-2e00-060e-2b3402060101", "EssenceDescriptor", True, {
+"TapeDescriptor"                          : ("0d010101-0101-2e00-060e-2b3402060101", "0d010101-0101-2400-060e-2b3402060101", True, {
     "ColorFrame"                             : ("9548b03a-15fb-11d4-a08f-006094eb75cb", 0xFFDF, "01010700-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"PCMDescriptor"                           : ("0d010101-0101-4800-060e-2b3402060101", "SoundDescriptor", True, {
+"PCMDescriptor"                           : ("0d010101-0101-4800-060e-2b3402060101", "0d010101-0101-4200-060e-2b3402060101", True, {
     "DataOffset"                             : ("bb3fabdd-fcc0-43a8-9759-c727771fcc4a", 0xFFE0, "01010700-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"CDCIDescriptor"                          : ("0d010101-0101-2800-060e-2b3402060101", "DigitalImageDescriptor", True, {
+"CDCIDescriptor"                          : ("0d010101-0101-2800-060e-2b3402060101", "0d010101-0101-2700-060e-2b3402060101", True, {
     "ImageStartAlignment"                    : ("506f8de5-54a1-11d3-a029-006094eb75cb", 0xFFE2, "01010300-0000-0000-060e-2b3401040101", True, False),
     "OffsetToFrameIndexes"                   : ("9d15fca3-54c5-11d3-a029-006094eb75cb", 0xFFE4, "01010700-0000-0000-060e-2b3401040101", True, False),
     "OffsetToFrameIndexes64"                 : ("298eb260-30b6-4e30-8c90-cf63aa793c34", 0xFFE3, "01010800-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"DigitalImageDescriptor"                  : ("0d010101-0101-2700-060e-2b3402060101", "FileDescriptor", False, {
+"DigitalImageDescriptor"                  : ("0d010101-0101-2700-060e-2b3402060101", "0d010101-0101-2500-060e-2b3402060101", False, {
     "AvidEssenceElementSizeKind"             : ("0e040101-0101-0110-060e-2b3401010101", 0xFFE5, "0e040201-0101-0000-060e-2b3401040101", True, False),
     "DataOffset"                             : ("bfde81e4-bcc8-4abd-a80e-214dc0f14684", 0xFFEB, "01010700-0000-0000-060e-2b3401040101", True, False),
     "EssenceBox"                             : ("0e040101-0101-0107-060e-2b3401010101", 0xFFE7, "0e040301-0200-0000-060e-2b3401040101", True, False),
@@ -39,16 +39,16 @@ classdefs = {
     "ValidBox"                               : ("0e040101-0101-0106-060e-2b3401010101", 0xFFE8, "0e040301-0200-0000-060e-2b3401040101", True, False),
     }
 ),
-"ANCDataDescriptor"                       : ("0d010101-0101-5c00-060e-2b3402060101", "DataEssenceDescriptor", True, {
+"ANCDataDescriptor"                       : ("0d010101-0101-5c00-060e-2b3402060101", "0d010101-0101-4300-060e-2b3402060101", True, {
     "ManifestArray"                          : ("0e040101-0101-0105-060e-2b3401010101", 0xFFCE, "0e040402-0100-0000-060e-2b3401040101", True, False),
     }
 ),
-"VaryingValue"                            : ("0d010101-0101-3e00-060e-2b3402060101", "Parameter", True, {
+"VaryingValue"                            : ("0d010101-0101-3e00-060e-2b3402060101", "0d010101-0101-3c00-060e-2b3402060101", True, {
     "VVal_Extrapolation"                     : ("8f2b8bae-b685-4939-b3a5-6373633b3e6c", 0xFFB8, "01030100-0000-0000-060e-2b3401040101", True, False),
     "VVal_FieldCount"                        : ("2902558b-acfa-439e-a1cd-9fa1e8f891ef", 0xFFB9, "01010600-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"DataEssenceDescriptor"                   : ("0d010101-0101-4300-060e-2b3402060101", "FileDescriptor", True, {
+"DataEssenceDescriptor"                   : ("0d010101-0101-4300-060e-2b3402060101", "0d010101-0101-2500-060e-2b3402060101", True, {
     "DataOffset"                             : ("0e040101-0101-0109-060e-2b3401010101", 0xFFD3, "01010700-0000-0000-060e-2b3401040101", True, False),
     "FirstFrameOffset"                       : ("0e040101-0101-0102-060e-2b3401010101", 0xFFD1, "01010700-0000-0000-060e-2b3401040101", True, False),
     "MaxSampleSize"                          : ("0e040101-0101-0104-060e-2b3401010101", 0xFFCF, "01010700-0000-0000-060e-2b3401040101", True, False),
@@ -56,20 +56,20 @@ classdefs = {
     "OffsetToFrameIndexes"                   : ("0e040101-0101-0101-060e-2b3401010101", 0xFFD2, "01010800-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"Parameter"                               : ("0d010101-0101-3c00-060e-2b3402060101", "InterchangeObject", False, {
+"Parameter"                               : ("0d010101-0101-3c00-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", False, {
     "IsEnabled"                              : ("0e040101-0101-010b-060e-2b3401010101", 0xFFD4, "01040100-0000-0000-060e-2b3401040101", True, False),
     "IsSilent"                               : ("967dbcc7-4ba6-4b57-b8e8-3a0fbc550353", 0xFFD5, "01040100-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"ScopeReference"                          : ("0d010101-0101-0d00-060e-2b3402060101", "Segment", True, {
+"ScopeReference"                          : ("0d010101-0101-0d00-060e-2b3402060101", "0d010101-0101-0300-060e-2b3402060101", True, {
     "Avid Scope"                             : ("9dc9c6cb-479d-4ff6-988a-b6784b90dc43", 0xFFCD, "01010300-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"Component"                               : ("0d010101-0101-0200-060e-2b3402060101", "InterchangeObject", False, {
+"Component"                               : ("0d010101-0101-0200-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", False, {
     "ComponentAttributeList"                 : ("60958184-47b1-11d4-a01c-0004ac969f50", 0xFFCC, "05060800-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"Mob"                                     : ("0d010101-0101-3400-060e-2b3402060101", "InterchangeObject", False, {
+"Mob"                                     : ("0d010101-0101-3400-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", False, {
     "AppCode"                                : ("96c46992-4f62-11d3-a022-006094eb75cb", 0xFFFA, "01010700-0000-0000-060e-2b3401040101", True, False),
     "ConvertFrameRate"                       : ("d4243bd4-0142-4595-a8f3-f2eba54244de", 0xFFF8, "01040100-0000-0000-060e-2b3401040101", True, False),
     "FileMobRate"                            : ("0e040101-0101-010f-060e-2b3401010101", 0xFFF5, "03010100-0000-0000-060e-2b3401040101", True, False),
@@ -78,56 +78,56 @@ classdefs = {
     "SubclipFullLength"                      : ("1262bf7b-fce2-4dfe-a0f6-ceec047c80aa", 0xFFF7, "01010800-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"SubDescriptor"                           : ("0d010101-0101-5900-060e-2b3402060101", "InterchangeObject", False, {
+"SubDescriptor"                           : ("0d010101-0101-5900-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", False, {
     }
 ),
-"SourceClip"                              : ("0d010101-0101-1100-060e-2b3402060101", "SourceReference", True, {
+"SourceClip"                              : ("0d010101-0101-1100-060e-2b3402060101", "0d010101-0101-1000-060e-2b3402060101", True, {
     "SubclipFullLength"                      : ("660162e5-bbef-4618-8e0b-4b149b661a12", 0xFFD6, "01010800-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"EssenceDescriptor"                       : ("0d010101-0101-2400-060e-2b3402060101", "InterchangeObject", False, {
+"EssenceDescriptor"                       : ("0d010101-0101-2400-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", False, {
     "MediaContainer"                         : ("13980e2b-2f30-44ec-bdb0-3b730da56562", 0xFFF1, "01100200-0000-0000-060e-2b3401040101", True, False),
     "MediaContainerGUID"                     : ("92790417-0131-4a05-898d-167691e11ca1", 0xFFF2, "01030100-0000-0000-060e-2b3401040101", True, False),
     "SubDescriptors"                         : ("06010104-0610-0000-060e-2b3401010109", 0xFFF3, "05060e00-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"AvidTrackManTrackedParamClass"           : ("30a42454-069e-11d4-9ffb-0004ac969f50", "InterchangeObject", True, {
+"AvidTrackManTrackedParamClass"           : ("30a42454-069e-11d4-9ffb-0004ac969f50", "0d010101-0101-0100-060e-2b3402060101", True, {
     "TKMNTrackedParamSetngs"                 : ("30a42453-069e-11d4-9ffb-0004ac969f50", 0xFF9F, "ccaa73d1-f538-11d3-a081-006094eb75cb", False, False),
     }
 ),
-"TimelineMobSlot"                         : ("0d010101-0101-3b00-060e-2b3402060101", "MobSlot", True, {
+"TimelineMobSlot"                         : ("0d010101-0101-3b00-060e-2b3402060101", "0d010101-0101-3800-060e-2b3402060101", True, {
     "TimelineMobAttributeList"               : ("107f8331-1914-4234-b2c4-5a3eb755b7ca", 0xFFF4, "05060800-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"ControlPoint"                            : ("0d010101-0101-1900-060e-2b3402060101", "InterchangeObject", True, {
+"ControlPoint"                            : ("0d010101-0101-1900-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", True, {
     "ControlPointPointProperties"            : ("3c1b48d0-c32c-4ea9-bb9d-35b898527283", 0xFFBE, "05060a00-0000-0000-060e-2b3401040101", True, False),
     "ControlPointSource"                     : ("0e040101-0101-010a-060e-2b3401010101", 0xFFBD, "01010700-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"Transition"                              : ("0d010101-0101-1700-060e-2b3402060101", "Component", True, {
+"Transition"                              : ("0d010101-0101-1700-060e-2b3402060101", "0d010101-0101-0200-060e-2b3402060101", True, {
     "TranTKMNTrackedParamAry"                : ("2c04d7ec-179d-11d4-a003-0004ac969f50", 0xFFBB, "b56a2ec2-fc3b-11d3-9ff7-0004ac969f50", True, False),
     "TranTKMNTrackedParamSetngs"             : ("2c04d7ed-179d-11d4-a003-0004ac969f50", 0xFFBA, "ccaa73d1-f538-11d3-a081-006094eb75cb", True, False),
     "TranTKMNTrackerDataAry"                 : ("2c04d7eb-179d-11d4-a003-0004ac969f50", 0xFFBC, "b56a2ec3-fc3b-11d3-9ff7-0004ac969f50", True, False),
     }
 ),
-"TaggedValue"                             : ("0d010101-0101-3f00-060e-2b3402060101", "InterchangeObject", True, {
+"TaggedValue"                             : ("0d010101-0101-3f00-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", True, {
     "PortableObject"                         : ("b6bb5f4e-7b37-11d3-a044-006094eb75cb", 0xFFC9, "f9a74d0a-7b30-11d3-a044-006094eb75cb", True, False),
     "PortableObjectClassID"                  : ("08835f4f-7b28-11d3-a044-006094eb75cb", 0xFFCA, "01010300-0000-0000-060e-2b3401040101", True, False),
     "TaggedValueAttributeList"               : ("60958185-47b1-11d4-a01c-0004ac969f50", 0xFFCB, "05060800-0000-0000-060e-2b3401040101", True, False),
     "TaggedValue_Stream"                     : ("c12d81ac-bd68-4fef-a37f-562d28e37158", 0xFFC8, "04100200-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"EdgeCode"                                : ("0d010101-0101-0400-060e-2b3402060101", "Segment", True, {
+"EdgeCode"                                : ("0d010101-0101-0400-060e-2b3402060101", "0d010101-0101-0300-060e-2b3402060101", True, {
     "AvBasePerf"                             : ("1fb0160a-6907-45fe-a997-c6818820970e", 0xFFB2, "01010100-0000-0000-060e-2b3401040101", True, False),
     "AvEdgeType"                             : ("4d783cfa-35da-4566-9a52-2190d5078616", 0xFFB3, "01010600-0000-0000-060e-2b3401040101", True, False),
     "AvFilmType"                             : ("067da182-a750-48ba-995b-b7fd88f3b838", 0xFFB4, "01010600-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"RGBADescriptor"                          : ("0d010101-0101-2900-060e-2b3402060101", "DigitalImageDescriptor", True, {
+"RGBADescriptor"                          : ("0d010101-0101-2900-060e-2b3402060101", "0d010101-0101-2700-060e-2b3402060101", True, {
     "OffsetToFrameIndexes"                   : ("0e040101-0101-010d-060e-2b3401010101", 0xFFE1, "01010800-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"AvidTrackManTrackerDataClass"            : ("13e0a981-0412-11d4-9ff9-0004ac969f50", "InterchangeObject", True, {
+"AvidTrackManTrackerDataClass"            : ("13e0a981-0412-11d4-9ff9-0004ac969f50", "0d010101-0101-0100-060e-2b3402060101", True, {
     "TKMNTrkDataBoxX"                        : ("e3c9057c-311d-41c1-9a7d-41ae1de90150", 0xFFA1, "05021600-0000-0000-060e-2b3401040101", True, False),
     "TKMNTrkDataBoxY"                        : ("f15129da-7d1a-4f68-87ab-c0956f125654", 0xFFA0, "05021600-0000-0000-060e-2b3401040101", True, False),
     "TKMNTrkDataConfidence"                  : ("c63c3449-0412-11d4-9ff9-0004ac969f50", 0xFFAE, "05021600-0000-0000-060e-2b3401040101", True, False),
@@ -148,7 +148,7 @@ classdefs = {
     "TKMNTrkDataSmoothingEnabled"            : ("75994f5f-e038-4769-9026-d8082cebc6e0", 0xFFA4, "01040100-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"OperationGroup"                          : ("0d010101-0101-0a00-060e-2b3402060101", "Segment", True, {
+"OperationGroup"                          : ("0d010101-0101-0a00-060e-2b3402060101", "0d010101-0101-0300-060e-2b3402060101", True, {
     "OpGroupAVXParamStream"                  : ("b045db5e-87d7-47fb-b862-2a548a1cad60", 0xFFC1, "04100200-0000-0000-060e-2b3401040101", True, False),
     "OpGroupGraphicsParamStream"             : ("73fe71c5-15f3-4f0e-acb8-b70edfe6ca5c", 0xFFC2, "04100200-0000-0000-060e-2b3401040101", True, False),
     "OpGroupLeftLength"                      : ("7cd5da62-6a1c-4490-9f6c-f57204ec7dba", 0xFFC0, "01010700-0000-0000-060e-2b3401040101", True, False),
@@ -160,7 +160,7 @@ classdefs = {
     "OpGrpTKMNTrackerDataAry"                : ("af913551-04c3-11d4-9ff9-0004ac969f50", 0xFFC7, "b56a2ec3-fc3b-11d3-9ff7-0004ac969f50", True, False),
     }
 ),
-"Header"                                  : ("0d010101-0101-2f00-060e-2b3402060101", "InterchangeObject", True, {
+"Header"                                  : ("0d010101-0101-2f00-060e-2b3402060101", "0d010101-0101-0100-060e-2b3402060101", True, {
     "AudioRateAdjustmentFactor"              : ("b7d51ad5-650b-4d3a-8596-99b579e177a6", 0xFFFB, "01010200-0000-0000-060e-2b3401040101", True, False),
     "EssenceFileMobID"                       : ("abf1b771-8efd-4802-8b2f-680dff611381", 0xFFFE, "01030200-0000-0000-060e-2b3401040101", True, False),
     "MasterMobID"                            : ("ffdd41e1-ae2c-49c6-ae58-78e041454179", 0xFFFF, "01030200-0000-0000-060e-2b3401040101", True, False),
@@ -168,11 +168,11 @@ classdefs = {
     "ProjectName"                            : ("62fc3717-492d-42bf-a5fb-7b25f61594b9", 0xFFFD, "01100200-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"EssenceGroup"                            : ("0d010101-0101-0500-060e-2b3402060101", "Segment", True, {
+"EssenceGroup"                            : ("0d010101-0101-0500-060e-2b3402060101", "0d010101-0101-0300-060e-2b3402060101", True, {
     "EssenceGroupType"                       : ("d9c9bf24-f6b8-11d3-a083-006094eb75cb", 0xFFB5, "01010700-0000-0000-060e-2b3401040101", True, False),
     }
 ),
-"Avid MC Mob Reference"                   : ("6619f8e0-fe77-11d3-a084-006094eb75cb", "InterchangeObject", True, {
+"Avid MC Mob Reference"                   : ("6619f8e0-fe77-11d3-a084-006094eb75cb", "0d010101-0101-0100-060e-2b3402060101", True, {
     "Mob Reference MobID"                    : ("81110e9f-fe7c-11d3-a084-006094eb75cb", 0xFFB7, "01030200-0000-0000-060e-2b3401040101", False, False),
     "Mob Reference Position"                 : ("81110ea0-fe7c-11d3-a084-006094eb75cb", 0xFFB6, "01010800-0000-0000-060e-2b3401040101", False, False),
     }

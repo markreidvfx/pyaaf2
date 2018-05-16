@@ -20,13 +20,23 @@ int main()
 #define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
+string CLASS_ID_Root= "None";
+
+#define AAF_CLASS(name, id, parent, concrete) \
+string CLASS_ID_##name = id;
+
+#include "AAFMetaDictionary.h"
+
+#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
+auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
+
 #define AAF_TABLE_BEGIN() \
     cout << "classdefs = {" << endl;
 
 #define AAF_CLASS(name, id, parent, concrete) \
     cout <<  QUOTE(name) <<  PAD(25, #name)<< " : ("; \
     cout << id <<  ", " ; \
-    cout << parse_parent(#parent) << ", " << python_bool(concrete)  <<", {"<< endl;
+    cout << CLASS_ID_##parent << ", " << python_bool(concrete)  <<", {"<< endl;
 
 #define AAF_PROPERTY(name, id, tag, type, mandatory, uid, container) \
     cout << indent << QUOTE(name) <<  PAD(25, #name) ; \

@@ -105,7 +105,7 @@ class PropertyDef(core.AAFObject):
 @register_class
 class ClassDef(core.AAFObject):
     class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
-    __slots__ = ('parent_name', '_propertydefs')
+    __slots__ = ('parent_id', '_propertydefs')
 
     def __new__(cls, root=None, name=None, uuid=None, parent=None, concrete=None):
         self = super(ClassDef, cls).__new__(cls)
@@ -114,8 +114,9 @@ class ClassDef(core.AAFObject):
         self.property_entries[PID_NAME]     = properties.string_property(self, PID_NAME, name)
         self.property_entries[PID_UUID]     = properties.uuid_property(self, PID_UUID, uuid)
         self.property_entries[PID_CONCRETE] = properties.bool_property(self, PID_CONCRETE, concrete)
-
-        self.parent_name = parent
+        self.parent_id = None
+        if parent:
+            self.parent_id = UUID(parent)
         self._propertydefs = []
         return self
 
@@ -194,20 +195,19 @@ class ClassDef(core.AAFObject):
 
     @property
     def parent(self):
-        parent = self.parent_name
-
+        parent = self.parent_id
         parent_pid = 8
         if parent is None and parent_pid in self.property_entries:
             ref = self.property_entries[parent_pid].ref
             p = self.root.metadict.lookup_classdef(ref)
-            parent = p.class_name
+            parent = p.uuid
 
 
-        if parent == self.class_name:
+        if parent == self.uuid:
             # print(parent)
             return None
 
-        return self.root.metadict.classdefs_by_name.get(parent, None)
+        return self.root.metadict.classdefs_by_uuid.get(parent, None)
 
     @property
     def propertydefs(self):
@@ -246,7 +246,6 @@ root_classes = {
     "MetaDictionary"      : ('0d010301-0101-0100-060e-2b3401010102', 0x0001, '05022700-0000-0000-060E-2B3401040101', False, False),
 })
 }
-
 
 root_types = {
 "HeaderStrongRefence"             : ('05022800-0000-0000-060E-2B3401040101', "Header"),
