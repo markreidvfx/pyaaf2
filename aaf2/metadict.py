@@ -33,20 +33,17 @@ PID_CONCRETE   = 0x000A
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
-    __slots__ = ('typedef_name')
+    __slots__ = ()
 
     def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         self = super(PropertyDef, cls).__new__(cls)
-
         self.root = root
         self.property_entries[PID_NAME]     = properties.string_property(self, PID_NAME, name)
         self.property_entries[PID_OPTIONAL] = properties.bool_property(self, PID_OPTIONAL, optional)
         self.property_entries[PID_UNIQUE]   = properties.bool_property(self, PID_UNIQUE, unique)
         self.property_entries[PID_PID]      = properties.u16le_property(self, PID_PID, pid)
         self.property_entries[PID_UUID]     = properties.uuid_property(self, PID_UUID, uuid)
-        self.typedef_name = None
-        if typedef is not None:
-            self.typedef_name = UUID(typedef)
+        self.property_entries[PID_TYPE]     = properties.uuid_property(self, PID_TYPE, typedef)
 
         return self
 
@@ -85,19 +82,19 @@ class PropertyDef(core.AAFObject):
         return self.property_entries[PID_OPTIONAL].data == b"\x01"
 
     @property
+    def typedef_id(self):
+        if PID_TYPE in self.property_entries:
+            return UUID(bytes_le=self.property_entries[PID_TYPE].data)
+
+    @property
     def typedef(self):
-        return self.root.metadict.lookup_typedef(self.typedef_name)
+        type_id = self.typedef_id
+        if type_id:
+            return self.root.metadict.lookup_typedef(type_id)
 
     @property
     def store_format(self):
         return self.typedef.store_format
-
-    def setup_defaults(self):
-        self['Type'].value = self.typedef.auid
-
-    def read_properties(self):
-        super(PropertyDef, self).read_properties()
-        self.typedef_name = UUID(bytes_le=self.property_entries[PID_TYPE].data)
 
     def __repr__(self):
         return "<%s PropertyDef" % self.property_name
@@ -159,8 +156,6 @@ class ClassDef(core.AAFObject):
 
     def setup_defaults(self):
 
-        for p in self._propertydefs:
-            p.setup_defaults()
         if self._propertydefs:
             self['Properties'].value = self._propertydefs
 
