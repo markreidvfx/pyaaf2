@@ -1174,37 +1174,63 @@ SF_UNIQUE_OBJECT_ID                        : UniqueIdProperty,
 SF_OPAQUE_STREAM                           : OpaqueStreamProperty
 }
 
-def string_property(root, pid, value):
-    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+def add_string_property(parent, pid, value):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
     if value:
         p.data = encode_utf16le(value)
+    parent.property_entries[pid] = p
     return p
 
-def bool_property(root, pid, value):
-    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+def add_bool_property(parent, pid, value):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
     if value:
         p.data = b"\x01"
     else:
         p.data = b"\x00"
+    parent.property_entries[pid] = p
     return p
 
-def u16le_property(root, pid, value):
-    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+def add_u16le_property(parent, pid, value):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
     if value is not None:
         p.data = encode_u16le(value)
+    parent.property_entries[pid] = p
     return p
 
-def u8_property(root, pid, value):
+def add_u8_property(parent, pid, value):
 
-    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
     if value is not None:
         p.data = encode_u8(value)
+    parent.property_entries[pid] = p
     return p
 
-def uuid_property(root, pid, value):
-    p = Property(root, pid, SF_DATA, PROPERTY_VERSION)
+def add_uuid_property(parent, pid, value):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
     if value is None:
         p.data = b'\0' * 16
     else:
         p.data = UUID(value).bytes_le
+
+    parent.property_entries[pid] = p
     return p
+
+def add_weakref_property(parent, pid, pid_path, key_pid, value):
+    p = WeakRefProperty(parent, pid, SF_WEAK_OBJECT_REFERENCE, PROPERTY_VERSION)
+    p.weakref_index = parent.root.weakref_index(pid_path)
+    p.key_pid = key_pid
+    p.key_size = 16
+    p.ref = UUID(value)
+    p.data = p.encode()
+
+    parent.property_entries[pid] = p
+
+    return p
+
+def add_classdef_weakref_property(parent, pid, value):
+    pid_path = [0x0001,  0x0003]
+    return add_weakref_property(parent, pid , pid_path, 0x0005, value)
+
+def add_typedef_weakref_property(parent, pid, value):
+    pid_path = [0x0001,  0x0004]
+    return add_weakref_property(parent, pid , pid_path, 0x0005, value)

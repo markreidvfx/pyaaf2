@@ -38,12 +38,13 @@ class PropertyDef(core.AAFObject):
     def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         self = super(PropertyDef, cls).__new__(cls)
         self.root = root
-        self.property_entries[PID_NAME]     = properties.string_property(self, PID_NAME, name)
-        self.property_entries[PID_OPTIONAL] = properties.bool_property(self, PID_OPTIONAL, optional)
-        self.property_entries[PID_UNIQUE]   = properties.bool_property(self, PID_UNIQUE, unique)
-        self.property_entries[PID_PID]      = properties.u16le_property(self, PID_PID, pid)
-        self.property_entries[PID_UUID]     = properties.uuid_property(self, PID_UUID, uuid)
-        self.property_entries[PID_TYPE]     = properties.uuid_property(self, PID_TYPE, typedef)
+        if root:
+            properties.add_string_property(self, PID_NAME, name)
+            properties.add_bool_property(self, PID_OPTIONAL, optional)
+            properties.add_bool_property(self, PID_UNIQUE, unique)
+            properties.add_u16le_property(self, PID_PID, pid)
+            properties.add_uuid_property(self, PID_UUID, uuid)
+            properties.add_uuid_property(self, PID_TYPE, typedef)
 
         return self
 
@@ -102,18 +103,19 @@ class PropertyDef(core.AAFObject):
 @register_class
 class ClassDef(core.AAFObject):
     class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
-    __slots__ = ('parent_id', '_propertydefs')
+    __slots__ = ('_propertydefs')
 
     def __new__(cls, root=None, name=None, uuid=None, parent=None, concrete=None):
         self = super(ClassDef, cls).__new__(cls)
         self.root = root
+        if root:
+            properties.add_string_property(self, PID_NAME, name)
+            properties.add_uuid_property(self, PID_UUID, uuid)
+            properties.add_bool_property(self, PID_CONCRETE, concrete)
 
-        self.property_entries[PID_NAME]     = properties.string_property(self, PID_NAME, name)
-        self.property_entries[PID_UUID]     = properties.uuid_property(self, PID_UUID, uuid)
-        self.property_entries[PID_CONCRETE] = properties.bool_property(self, PID_CONCRETE, concrete)
-        self.parent_id = None
-        if parent:
-            self.parent_id = UUID(parent)
+            # refernce self uuid if no parent
+            properties.add_classdef_weakref_property(self, PID_PARENT, parent or uuid)
+
         self._propertydefs = []
         return self
 
@@ -159,17 +161,6 @@ class ClassDef(core.AAFObject):
         if self._propertydefs:
             self['Properties'].value = self._propertydefs
 
-        p = self.parent
-        # if p and p.dir:
-        # print('parent', p, self)
-
-        # InterchangeObject parent is itself???
-        if p is None:
-            p = self
-
-        # print(self, p)
-        self['ParentClass'].value = p
-
     def isinstance(self, other):
 
         if self.uuid == other.uuid:
@@ -189,20 +180,18 @@ class ClassDef(core.AAFObject):
         return self.root.metadict.classdefs_by_name['ClassDefinition']
 
     @property
+    def parent_id(self):
+        if PID_PARENT in self.property_entries:
+            return self.property_entries[PID_PARENT].ref
+
+    @property
     def parent(self):
-        parent = self.parent_id
-        parent_pid = 8
-        if parent is None and parent_pid in self.property_entries:
-            ref = self.property_entries[parent_pid].ref
-            p = self.root.metadict.lookup_classdef(ref)
-            parent = p.uuid
+        parent_id = self.parent_id
 
-
-        if parent == self.uuid:
-            # print(parent)
+        if parent_id == self.uuid:
             return None
 
-        return self.root.metadict.classdefs_by_uuid.get(parent, None)
+        return self.root.metadict.classdefs_by_uuid.get(parent_id, None)
 
     @property
     def propertydefs(self):

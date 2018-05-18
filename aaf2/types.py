@@ -34,8 +34,9 @@ class TypeDef(core.AAFObject):
     def __new__(cls, root=None, name=None, auid=None, *args, **kwargs):
         self = super(TypeDef, cls).__new__(cls)
         self.root = root
-        self.property_entries[PID_NAME] = properties.string_property(self, PID_NAME, name)
-        self.property_entries[PID_UUID] = properties.uuid_property(self, PID_UUID, auid)
+        if root:
+            properties.add_string_property(self, PID_NAME, name)
+            properties.add_uuid_property(self, PID_UUID, auid)
         return self
 
     @property
@@ -73,8 +74,9 @@ class TypeDefInt(TypeDef):
     __slots__ = ()
     def __new__(cls, root=None, name=None, auid=None, size=None, signed=None):
         self = super(TypeDefInt, cls).__new__(cls, root, name, auid)
-        self.property_entries[PID_INT_SIZE] = properties.u8_property(self, PID_INT_SIZE, size)
-        self.property_entries[PID_INT_SIGNED] = properties.bool_property(self, PID_INT_SIGNED, signed)
+        if root:
+            properties.add_u8_property(self, PID_INT_SIZE, size)
+            properties.add_bool_property(self, PID_INT_SIGNED, signed)
         return self
 
     @property
