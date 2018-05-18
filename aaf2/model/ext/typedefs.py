@@ -2,7 +2,7 @@ ints = {
 }
 
 enums = {
-"AvidPannerKindType"  : ("3659b342-4f19-4316-9309-f139434a94e5", "aafUInt32",{
+"AvidPannerKindType"  : ("3659b342-4f19-4316-9309-f139434a94e5", "01010300-0000-0000-060e-2b3401040101",{
       1 : "AvidPannerKind_Stereo",
       2 : "AvidPannerKind_LCR",
       3 : "AvidPannerKind_Quad",
@@ -15,7 +15,7 @@ enums = {
      10 : "AvidPannerKind_7dot1",
    }
 ),
-"AvidEssenceElementSizeKind" : ("0e040201-0101-0000-060e-2b3401040101", "aafUInt8",{
+"AvidEssenceElementSizeKind" : ("0e040201-0101-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101",{
       0 : "AvidEssenceElementSizeKind_Unknown",
       1 : "AvidEssenceElementSizeKind_CBE",
       2 : "AvidEssenceElementSizeKind_VBE",

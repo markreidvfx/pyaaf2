@@ -10,12 +10,12 @@ ints = {
 }
 
 enums = {
-"Boolean"                  : ("01040100-0000-0000-060e-2b3401040101", "aafUInt8", {
+"Boolean"                  : ("01040100-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "False",
    1  : "True",
    }
 ),
-"ProductReleaseType"       : ("02010101-0000-0000-060e-2b3401040101", "aafUInt8", {
+"ProductReleaseType"       : ("02010101-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "VersionUnknown",
    1  : "VersionReleased",
    2  : "VersionDebug",
@@ -24,7 +24,7 @@ enums = {
    5  : "VersionPrivateBuild",
    }
 ),
-"TapeFormatType"           : ("02010102-0000-0000-060e-2b3401040101", "aafUInt8", {
+"TapeFormatType"           : ("02010102-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "TapeFormatNull",
    1  : "BetacamFormat",
    2  : "BetacamSPFormat",
@@ -34,13 +34,13 @@ enums = {
    6  : "Hi8Format",
    }
 ),
-"VideoSignalType"          : ("02010103-0000-0000-060e-2b3401040101", "aafUInt8", {
+"VideoSignalType"          : ("02010103-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "VideoSignalNull",
    1  : "NTSCSignal",
    2  : "PALSignal",
    }
 ),
-"TapeCaseType"             : ("02010104-0000-0000-060e-2b3401040101", "aafUInt8", {
+"TapeCaseType"             : ("02010104-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "TapeCaseNull",
    1  : "ThreeFourthInchVideoTape",
    2  : "VHSVideoTape",
@@ -51,7 +51,7 @@ enums = {
    7  : "NagraAudioTape",
    }
 ),
-"ColorSitingType"          : ("02010105-0000-0000-060e-2b3401040101", "aafUInt8", {
+"ColorSitingType"          : ("02010105-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "CoSiting",
    1  : "Averaging",
    2  : "ThreeTap",
@@ -60,7 +60,7 @@ enums = {
    255: "UnknownSiting",
    }
 ),
-"EditHintType"             : ("02010106-0000-0000-060e-2b3401040101", "aafUInt8", {
+"EditHintType"             : ("02010106-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "NoEditHint",
    1  : "Proportional",
    2  : "RelativeLeft",
@@ -68,13 +68,13 @@ enums = {
    4  : "RelativeFixed",
    }
 ),
-"FadeType"                 : ("02010107-0000-0000-060e-2b3401040101", "aafUInt8", {
+"FadeType"                 : ("02010107-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "FadeNone",
    1  : "FadeLinearAmp",
    2  : "FadeLinearPower",
    }
 ),
-"LayoutType"               : ("02010108-0000-0000-060e-2b3401040101", "aafUInt8", {
+"LayoutType"               : ("02010108-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "FullFrame",
    1  : "SeparateFields",
    2  : "OneField",
@@ -82,17 +82,17 @@ enums = {
    4  : "SegmentedFrame",
    }
 ),
-"TCSource"                 : ("02010109-0000-0000-060e-2b3401040101", "aafUInt8", {
+"TCSource"                 : ("02010109-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "TimecodeLTC",
    1  : "TimecodeVITC",
    }
 ),
-"PulldownDirectionType"    : ("0201010a-0000-0000-060e-2b3401040101", "aafUInt8", {
+"PulldownDirectionType"    : ("0201010a-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "TapeToFilmSpeed",
    1  : "FilmToTapeSpeed",
    }
 ),
-"PulldownKindType"         : ("0201010b-0000-0000-060e-2b3401040101", "aafUInt8", {
+"PulldownKindType"         : ("0201010b-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "TwoThreePD",
    1  : "PALPD",
    2  : "OneToOneNTSC",
@@ -103,7 +103,7 @@ enums = {
    7  : "TwoToOnePD",
    }
 ),
-"EdgeType"                 : ("0201010c-0000-0000-060e-2b3401040101", "aafUInt8", {
+"EdgeType"                 : ("0201010c-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "EtNull",
    1  : "EtKeycode",
    2  : "EtEdgenum4",
@@ -111,7 +111,7 @@ enums = {
    8  : "EtHeaderSize",
    }
 ),
-"FilmType"                 : ("0201010d-0000-0000-060e-2b3401040101", "aafUInt8", {
+"FilmType"                 : ("0201010d-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "FtNull",
    1  : "Ft35MM",
    2  : "Ft16MM",
@@ -119,7 +119,7 @@ enums = {
    4  : "Ft65MM",
    }
 ),
-"RGBAComponentKind"        : ("0201010e-0000-0000-060e-2b3401040101", "aafUInt8", {
+"RGBAComponentKind"        : ("0201010e-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0x30: "CompNone",
    0x41: "CompAlpha",
    0x42: "CompBlue",
@@ -130,7 +130,7 @@ enums = {
    0x00: "CompNull",
    }
 ),
-"ReferenceType"            : ("0201010f-0000-0000-060e-2b3401040101", "aafUInt8", {
+"ReferenceType"            : ("0201010f-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "RefLimitMinimum",
    1  : "RefLimitMaximum",
    2  : "RefMinimum",
@@ -138,18 +138,18 @@ enums = {
    4  : "RefEnumvalue",
    }
 ),
-"AlphaTransparencyType"    : ("02010120-0000-0000-060e-2b3401040101", "aafUInt8", {
+"AlphaTransparencyType"    : ("02010120-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "MinValueTransparent",
    1  : "MaxValueTransparent",
    }
 ),
-"FieldNumber"              : ("02010121-0000-0000-060e-2b3401040101", "aafUInt8", {
+"FieldNumber"              : ("02010121-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "UnspecifiedField",
    1  : "FieldOne",
    2  : "FieldTwo",
    }
 ),
-"ElectroSpatialFormulation": ("02010122-0000-0000-060e-2b3401040101", "aafUInt8", {
+"ElectroSpatialFormulation": ("02010122-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "ElectroSpatialFormulation_Default",
    1  : "ElectroSpatialFormulation_TwoChannelMode",
    2  : "ElectroSpatialFormulation_SingleChannelMode",
@@ -161,7 +161,7 @@ enums = {
    15 : "ElectroSpatialFormulation_MultiChannelMode",
    }
 ),
-"EmphasisType"             : ("02010123-0000-0000-060e-2b3401040101", "aafUInt8", {
+"EmphasisType"             : ("02010123-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "Emphasis_Unknown",
    1  : "Emphasis_Reserved0",
    2  : "Emphasis_Reserved1",
@@ -172,7 +172,7 @@ enums = {
    7  : "Emphasis_ITU",
    }
 ),
-"AuxBitsModeType"          : ("02010124-0000-0000-060e-2b3401040101", "aafUInt8", {
+"AuxBitsModeType"          : ("02010124-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "AuxBitsMode_NotDefined",
    1  : "AuxBitsMode_MainAudioSampleData",
    2  : "AuxBitsMode_SingleCoordinationSignal",
@@ -183,7 +183,7 @@ enums = {
    7  : "AuxBitsMode_Reserved3",
    }
 ),
-"ChannelStatusModeType"    : ("02010125-0000-0000-060e-2b3401040101", "aafUInt8", {
+"ChannelStatusModeType"    : ("02010125-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "ChannelStatusMode_None",
    1  : "ChannelStatusMode_Minimum",
    2  : "ChannelStatusMode_Standard",
@@ -192,7 +192,7 @@ enums = {
    5  : "ChannelStatusMode_Essence",
    }
 ),
-"UserDataModeType"         : ("02010126-0000-0000-060e-2b3401040101", "aafUInt8", {
+"UserDataModeType"         : ("02010126-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "UserDataMode_NotDefined",
    1  : "UserDataMode_192BitBlockStructure",
    2  : "UserDataMode_AES18",
@@ -211,7 +211,7 @@ enums = {
    15 : "UserDataMode_Reserved9",
    }
 ),
-"SignalStandardType"       : ("02010127-0000-0000-060e-2b3401040101", "aafUInt8", {
+"SignalStandardType"       : ("02010127-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "SignalStandard_None",
    1  : "SignalStandard_ITU601",
    2  : "SignalStandard_ITU1358",
@@ -221,7 +221,7 @@ enums = {
    6  : "SignalStandard_SMPTE349M",
    }
 ),
-"ScanningDirectionType"    : ("02010128-0000-0000-060e-2b3401040101", "aafUInt8", {
+"ScanningDirectionType"    : ("02010128-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "ScanningDirection_LeftToRightTopToBottom",
    1  : "ScanningDirection_RightToLeftTopToBottom",
    2  : "ScanningDirection_LeftToRightBottomToTop",
@@ -232,14 +232,14 @@ enums = {
    7  : "ScanningDirection_BottomToTopRightToLeft",
    }
 ),
-"ContentScanningType"      : ("0201012a-0000-0000-060e-2b3401040101", "aafUInt8", {
+"ContentScanningType"      : ("0201012a-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "ContentScanning_NotKnown",
    1  : "ContentScanning_Progressive",
    2  : "ContentScanning_Interlace",
    3  : "ContentScanning_Mixed",
    }
 ),
-"TitleAlignmentType"       : ("0201012b-0000-0000-060e-2b3401040101", "aafUInt8", {
+"TitleAlignmentType"       : ("0201012b-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
    0  : "TitleAlignment_Left",
    1  : "TitleAlignment_Center",
    2  : "TitleAlignment_Right",

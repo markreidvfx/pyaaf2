@@ -383,8 +383,9 @@ def resolve_refs(typedefs, classdefs):
 
     new_enums  = {}
     for name, data in typedefs['enums'].items():
-        typedef_name = typedefs['all'][data[1]]
-        new_enums[name] = (data[0], typedef_name, data[2])
+        typedef_id = data[1]
+        typedef_name = typedefs['all'][typedef_id]
+        new_enums[name] = (data[0], typedef_id, data[2])
     typedefs['enums'] = new_enums
 
     new_records = {}

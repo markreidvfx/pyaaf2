@@ -121,6 +121,7 @@ class TypeDefInt(TypeDef):
 
 
 PID_STRONGREF_REF_TYPE = 0x0011
+
 @register_class
 class TypeDefStrongRef(TypeDef):
     class_id = UUID("0d010101-0205-0000-060e-2b3402060101")
@@ -194,12 +195,18 @@ class TypeDefWeakRef(TypeDef):
 
         return path
 
+PID_ENUM_TYPE    = 0x0014
+PID_ENUM_NAMES   = 0x0015
+PID_ENUM_VALUES  = 0x0016
+
 @register_class
 class TypeDefEnum(TypeDef):
     class_id = UUID("0d010101-0207-0000-060e-2b3402060101")
+    __slots__ = ('_elements')
     def __new__(cls, root=None, name=None, auid=None, typedef=None, elements=None):
         self = super(TypeDefEnum, cls).__new__(cls, root, name, auid)
-        self.element_typedef_name = typedef
+        if root:
+            properties.add_typedef_weakref_property(self, PID_ENUM_TYPE, typedef)
         self._elements = elements
         return self
 
@@ -226,7 +233,6 @@ class TypeDefEnum(TypeDef):
         self['ElementNames'].add_pid_entry()
         self['ElementNames'].data = encode_utf16_array(names)
         self['ElementValues'].value = values
-        self['ElementType'].value = self.element_typedef
 
     def read_properties(self):
         super(TypeDefEnum, self).read_properties()
@@ -234,9 +240,8 @@ class TypeDefEnum(TypeDef):
 
     @property
     def element_typedef(self):
-        if self.element_typedef_name:
-            return self.root.metadict.lookup_typedef(self.element_typedef_name)
-        return self['ElementType'].value
+        if PID_ENUM_TYPE in self.property_entries:
+            return self.root.metadict.lookup_typedef(self.property_entries[PID_ENUM_TYPE].ref)
 
     def decode(self, data):
 
