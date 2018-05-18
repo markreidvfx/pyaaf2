@@ -1215,6 +1215,14 @@ def add_uuid_property(parent, pid, value):
     parent.property_entries[pid] = p
     return p
 
+def add_uuid_array_propertry(parent, pid, values):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
+    p.data = b''
+    for item in values:
+        p.data += UUID(item).bytes_le
+    parent.property_entries[pid] = p
+    return p
+
 def add_weakref_property(parent, pid, pid_path, key_pid, value):
     p = WeakRefProperty(parent, pid, SF_WEAK_OBJECT_REFERENCE, PROPERTY_VERSION)
     p.weakref_index = parent.root.weakref_index(pid_path)

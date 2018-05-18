@@ -14,6 +14,9 @@ int main()
 #include "classdefs_names.h"
 #include "AAFMetaDictionary.h"
 
+#include "propertydef_names.h"
+#include "AAFMetaDictionary.h"
+
 // TypeDefInt            = UUID("0d010101-0204-0000-060e-2b3402060101")
 #define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
@@ -366,7 +369,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
     cout << endl << "   (";
 
 #define AAF_TYPE_DEFINITION_WEAK_REFERENCE_MEMBER(name, parent, container) \
-    cout << QUOTE(name) << ", ";
+    cout << PROP_ID_##parent##name << ", ";
 
 #define AAF_TYPE_DEFINITION_WEAK_REFERENCE_END(name, id, type) \
     cout << ")"<< endl << ")," << endl;;

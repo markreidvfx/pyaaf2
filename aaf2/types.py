@@ -146,19 +146,15 @@ PID_WEAKREF_TARGET_SET = 0x0013
 @register_class
 class TypeDefWeakRef(TypeDef):
     class_id = UUID("0d010101-0206-0000-060e-2b3402060101")
-    __slots__ = ('_path')
+    __slots__ = ()
 
     def __new__(cls, root=None, name=None, auid=None, classdef=None, path=None):
         self = super(TypeDefWeakRef, cls).__new__(cls, root, name, auid)
         if root:
             properties.add_classdef_weakref_property(self, PID_WEAKREF_REF_TYPE, classdef)
+            properties.add_uuid_array_propertry(self, PID_WEAKREF_TARGET_SET, path)
 
-        self._path = path
         return self
-
-    def setup_defaults(self):
-        super(TypeDefWeakRef, self).setup_defaults()
-        self['TargetSet'].value = self.target_set_path
 
     @property
     def store_format(self):
@@ -179,24 +175,6 @@ class TypeDefWeakRef(TypeDef):
 
     @property
     def target_set_path(self):
-        if self._path:
-            result = []
-            # root = self.root.root
-            classdef = self.root.metadict.lookup_classdef("Root")
-
-            for p_name in self._path:
-                found = False
-                for p_def in classdef.propertydefs:
-                    if p_def.property_name == p_name:
-                        if p_def.uuid:
-                            result.append(p_def.uuid)
-                        classdef = p_def.typedef.ref_classdef
-                        found = True
-                        break
-                if not found:
-                    raise AAFPropertyError("unable to resolve property path")
-            return result
-
         return self['TargetSet'].value
 
     @property

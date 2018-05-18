@@ -443,8 +443,10 @@ def resolve_refs(typedefs, classdefs):
         p_path = []
         for item in data[2]:
             p_name = classdefs['prop_ids'].get(item, item)
+            # print((p_name, item), end=",")
             p_path.append(p_name)
-        new_weakrefs[name] = (data[0], ref_id, p_path)
+        # print()
+        new_weakrefs[name] = (data[0], ref_id, data[2])
         # print(name, p_path)
 
     typedefs['weakrefs'] = new_weakrefs
