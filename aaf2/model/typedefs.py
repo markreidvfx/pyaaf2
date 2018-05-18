@@ -473,37 +473,38 @@ strongrefs = {
 }
 
 weakrefs = {
-"ClassDefinitionWeakReference"            : ("05010100-0000-0000-060e-2b3401040101", "ClassDefinition",
+"ClassDefinitionWeakReference"            : ("05010100-0000-0000-060e-2b3401040101", "0d010101-0201-0000-060e-2b3402060101",
    ("MetaDictionary", "ClassDefinitions", )
 ),
-"ContainerDefinitionWeakReference"        : ("05010200-0000-0000-060e-2b3401040101", "ContainerDefinition",
+"ContainerDefinitionWeakReference"        : ("05010200-0000-0000-060e-2b3401040101", "0d010101-0101-2000-060e-2b3402060101",
    ("Header", "Dictionary", "ContainerDefinitions", )
 ),
-"DataDefinitionWeakReference"             : ("05010300-0000-0000-060e-2b3401040101", "DataDefinition",
+"DataDefinitionWeakReference"             : ("05010300-0000-0000-060e-2b3401040101", "0d010101-0101-1b00-060e-2b3402060101",
    ("Header", "Dictionary", "DataDefinitions", )
 ),
-"InterpolationDefinitionWeakReference"    : ("05010500-0000-0000-060e-2b3401040101", "InterpolationDefinition",
+"InterpolationDefinitionWeakReference"    : ("05010500-0000-0000-060e-2b3401040101", "0d010101-0101-2100-060e-2b3402060101",
    ("Header", "Dictionary", "InterpolationDefinitions", )
 ),
-"MobWeakReference"                        : ("05010600-0000-0000-060e-2b3401040101", "Mob",
+"MobWeakReference"                        : ("05010600-0000-0000-060e-2b3401040101", "0d010101-0101-3400-060e-2b3402060101",
    ("Header", "Content", "Mobs", )
 ),
-"OperationDefinitionWeakReference"        : ("05010700-0000-0000-060e-2b3401040101", "OperationDefinition",
+"OperationDefinitionWeakReference"        : ("05010700-0000-0000-060e-2b3401040101", "0d010101-0101-1c00-060e-2b3402060101",
    ("Header", "Dictionary", "OperationDefinitions", )
 ),
-"ParameterDefinitionWeakReference"        : ("05010800-0000-0000-060e-2b3401040101", "ParameterDefinition",
+"ParameterDefinitionWeakReference"        : ("05010800-0000-0000-060e-2b3401040101", "0d010101-0101-1d00-060e-2b3402060101",
    ("Header", "Dictionary", "ParameterDefinitions", )
 ),
-"TypeDefinitionWeakReference"             : ("05010900-0000-0000-060e-2b3401040101", "TypeDefinition",
+"TypeDefinitionWeakReference"             : ("05010900-0000-0000-060e-2b3401040101", "0d010101-0203-0000-060e-2b3402060101",
    ("MetaDictionary", "TypeDefinitions", )
 ),
-"PluginDefinitionWeakReference"           : ("05010a00-0000-0000-060e-2b3401040101", "PluginDefinition",
+"PluginDefinitionWeakReference"           : ("05010a00-0000-0000-060e-2b3401040101", "0d010101-0101-1e00-060e-2b3402060101",
    ("Header", "Dictionary", "PluginDefinitions", )
 ),
-"CodecDefinitionWeakReference"            : ("05010b00-0000-0000-060e-2b3401040101", "CodecDefinition",
+"CodecDefinitionWeakReference"            : ("05010b00-0000-0000-060e-2b3401040101", "0d010101-0101-1f00-060e-2b3402060101",
    ("Header", "Dictionary", "CodecDefinitions", )
 ),
-"PropertyDefinitionWeakReference"         : ("05010c00-0000-0000-060e-2b3401040101", "PropertyDefinition",
+"PropertyDefinitionWeakReference"         : ("05010c00-0000-0000-060e-2b3401040101", "0d010101-0202-0000-060e-2b3402060101",
    ("MetaDictionary", "ClassDefinitions", "Properties", )
 ),
 }
+

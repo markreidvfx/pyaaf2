@@ -140,20 +140,25 @@ class TypeDefStrongRef(TypeDef):
         if PID_STRONGREF_REF_TYPE in self.property_entries:
              return self.root.metadict.lookup_classdef(self.property_entries[PID_STRONGREF_REF_TYPE].ref)
 
+PID_WEAKREF_REF_TYPE   = 0x0012
+PID_WEAKREF_TARGET_SET = 0x0013
+
 @register_class
 class TypeDefWeakRef(TypeDef):
     class_id = UUID("0d010101-0206-0000-060e-2b3402060101")
+    __slots__ = ('_path')
 
     def __new__(cls, root=None, name=None, auid=None, classdef=None, path=None):
         self = super(TypeDefWeakRef, cls).__new__(cls, root, name, auid)
-        self.ref_classdef_name = classdef
+        if root:
+            properties.add_classdef_weakref_property(self, PID_WEAKREF_REF_TYPE, classdef)
+
         self._path = path
         return self
 
     def setup_defaults(self):
         super(TypeDefWeakRef, self).setup_defaults()
         self['TargetSet'].value = self.target_set_path
-        self['ReferencedType'].value = self.ref_classdef
 
     @property
     def store_format(self):
@@ -161,10 +166,8 @@ class TypeDefWeakRef(TypeDef):
 
     @property
     def ref_classdef(self):
-        if self.ref_classdef_name:
-            return self.root.metadict.lookup_classdef(self.ref_classdef_name)
-
-        return self.root.metadict.lookup_classdef(self['ReferencedType'].ref)
+        if PID_WEAKREF_REF_TYPE in self.property_entries:
+            return self.root.metadict.lookup_classdef(self.property_entries[PID_WEAKREF_REF_TYPE].ref)
 
     @property
     def path(self):

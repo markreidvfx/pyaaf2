@@ -354,7 +354,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(target##type)
-#define AAF_TYPE(name) QUOTE(name)
+#define AAF_TYPE(name) CLASS_ID_##name
 
 #define AAF_TYPE_TABLE_BEGIN() \
     cout << "weakrefs = {" << endl;
