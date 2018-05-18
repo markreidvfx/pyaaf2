@@ -194,6 +194,21 @@ class ClassDef(core.AAFObject):
             return self.property_entries[PID_PROPERTIES].values()
         return []
 
+    def register_propertydef(self, name, uuid, pid, typedef, optional, unique=False):
+        p = PropertyDef(self.root, name, uuid, pid, typedef, optional, unique)
+
+        # this is done low level to avoid recursion errors
+        prop = self.property_entries[PID_PROPERTIES]
+        key = p.uuid
+
+        if key in prop.references:
+            raise ValueError("%s %s already exists" % (str(name), str(key)))
+
+        prop.references[key] = prop.next_free_key
+        prop.objects[key] = p
+        prop.next_free_key += 1
+        return p
+
     def relatives(self):
         root = self
         while root:
@@ -370,13 +385,7 @@ class MetaDictionary(core.AAFObject):
             c = ClassDef(self.root, name, *args[:3])
 
         for prop_name, prop_args in args[3].items():
-            p = PropertyDef(self.root, prop_name, *prop_args)
-            # this is done low level to avoid recursion errors
-            prop = c.property_entries[PID_PROPERTIES]
-            key = p.uuid
-            prop.references[key] = prop.next_free_key
-            prop.objects[key] = p
-            prop.next_free_key += 1
+            c.register_propertydef(prop_name, *prop_args)
 
         self.classdefs_by_name[name]   = c
         self.classdefs_by_uuid[c.uuid] = c
