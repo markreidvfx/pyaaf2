@@ -127,8 +127,8 @@ sets = {
 }
 
 strongrefs = {
-"AvidStrongReference"                               : ("f9a74d0a-7b30-11d3-a044-006094eb75cb", "InterchangeObject"),
-"kAAFTypeID_SubDescriptorStrongReference"           : ("05022600-0000-0000-060e-2b3401040101", "SubDescriptor"),
+"AvidStrongReference"                               : ("f9a74d0a-7b30-11d3-a044-006094eb75cb", "0d010101-0101-0100-060e-2b3402060101"),
+"kAAFTypeID_SubDescriptorStrongReference"           : ("05022600-0000-0000-060e-2b3401040101", "0d010101-0101-5900-060e-2b3402060101"),
 }
 
 weakrefs = {

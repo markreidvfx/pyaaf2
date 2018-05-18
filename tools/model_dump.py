@@ -430,8 +430,9 @@ def resolve_refs(typedefs, classdefs):
 
     new_strongrefs = {}
     for name, data in typedefs['strongrefs'].items():
+        ref_id = data[1]
         ref_name = classdefs['ids'][data[1]]
-        new_strongrefs[name] = (data[0], ref_name)
+        new_strongrefs[name] = (data[0], ref_id)
     typedefs['strongrefs'] = new_strongrefs
 
     new_weakrefs = {}

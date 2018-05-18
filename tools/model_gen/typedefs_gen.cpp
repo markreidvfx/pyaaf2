@@ -11,6 +11,9 @@ int main()
 #include "typedefs_names.h"
 #include "AAFMetaDictionary.h"
 
+#include "classdefs_names.h"
+#include "AAFMetaDictionary.h"
+
 // TypeDefInt            = UUID("0d010101-0204-0000-060e-2b3402060101")
 #define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
@@ -330,7 +333,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
-#define AAF_TYPE(name) QUOTE(name)
+#define AAF_TYPE(name) CLASS_ID_##name
 
 #define AAF_TYPE_TABLE_BEGIN() \
     cout << "strongrefs = {" << endl;

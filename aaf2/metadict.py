@@ -236,8 +236,8 @@ root_classes = {
 }
 
 root_types = {
-"HeaderStrongRefence"             : ('05022800-0000-0000-060E-2B3401040101', "Header"),
-"MetaDictionaryStrongReference"   : ('05022700-0000-0000-060E-2B3401040101', "MetaDictionary"),
+"HeaderStrongRefence"             : ('05022800-0000-0000-060E-2B3401040101', "0d010101-0101-2f00-060e-2b3402060101"),
+"MetaDictionaryStrongReference"   : ('05022700-0000-0000-060E-2B3401040101', "0d010101-0225-0000-060e-2b3402060101"),
 }
 
 @register_class

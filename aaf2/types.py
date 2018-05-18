@@ -23,9 +23,6 @@ if sys.version_info.major >= 3:
 PID_NAME      = 0x0006
 PID_UUID      = 0x0005
 
-PID_INT_SIZE   = 0x000F
-PID_INT_SIGNED = 0x0010
-
 @register_class
 class TypeDef(core.AAFObject):
     class_id = UUID("0d010101-0203-0000-060e-2b3402060101")
@@ -67,6 +64,9 @@ class TypeDef(core.AAFObject):
 
     def setup_defaults(self):
         return
+
+PID_INT_SIZE   = 0x000F
+PID_INT_SIGNED = 0x0010
 
 @register_class
 class TypeDefInt(TypeDef):
@@ -119,17 +119,17 @@ class TypeDefInt(TypeDef):
     def encode(self, value):
         return pack(self.pack_format(), value)
 
+
+PID_STRONGREF_REF_TYPE = 0x0011
 @register_class
 class TypeDefStrongRef(TypeDef):
     class_id = UUID("0d010101-0205-0000-060e-2b3402060101")
+    __slots__ = ()
     def __new__(cls, root=None, name=None, auid=None, classdef=None):
         self = super(TypeDefStrongRef, cls).__new__(cls, root, name, auid)
-        self.ref_classdef_name = classdef
+        if root:
+            properties.add_classdef_weakref_property(self, PID_STRONGREF_REF_TYPE, classdef)
         return self
-
-    def setup_defaults(self):
-        super(TypeDefStrongRef, self).setup_defaults()
-        self['ReferencedType'].value = self.ref_classdef
 
     @property
     def store_format(self):
@@ -137,10 +137,8 @@ class TypeDefStrongRef(TypeDef):
 
     @property
     def ref_classdef(self):
-        if self.ref_classdef_name:
-            return self.root.metadict.lookup_classdef(self.ref_classdef_name)
-
-        return self['ReferencedType'].value
+        if PID_STRONGREF_REF_TYPE in self.property_entries:
+             return self.root.metadict.lookup_classdef(self.property_entries[PID_STRONGREF_REF_TYPE].ref)
 
 @register_class
 class TypeDefWeakRef(TypeDef):
