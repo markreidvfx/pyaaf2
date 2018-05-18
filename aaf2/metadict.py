@@ -103,7 +103,7 @@ class PropertyDef(core.AAFObject):
 @register_class
 class ClassDef(core.AAFObject):
     class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
-    __slots__ = ('_propertydefs')
+    __slots__ = ()
 
     def __new__(cls, root=None, name=None, uuid=None, parent=None, concrete=None):
         self = super(ClassDef, cls).__new__(cls)
@@ -113,10 +113,10 @@ class ClassDef(core.AAFObject):
             properties.add_uuid_property(self, PID_UUID, uuid)
             properties.add_bool_property(self, PID_CONCRETE, concrete)
 
-            # refernce self uuid if no parent
+            # reference self uuid if no parent
             properties.add_classdef_weakref_property(self, PID_PARENT, parent or uuid)
+            properties.add_strongref_set_property(self, PID_PROPERTIES, "Properties", PID_UUID)
 
-        self._propertydefs = []
         return self
 
     def __eq__(self, other):
@@ -156,11 +156,6 @@ class ClassDef(core.AAFObject):
             return 32
         return 16
 
-    def setup_defaults(self):
-
-        if self._propertydefs:
-            self['Properties'].value = self._propertydefs
-
     def isinstance(self, other):
 
         if self.uuid == other.uuid:
@@ -195,8 +190,9 @@ class ClassDef(core.AAFObject):
 
     @property
     def propertydefs(self):
-        return self._propertydefs
-
+        if PID_PROPERTIES in self.property_entries:
+            return self.property_entries[PID_PROPERTIES].values()
+        return []
 
     def relatives(self):
         root = self
@@ -213,13 +209,6 @@ class ClassDef(core.AAFObject):
 
             for p in classdef.propertydefs:
                 yield p
-
-    def read_properties(self):
-        super(ClassDef, self).read_properties()
-
-        if PID_PROPERTIES in self.property_entries:
-            for key,value in self.property_entries[PID_PROPERTIES].items():
-                self._propertydefs.append(value)
 
     def __repr__(self):
         return "<%s %s>" % (self.class_name, "ClassDef")
@@ -356,7 +345,6 @@ class MetaDictionary(core.AAFObject):
                 if p.class_name in done:
                     continue
 
-                p.setup_defaults()
                 done.add(p.class_name)
 
         # for c in classes:
@@ -383,7 +371,12 @@ class MetaDictionary(core.AAFObject):
 
         for prop_name, prop_args in args[3].items():
             p = PropertyDef(self.root, prop_name, *prop_args)
-            c.propertydefs.append(p)
+            # this is done low level to avoid recursion errors
+            prop = c.property_entries[PID_PROPERTIES]
+            key = p.uuid
+            prop.references[key] = prop.next_free_key
+            prop.objects[key] = p
+            prop.next_free_key += 1
 
         self.classdefs_by_name[name]   = c
         self.classdefs_by_uuid[c.uuid] = c

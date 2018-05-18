@@ -1234,3 +1234,16 @@ def add_classdef_weakref_property(parent, pid, value):
 def add_typedef_weakref_property(parent, pid, value):
     pid_path = [0x0001,  0x0004]
     return add_weakref_property(parent, pid , pid_path, 0x0005, value)
+
+def add_strongref_set_property(parent, pid, property_name, unique_pid, key_size=16):
+
+    p = StrongRefSetProperty(parent, pid, SF_STRONG_OBJECT_REFERENCE_SET, PROPERTY_VERSION)
+    name = mangle_name(property_name, pid, 32-10)
+    p.index_name = name
+    p.data = p.encode(name)
+
+    p.key_pid = unique_pid
+    p.key_size = key_size
+    parent.property_entries[pid] = p
+
+    return p
