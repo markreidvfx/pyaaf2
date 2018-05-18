@@ -126,6 +126,28 @@ def read_properties(entry):
 
     return property_entries
 
+def read_reference_properties(cfb):
+    f = cfb.open("/referenced properties")
+
+    byte_order = read_u8(f)
+    if byte_order != 0x4c:
+        raise NotImplementedError("be byteorder")
+
+    path_count = read_u16le(f)
+    pid_count = read_u32le(f)
+
+    weakref_table = []
+    path = []
+    for i in range(pid_count):
+        pid = read_u16le(f)
+        if pid != 0:
+            path.append(pid)
+        else:
+            weakref_table.append(path)
+            path = []
+    assert len(weakref_table) == path_count
+    return weakref_table
+
 def decode_weakref(data):
     f = BytesIO(data)
     weakref_index = read_u16le(f)
@@ -753,6 +775,14 @@ def dump_model(path):
 
     with open(path, 'rb') as f:
         c = cfb.CompoundFileBinary(f, 'rb')
+
+        weakref_table = read_reference_properties(c)
+        for i, path in enumerate(weakref_table):
+            print(i, ':', end="")
+            for item in path:
+                print(" 0x%04X, " % item, end="")
+            print()
+
         metadict = None
         for item in c.listdir("/"):
             if item.class_id == MetaDictionary:
