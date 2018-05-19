@@ -188,7 +188,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_TYPE_DEFINITION_STRING(name, id, type) \
     cout << QUOTE(aaf##name) << PAD(20, #name) <<  ": ("; \
-    cout  << id << ", " << NAME_##type <<")," << endl;
+    cout  << id << ", " << ID_##type <<")," << endl;
 
 #define AAF_TYPE_TABLE_END() \
     cout << "}" << endl << endl;
