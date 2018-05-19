@@ -114,7 +114,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 #define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
-#define AAF_TYPE(name) NAME_##name
+#define AAF_TYPE(name) ID_##name
 
 #define AAF_TYPE_TABLE_BEGIN() \
     cout << "var_arrays = {" << endl;
@@ -132,7 +132,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
-#define AAF_TYPE(name) NAME_##name##StrongReference
+#define AAF_TYPE(name) ID_##name##StrongReference
 
 #define AAF_TYPE_DEFINITION_STRONG_REFERENCE_VECTOR(name, id, type) \
     cout << name << PAD(60, name) << " : ("; \
@@ -148,7 +148,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_REFERENCE_TYPE_NAME(type, target) QUOTE(kAAFTypeID_##target##type)
-#define AAF_TYPE(name) NAME_##name##WeakReference
+#define AAF_TYPE(name) ID_##name##WeakReference
 
 #define AAF_TYPE_DEFINITION_WEAK_REFERENCE_VECTOR(name, id, type) \
     cout << name << PAD(55, name) << " : ("; \

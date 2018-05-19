@@ -333,18 +333,19 @@ class TypeDefFixedArray(TypeDef):
         super(TypeDefFixedArray, self).read_properties()
         self.size = self['ElementCount'].value
 
+PID_VAR_TYPE = 0x0019
+
 @register_class
 class TypeDefVarArray(TypeDef):
     class_id = UUID("0d010101-0209-0000-060e-2b3402060101")
+    __slots__ = ()
 
     def __new__(cls, root=None, name=None, auid=None, typedef=None):
         self = super(TypeDefVarArray, cls).__new__(cls, root, name, auid)
-        self.element_typedef_name = typedef
-        return self
 
-    def setup_defaults(self):
-        super(TypeDefVarArray, self).setup_defaults()
-        self['ElementType'].value = self.element_typedef
+        if root:
+            properties.add_typedef_weakref_property(self, PID_VAR_TYPE, typedef)
+        return self
 
     @property
     def store_format(self):
@@ -357,9 +358,8 @@ class TypeDefVarArray(TypeDef):
 
     @property
     def element_typedef(self):
-        if not self.element_typedef_name:
-            return self['ElementType'].value
-        return self.root.metadict.lookup_typedef(self.element_typedef_name)
+        if PID_VAR_TYPE in self.property_entries:
+            return self.root.metadict.lookup_typedef(self.property_entries[PID_VAR_TYPE].ref)
 
     def decode(self, data):
 
@@ -402,14 +402,9 @@ class TypeDefVarArray(TypeDef):
         result = b''
 
         for item in value:
-            # print(member_typedef)
             result += element_typedef.encode(item)
 
         return result
-        # raise Exception()
-
-    def read_properties(self):
-        super(TypeDefVarArray, self).read_properties()
 
 @register_class
 class TypeDefSet(TypeDef):

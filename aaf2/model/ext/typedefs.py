@@ -75,14 +75,14 @@ fixed_arrays = {
 }
 
 var_arrays = {
-"AudioSuitePIChunkArray"                            : ("4e4d8f60-eefd-11d3-9ff5-0004ac969f50", "AudioSuitePlugInChunk"),
-"AudioSuitePIChunkData"                             : ("5cf19caf-ef83-11d3-9ff5-0004ac969f50", "aafUInt8"),
-"AvidBagOfBits"                                     : ("ccaa73d1-f538-11d3-a081-006094eb75cb", "aafUInt8"),
-"AvidManifestArray"                                 : ("0e040402-0100-0000-060e-2b3401040101", "AvidManifestElement"),
-"AvidTKMNTrackedParamArray"                         : ("b56a2ec2-fc3b-11d3-9ff7-0004ac969f50", "AvidStrongReference"),
-"AvidTKMNTrackerDataArray"                          : ("b56a2ec3-fc3b-11d3-9ff7-0004ac969f50", "AvidStrongReference"),
-"EqualizationBandArray"                             : ("c4c670ca-bd44-11d3-80e9-006008143e6f", "EqualizationBand"),
-"kAAFTypeID_SubDescriptorStrongReferenceVector"     : ("05060e00-0000-0000-060e-2b3401040101", "kAAFTypeID_SubDescriptorStrongReference"),
+"AudioSuitePIChunkArray"                            : ("4e4d8f60-eefd-11d3-9ff5-0004ac969f50", "4e4d8f5f-eefd-11d3-9ff5-0004ac969f50"),
+"AudioSuitePIChunkData"                             : ("5cf19caf-ef83-11d3-9ff5-0004ac969f50", "01010100-0000-0000-060e-2b3401040101"),
+"AvidBagOfBits"                                     : ("ccaa73d1-f538-11d3-a081-006094eb75cb", "01010100-0000-0000-060e-2b3401040101"),
+"AvidManifestArray"                                 : ("0e040402-0100-0000-060e-2b3401040101", "0e040301-0100-0000-060e-2b3401040101"),
+"AvidTKMNTrackedParamArray"                         : ("b56a2ec2-fc3b-11d3-9ff7-0004ac969f50", "f9a74d0a-7b30-11d3-a044-006094eb75cb"),
+"AvidTKMNTrackerDataArray"                          : ("b56a2ec3-fc3b-11d3-9ff7-0004ac969f50", "f9a74d0a-7b30-11d3-a044-006094eb75cb"),
+"EqualizationBandArray"                             : ("c4c670ca-bd44-11d3-80e9-006008143e6f", "c4c670c9-bd44-11d3-80e9-006008143e6f"),
+"kAAFTypeID_SubDescriptorStrongReferenceVector"     : ("05060e00-0000-0000-060e-2b3401040101", "05022600-0000-0000-060e-2b3401040101"),
 }
 
 renames = {

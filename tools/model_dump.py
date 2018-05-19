@@ -408,8 +408,9 @@ def resolve_refs(typedefs, classdefs):
 
     new_var_arrays = {}
     for name, data in typedefs['var_arrays'].items():
-        typedef_name = typedefs['all'][data[1]]
-        new_var_arrays[name] = (data[0], typedef_name)
+        typedef_id = data[1]
+        typedef_name = typedefs['all'][typedef_id]
+        new_var_arrays[name] = (data[0], typedef_id)
     typedefs['var_arrays'] = new_var_arrays
 
     new_renames = {}
