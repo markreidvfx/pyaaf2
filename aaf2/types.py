@@ -507,12 +507,27 @@ class TypeDefStream(TypeDef):
     def store_format(self):
         return properties.SF_DATA_STREAM
 
+PID_RECORD_TYPES = 0x001C
+PID_RECORD_NAMES = 0x001D
+
 @register_class
 class TypeDefRecord(TypeDef):
     class_id = UUID("0d010101-020d-0000-060e-2b3402060101")
+    __slots__ = ('_fields')
+
     def __new__(cls, root=None, name=None, auid=None, fields=None):
         self = super(TypeDefRecord, cls).__new__(cls, root, name, auid)
-        self._fields = fields
+        if root:
+            names = []
+            types = []
+            for name, val in fields:
+                names.append(name)
+                types.append(val)
+
+            properties.add_utf16_array_property(self, PID_RECORD_NAMES, names)
+            properties.add_typedef_weakref_vector_property(self, PID_RECORD_TYPES, 'MemberTypes', types)
+
+        self._fields = None
         return self
 
     @property
@@ -523,19 +538,6 @@ class TypeDefRecord(TypeDef):
         types = list(self['MemberTypes'].value)
         self._fields = list(zip(names, [t.type_name for t in types]))
         return self._fields
-
-    def setup_defaults(self):
-        super(TypeDefRecord, self).setup_defaults()
-        member_names = []
-        member_types = []
-        for name, typedef_name in self.fields:
-            typedef = self.root.metadict.typedefs_by_name[typedef_name]
-            member_names.append(name)
-            member_types.append(typedef)
-
-        self['MemberNames'].add_pid_entry()
-        self['MemberNames'].data = encode_utf16_array(member_names)
-        self['MemberTypes'].value = member_types
 
     @property
     def byte_size(self):
@@ -650,9 +652,6 @@ class TypeDefRecord(TypeDef):
             result+=value
 
         return result
-
-    def read_properties(self):
-        super(TypeDefRecord, self).read_properties()
 
 @register_class
 class TypeDefRename(TypeDef):

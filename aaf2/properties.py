@@ -1271,3 +1271,21 @@ def add_strongref_set_property(parent, pid, property_name, unique_pid, key_size=
     parent.property_entries[pid] = p
 
     return p
+
+def add_typedef_weakref_vector_property(parent, pid, property_name, values):
+    # kAAFTypeID_TypeDefinitionWeakReferenceVector
+    pid_path = [0x0001,  0x0004]
+    key_pid = 0x0005
+    p = WeakRefVectorProperty(parent, pid, SF_WEAK_OBJECT_REFERENCE_VECTOR, PROPERTY_VERSION)
+
+    p.weakref_index = parent.root.weakref_index(pid_path)
+    p.key_pid = key_pid
+    p.key_size = 16
+
+    p.index_name = mangle_name(property_name, pid, 32)
+    p.data = p.encode(p.index_name)
+
+    p.references = [UUID(v) for v in values]
+
+    parent.property_entries[pid] = p
+    return p

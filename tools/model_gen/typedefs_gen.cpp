@@ -69,7 +69,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 #define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
 auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
-#define AAF_TYPE(name) NAME_##name
+#define AAF_TYPE(name) ID_##name
 
 #define AAF_TYPE_TABLE_BEGIN() \
     cout << "records = {" << endl;

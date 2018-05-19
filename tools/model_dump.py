@@ -392,8 +392,9 @@ def resolve_refs(typedefs, classdefs):
     for name, data in typedefs['records'].items():
         members = []
         for item in data[1]:
-            typedef_name = typedefs['all'][item[1]]
-            members.append((item[0], typedef_name))
+            typedef_id = item[1]
+            typedef_name = typedefs['all'][typedef_id]
+            members.append((item[0], typedef_id))
 
         new_records[name] = [data[0], members]
 
