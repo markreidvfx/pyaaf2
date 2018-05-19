@@ -19,8 +19,10 @@ from .utils import (
     write_u32le,
     decode_utf16le,
     encode_utf16le,
+    encode_utf16_array,
     encode_u16le,
     encode_u8,
+    encode_s64,
     mangle_name,
     )
 from .mobid import MobID
@@ -1220,6 +1222,20 @@ def add_uuid_array_propertry(parent, pid, values):
     p.data = b''
     for item in values:
         p.data += UUID(item).bytes_le
+    parent.property_entries[pid] = p
+    return p
+
+def add_utf16_array_property(parent, pid, values):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
+    p.data = encode_utf16_array(values)
+    parent.property_entries[pid] = p
+    return p
+
+def add_s64_array_property(parent, pid, values):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
+    p.data = b''
+    for i in values:
+        p.data += encode_s64(i)
     parent.property_entries[pid] = p
     return p
 

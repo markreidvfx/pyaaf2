@@ -84,6 +84,15 @@ def encode_u16le(value):
 def encode_u8(value):
     return pack(b"B", value)
 
+def encode_utf16_array(data):
+    result = b""
+    for item in data:
+        result += encode_utf16le(item)
+    return result
+
+def encode_s64(value):
+    return pack(b"<q", value)
+
 def write_filetime(f, value):
     write_u64le(f, value)
 

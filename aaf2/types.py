@@ -15,7 +15,7 @@ from .exceptions import AAFPropertyError
 import datetime
 
 from struct import (unpack, pack)
-from .utils import register_class, decode_utf16le, encode_utf16le
+from .utils import register_class, decode_utf16le, encode_utf16le, encode_utf16_array
 
 if sys.version_info.major >= 3:
     unicode = str
@@ -202,12 +202,20 @@ PID_ENUM_VALUES  = 0x0016
 @register_class
 class TypeDefEnum(TypeDef):
     class_id = UUID("0d010101-0207-0000-060e-2b3402060101")
-    __slots__ = ('_elements')
+    __slots__ = ()
     def __new__(cls, root=None, name=None, auid=None, typedef=None, elements=None):
         self = super(TypeDefEnum, cls).__new__(cls, root, name, auid)
         if root:
             properties.add_typedef_weakref_property(self, PID_ENUM_TYPE, typedef)
-        self._elements = elements
+            names = []
+            values = []
+            for val, name in elements.items():
+                names.append(name)
+                values.append(val)
+
+            properties.add_utf16_array_property(self, PID_ENUM_NAMES, names)
+            properties.add_s64_array_property(self, PID_ENUM_VALUES, values)
+
         return self
 
     @property
@@ -216,27 +224,9 @@ class TypeDefEnum(TypeDef):
 
     @property
     def elements(self):
-        if not self._elements:
-            names = list(iter_utf16_array(self['ElementNames'].data))
-            self._elements = dict(zip(self['ElementValues'].value, names))
-
-        return self._elements
-
-    def setup_defaults(self):
-        super(TypeDefEnum, self).setup_defaults()
-        names = []
-        values = []
-        for value, name in sorted(self.elements.items()):
-            names.append(name)
-            values.append(value)
-
-        self['ElementNames'].add_pid_entry()
-        self['ElementNames'].data = encode_utf16_array(names)
-        self['ElementValues'].value = values
-
-    def read_properties(self):
-        super(TypeDefEnum, self).read_properties()
-
+        names = list(iter_utf16_array(self['ElementNames'].data))
+        elements = dict(zip(self['ElementValues'].value, names))
+        return elements
 
     @property
     def element_typedef(self):
@@ -274,12 +264,6 @@ def iter_utf16_array(data):
         if data[i] == 0x00 and data[i+1] == 0x00:
             yield data[start:i].decode("utf-16le")
             start = i+2
-
-def encode_utf16_array(data):
-    result = b""
-    for item in data:
-        result += encode_utf16le(item)
-    return result
 
 @register_class
 class TypeDefFixedArray(TypeDef):
