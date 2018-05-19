@@ -643,23 +643,21 @@ class TypeDefRecord(TypeDef):
 
         return result
 
+PID_RENAME_TYPE = 0x001E
+
 @register_class
 class TypeDefRename(TypeDef):
     class_id = UUID("0d010101-020e-0000-060e-2b3402060101")
     def __new__(cls,  root=None, name=None, auid=None, typedef=None):
         self = super(TypeDefRename, cls).__new__(cls, root, name, auid)
-        self.typedef_name = typedef
+        if root:
+            properties.add_typedef_weakref_property(self, PID_RENAME_TYPE, typedef)
         return self
-
-    def setup_defaults(self):
-        super(TypeDefRename, self).setup_defaults()
-        self['RenamedType'].value = self.renamed_typedef
 
     @property
     def renamed_typedef(self):
-        if self.typedef_name:
-            return self.root.metadict.lookup_typedef(self.typedef_name)
-        return self['RenamedType'].value
+        if PID_RENAME_TYPE in self.property_entries:
+            return self.root.metadict.lookup_typedef(self.property_entries[PID_RENAME_TYPE].ref)
 
     def decode(self, data):
         return self.renamed_typedef.decode(data)
@@ -667,8 +665,6 @@ class TypeDefRename(TypeDef):
     def encode(self, data):
         return self.renamed_typedef.encode(data)
 
-    def read_properties(self):
-        super(TypeDefRename, self).read_properties()
 
 @register_class
 class TypeDefExtEnum(TypeDef):

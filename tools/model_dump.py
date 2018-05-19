@@ -416,8 +416,9 @@ def resolve_refs(typedefs, classdefs):
 
     new_renames = {}
     for name, data in typedefs['renames'].items():
+        typedef_id = data[1]
         typedef_name = typedefs['all'][data[1]]
-        new_renames[name] = (data[0], typedef_name)
+        new_renames[name] = (data[0], typedef_id)
     typedefs['renames'] = new_renames
 
     new_strings = {}
