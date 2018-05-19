@@ -74,6 +74,7 @@ PID_INT_SIGNED = 0x0010
 class TypeDefInt(TypeDef):
     class_id = UUID("0d010101-0204-0000-060e-2b3402060101")
     __slots__ = ()
+
     def __new__(cls, root=None, name=None, auid=None, size=None, signed=None):
         self = super(TypeDefInt, cls).__new__(cls, root, name, auid)
         if root:
@@ -128,6 +129,7 @@ PID_STRONGREF_REF_TYPE = 0x0011
 class TypeDefStrongRef(TypeDef):
     class_id = UUID("0d010101-0205-0000-060e-2b3402060101")
     __slots__ = ()
+
     def __new__(cls, root=None, name=None, auid=None, classdef=None):
         self = super(TypeDefStrongRef, cls).__new__(cls, root, name, auid)
         if root:
@@ -205,6 +207,7 @@ PID_ENUM_VALUES  = 0x0016
 class TypeDefEnum(TypeDef):
     class_id = UUID("0d010101-0207-0000-060e-2b3402060101")
     __slots__ = ()
+
     def __new__(cls, root=None, name=None, auid=None, typedef=None, elements=None):
         self = super(TypeDefEnum, cls).__new__(cls, root, name, auid)
         if root:
@@ -755,6 +758,7 @@ class TypeDefExtEnum(TypeDef):
 @register_class
 class TypeDefIndirect(TypeDef):
     class_id = UUID("0d010101-0221-0000-060e-2b3402060101")
+    __slots__ = ()
 
     def decode_typedef(self, data):
         byte_order = data[0:1]
@@ -798,7 +802,9 @@ class TypeDefIndirect(TypeDef):
 @register_class
 class TypeDefOpaque(TypeDefIndirect):
     class_id = UUID("0d010101-0222-0000-060e-2b3402060101")
+    __slots__ = ()
 
 @register_class
 class TypeDefCharacter(TypeDef):
     class_id = UUID("0d010101-0223-0000-060e-2b3402060101")
+    __slots__ = ()
