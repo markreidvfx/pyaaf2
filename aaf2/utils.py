@@ -93,6 +93,14 @@ def encode_utf16_array(data):
         result += encode_utf16le(item)
     return result
 
+def encode_uuid_array(values):
+    result = b""
+    for item in values:
+        if not isinstance(item, uuid.UUID):
+            item = uuid.UUID(item)
+        result += item.bytes_le
+    return result
+
 def encode_s64(value):
     return pack(b"<q", value)
 

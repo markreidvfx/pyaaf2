@@ -310,8 +310,9 @@ class MetaDictionary(core.AAFObject):
             # add new enums if already exists
             if name in self.typedefs_by_name:
                 typedef = self.typedefs_by_name[name]
-                for key,value in args[1].items():
-                    typedef._elements[UUID(key)] = value
+                for element_value, element_name in args[1].items():
+                    typedef.register_element(element_name, UUID(element_value))
+                    # typedef._elements[UUID(key)] = value
             else:
                 self.typedefs_by_name[name] = types.TypeDefExtEnum(self.root, name, *args)
 

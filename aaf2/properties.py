@@ -20,6 +20,7 @@ from .utils import (
     decode_utf16le,
     encode_utf16le,
     encode_utf16_array,
+    encode_uuid_array,
     encode_u16le,
     encode_u32le,
     encode_u8,
@@ -1227,9 +1228,7 @@ def add_uuid_property(parent, pid, value):
 
 def add_uuid_array_propertry(parent, pid, values):
     p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
-    p.data = b''
-    for item in values:
-        p.data += UUID(item).bytes_le
+    p.data = encode_uuid_array(values)
     parent.property_entries[pid] = p
     return p
 

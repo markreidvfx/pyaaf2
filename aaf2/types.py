@@ -6,6 +6,8 @@ from __future__ import (
     )
 import sys
 from uuid import UUID
+from io import BytesIO
+
 from . import core
 from . import properties
 from .mobid import MobID
@@ -15,7 +17,7 @@ from .exceptions import AAFPropertyError
 import datetime
 
 from struct import (unpack, pack)
-from .utils import register_class, decode_utf16le, encode_utf16le, encode_utf16_array
+from .utils import register_class, decode_utf16le, encode_utf16le, encode_utf16_array, encode_uuid_array
 
 if sys.version_info.major >= 3:
     unicode = str
@@ -648,6 +650,8 @@ PID_RENAME_TYPE = 0x001E
 @register_class
 class TypeDefRename(TypeDef):
     class_id = UUID("0d010101-020e-0000-060e-2b3402060101")
+    __slots__ = ()
+
     def __new__(cls,  root=None, name=None, auid=None, typedef=None):
         self = super(TypeDefRename, cls).__new__(cls, root, name, auid)
         if root:
@@ -665,41 +669,66 @@ class TypeDefRename(TypeDef):
     def encode(self, data):
         return self.renamed_typedef.encode(data)
 
+def iter_uuid_array(data):
+    f = BytesIO(data)
+    result = []
+    while True:
+        d = f.read(16)
+        if not d:
+            break
+
+        if len(d) == 16:
+            yield UUID(bytes_le=d)
+        else:
+            raise Exception("auid length wrong: %d" % len(d))
+
+PID_EXTENUM_NAMES  = 0x001f
+PID_EXTENUM_VALUES = 0x0020
 
 @register_class
 class TypeDefExtEnum(TypeDef):
     class_id = UUID("0d010101-0220-0000-060e-2b3402060101")
+    __slots__ = ()
+
     def __new__(cls, root=None, name=None, auid=None, elements=None):
         self = super(TypeDefExtEnum, cls).__new__(cls, root, name, auid)
-        self._elements = {}
-        if elements:
-            for key,value in elements.items():
-                self._elements[UUID(key)] = value
+
+        if root:
+            names = []
+            values = []
+            for val, name in elements.items():
+                values.append(val)
+                names.append(name)
+
+            properties.add_utf16_array_property(self, PID_EXTENUM_NAMES, names)
+            properties.add_uuid_array_propertry(self, PID_EXTENUM_VALUES, values)
+
         return self
 
-    def setup_defaults(self):
-        super(TypeDefExtEnum, self).setup_defaults()
+    def register_element(self, element_name, element_uuid):
 
-        names = []
-        keys = []
-        for key, name in self.elements.items():
-            keys.append(key)
-            names.append(name)
+        element_names = []
+        element_values = []
+        for val, name in self.elements.items():
+            if val == element_uuid:
+                raise ValueError("element uuid already defined: %s" % str(element_uuid))
+            if name == element_name:
+                raise ValueError("element name already defined: %s" % str(element_name))
 
-        self['ElementNames'].add_pid_entry()
-        self['ElementNames'].data = encode_utf16_array(names)
-        self['ElementValues'].value = keys
+            element_values.append(val)
+            element_names.append(name)
 
+        element_names.append(element_name)
+        element_values.append(element_uuid)
+
+        self.property_entries[PID_EXTENUM_NAMES].data = encode_utf16_array(element_names)
+        self.property_entries[PID_EXTENUM_VALUES].data = encode_uuid_array(element_values)
 
     @property
     def elements(self):
-        if self._elements:
-            return self._elements
-
-        names = list(iter_utf16_array(self['ElementNames'].data))
-        keys = list(self['ElementValues'].value)
-        return dict(zip(keys, names))
-
+        element_names = list(iter_utf16_array(self.property_entries[PID_EXTENUM_NAMES].data))
+        element_values = list(iter_uuid_array(self.property_entries[PID_EXTENUM_VALUES].data))
+        return dict(zip(element_values, element_names))
 
     def decode(self, data):
         if data is None:
