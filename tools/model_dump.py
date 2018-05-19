@@ -428,8 +428,9 @@ def resolve_refs(typedefs, classdefs):
 
     new_sets = {}
     for name, data in typedefs['sets'].items():
+        typedef_id = data[1]
         typedef_name = typedefs['all'][data[1]]
-        new_sets[name] = (data[0], typedef_name)
+        new_sets[name] = (data[0], typedef_id)
     typedefs['sets'] = new_sets
 
     new_strongrefs = {}

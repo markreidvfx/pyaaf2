@@ -412,27 +412,27 @@ indirects = {
 }
 
 sets = {
-"AUIDSet": ("04030100-0000-0000-060e-2b3401040101", "AUID"),
-"UInt32Set": ("04030200-0000-0000-060e-2b3401040101", "aafUInt32"),
-"kAAFTypeID_ClassDefinitionStrongReferenceSet"           : ("05050100-0000-0000-060e-2b3401040101", "kAAFTypeID_ClassDefinitionStrongReference" ),
-"kAAFTypeID_CodecDefinitionStrongReferenceSet"           : ("05050200-0000-0000-060e-2b3401040101", "kAAFTypeID_CodecDefinitionStrongReference" ),
-"kAAFTypeID_ContainerDefinitionStrongReferenceSet"       : ("05050300-0000-0000-060e-2b3401040101", "kAAFTypeID_ContainerDefinitionStrongReference" ),
-"kAAFTypeID_DataDefinitionStrongReferenceSet"            : ("05050400-0000-0000-060e-2b3401040101", "kAAFTypeID_DataDefinitionStrongReference" ),
-"kAAFTypeID_EssenceDataStrongReferenceSet"               : ("05050500-0000-0000-060e-2b3401040101", "kAAFTypeID_EssenceDataStrongReference" ),
-"kAAFTypeID_InterpolationDefinitionStrongReferenceSet"   : ("05050600-0000-0000-060e-2b3401040101", "kAAFTypeID_InterpolationDefinitionStrongReference" ),
-"kAAFTypeID_MobStrongReferenceSet"                       : ("05050700-0000-0000-060e-2b3401040101", "kAAFTypeID_MobStrongReference" ),
-"kAAFTypeID_OperationDefinitionStrongReferenceSet"       : ("05050800-0000-0000-060e-2b3401040101", "kAAFTypeID_OperationDefinitionStrongReference" ),
-"kAAFTypeID_ParameterDefinitionStrongReferenceSet"       : ("05050900-0000-0000-060e-2b3401040101", "kAAFTypeID_ParameterDefinitionStrongReference" ),
-"kAAFTypeID_PluginDefinitionStrongReferenceSet"          : ("05050a00-0000-0000-060e-2b3401040101", "kAAFTypeID_PluginDefinitionStrongReference" ),
-"kAAFTypeID_PropertyDefinitionStrongReferenceSet"        : ("05050b00-0000-0000-060e-2b3401040101", "kAAFTypeID_PropertyDefinitionStrongReference" ),
-"kAAFTypeID_TypeDefinitionStrongReferenceSet"            : ("05050c00-0000-0000-060e-2b3401040101", "kAAFTypeID_TypeDefinitionStrongReference" ),
-"kAAFTypeID_KLVDataDefinitionStrongReferenceSet"         : ("05050d00-0000-0000-060e-2b3401040101", "kAAFTypeID_KLVDataDefinitionStrongReference" ),
-"kAAFTypeID_TaggedValueDefinitionStrongReferenceSet"     : ("05050e00-0000-0000-060e-2b3401040101", "kAAFTypeID_TaggedValueDefinitionStrongReference" ),
-"kAAFTypeID_DescriptiveObjectStrongReferenceSet"         : ("05050f00-0000-0000-060e-2b3401040101", "kAAFTypeID_DescriptiveObjectStrongReference" ),
-"kAAFTypeID_DataDefinitionWeakReferenceSet"         : ("05030d00-0000-0000-060e-2b3401040101", "DataDefinitionWeakReference" ),
-"kAAFTypeID_ParameterDefinitionWeakReferenceSet"    : ("05030e00-0000-0000-060e-2b3401040101", "ParameterDefinitionWeakReference" ),
-"kAAFTypeID_PluginDefinitionWeakReferenceSet"       : ("05030f00-0000-0000-060e-2b3401040101", "PluginDefinitionWeakReference" ),
-"kAAFTypeID_PropertyDefinitionWeakReferenceSet"     : ("05031000-0000-0000-060e-2b3401040101", "PropertyDefinitionWeakReference" ),
+"AUIDSet": ("04030100-0000-0000-060e-2b3401040101", "01030100-0000-0000-060e-2b3401040101"),
+"UInt32Set": ("04030200-0000-0000-060e-2b3401040101", "01010300-0000-0000-060e-2b3401040101"),
+"kAAFTypeID_ClassDefinitionStrongReferenceSet"           : ("05050100-0000-0000-060e-2b3401040101", "05020900-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_CodecDefinitionStrongReferenceSet"           : ("05050200-0000-0000-060e-2b3401040101", "05020a00-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_ContainerDefinitionStrongReferenceSet"       : ("05050300-0000-0000-060e-2b3401040101", "05020c00-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_DataDefinitionStrongReferenceSet"            : ("05050400-0000-0000-060e-2b3401040101", "05020e00-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_EssenceDataStrongReferenceSet"               : ("05050500-0000-0000-060e-2b3401040101", "05020f00-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_InterpolationDefinitionStrongReferenceSet"   : ("05050600-0000-0000-060e-2b3401040101", "05021100-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_MobStrongReferenceSet"                       : ("05050700-0000-0000-060e-2b3401040101", "05021300-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_OperationDefinitionStrongReferenceSet"       : ("05050800-0000-0000-060e-2b3401040101", "05021500-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_ParameterDefinitionStrongReferenceSet"       : ("05050900-0000-0000-060e-2b3401040101", "05021700-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_PluginDefinitionStrongReferenceSet"          : ("05050a00-0000-0000-060e-2b3401040101", "05021800-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_PropertyDefinitionStrongReferenceSet"        : ("05050b00-0000-0000-060e-2b3401040101", "05021900-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_TypeDefinitionStrongReferenceSet"            : ("05050c00-0000-0000-060e-2b3401040101", "05021b00-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_KLVDataDefinitionStrongReferenceSet"         : ("05050d00-0000-0000-060e-2b3401040101", "05022000-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_TaggedValueDefinitionStrongReferenceSet"     : ("05050e00-0000-0000-060e-2b3401040101", "05022100-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_DescriptiveObjectStrongReferenceSet"         : ("05050f00-0000-0000-060e-2b3401040101", "05022200-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_DataDefinitionWeakReferenceSet"         : ("05030d00-0000-0000-060e-2b3401040101", "05010300-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_ParameterDefinitionWeakReferenceSet"    : ("05030e00-0000-0000-060e-2b3401040101", "05010800-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_PluginDefinitionWeakReferenceSet"       : ("05030f00-0000-0000-060e-2b3401040101", "05010a00-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_PropertyDefinitionWeakReferenceSet"     : ("05031000-0000-0000-060e-2b3401040101", "05010c00-0000-0000-060e-2b3401040101" ),
 }
 
 strongrefs = {
@@ -507,4 +507,3 @@ weakrefs = {
    ("0d010301-0101-0100-060e-2b3401010102", "06010107-0700-0000-060e-2b3401010102", "06010107-0200-0000-060e-2b3401010102", )
 ),
 }
-

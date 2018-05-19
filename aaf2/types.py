@@ -406,24 +406,21 @@ class TypeDefVarArray(TypeDef):
 
         return result
 
+PID_SET_TYPE = 0x001A
+
 @register_class
 class TypeDefSet(TypeDef):
     class_id = UUID("0d010101-020a-0000-060e-2b3402060101")
     def __new__(cls, root=None, name=None, auid=None, typedef=None):
         self = super(TypeDefSet, cls).__new__(cls, root, name, auid)
-        self.element_typedef_name = typedef
+        if root:
+            properties.add_typedef_weakref_property(self, PID_SET_TYPE, typedef)
         return self
-
-    def setup_defaults(self):
-        super(TypeDefSet, self).setup_defaults()
-        self['ElementType'].value = self.element_typedef
 
     @property
     def element_typedef(self):
-        if self.element_typedef_name:
-            return self.root.metadict.lookup_typedef(self.element_typedef_name)
-
-        return self['ElementType'].value
+        if PID_SET_TYPE in self.property_entries:
+            return self.root.metadict.lookup_typedef(self.property_entries[PID_SET_TYPE].ref)
 
     @property
     def ref_classdef(self):
@@ -465,9 +462,6 @@ class TypeDefSet(TypeDef):
             result += typedef.encode(item)
 
         return result
-
-    def read_properties(self):
-        super(TypeDefSet, self).read_properties()
 
 @register_class
 class TypeDefString(TypeDef):
