@@ -63,15 +63,15 @@ records = {
 }
 
 fixed_arrays = {
-"AvidBounds"          : ("8bc42732-6bab-11d3-80cf-006008143e6f", "aafUInt8", 48),
-"AvidColor"           : ("8bc42733-6bab-11d3-80cf-006008143e6f", "aafUInt8", 68),
-"AvidCrop"            : ("8bc4272f-6bab-11d3-80cf-006008143e6f", "aafUInt8", 32),
-"AvidGlobalKeyFrame"  : ("09997778-960e-11d3-a04e-006094eb75cb", "aafUInt8", 16),
-"AvidPosition"        : ("8bc4272e-6bab-11d3-80cf-006008143e6f", "aafUInt8", 24),
-"AvidScale"           : ("8bc42730-6bab-11d3-80cf-006008143e6f", "aafUInt8", 16),
-"AvidSpillSupress"    : ("8bc42731-6bab-11d3-80cf-006008143e6f", "aafUInt8", 8),
-"AvidString4"         : ("0f96cb41-2aa8-11d4-a00f-0004ac969f50", "aafUInt8", 4),
-"AvidWideString32"    : ("3271a34f-f3a1-11d3-9ff5-0004ac969f50", "aafUInt16", 32),
+"AvidBounds"          : ("8bc42732-6bab-11d3-80cf-006008143e6f", "01010100-0000-0000-060e-2b3401040101", 48),
+"AvidColor"           : ("8bc42733-6bab-11d3-80cf-006008143e6f", "01010100-0000-0000-060e-2b3401040101", 68),
+"AvidCrop"            : ("8bc4272f-6bab-11d3-80cf-006008143e6f", "01010100-0000-0000-060e-2b3401040101", 32),
+"AvidGlobalKeyFrame"  : ("09997778-960e-11d3-a04e-006094eb75cb", "01010100-0000-0000-060e-2b3401040101", 16),
+"AvidPosition"        : ("8bc4272e-6bab-11d3-80cf-006008143e6f", "01010100-0000-0000-060e-2b3401040101", 24),
+"AvidScale"           : ("8bc42730-6bab-11d3-80cf-006008143e6f", "01010100-0000-0000-060e-2b3401040101", 16),
+"AvidSpillSupress"    : ("8bc42731-6bab-11d3-80cf-006008143e6f", "01010100-0000-0000-060e-2b3401040101", 8),
+"AvidString4"         : ("0f96cb41-2aa8-11d4-a00f-0004ac969f50", "01010100-0000-0000-060e-2b3401040101", 4),
+"AvidWideString32"    : ("3271a34f-f3a1-11d3-9ff5-0004ac969f50", "01010200-0000-0000-060e-2b3401040101", 32),
 }
 
 var_arrays = {

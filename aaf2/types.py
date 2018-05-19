@@ -265,25 +265,29 @@ def iter_utf16_array(data):
             yield data[start:i].decode("utf-16le")
             start = i+2
 
+PID_FIXED_TYPE  = 0x0017
+PID_FIXED_COUNT = 0x0018
+
 @register_class
 class TypeDefFixedArray(TypeDef):
     class_id = UUID("0d010101-0208-0000-060e-2b3402060101")
+    __slots__ = ()
+
     def __new__(cls, root=None, name=None, auid=None, typedef=None, size=None):
         self = super(TypeDefFixedArray, cls).__new__(cls, root, name, auid)
-        self.member_typedef_name = typedef
-        self.size = size
+        if root:
+            properties.add_typedef_weakref_property(self, PID_FIXED_TYPE, typedef)
+            properties.add_u32le_property(self, PID_FIXED_COUNT, size)
         return self
-
-    def setup_defaults(self):
-        super(TypeDefFixedArray, self).setup_defaults()
-        self['ElementCount'].value = self.size
-        self['ElementType'].value = self.element_typedef
 
     @property
     def element_typedef(self):
-        if not self.member_typedef_name:
-            return self['ElementType'].value
-        return self.root.metadict.lookup_typedef(self.member_typedef_name)
+        if PID_FIXED_TYPE in self.property_entries:
+            return self.root.metadict.lookup_typedef(self.property_entries[PID_FIXED_TYPE].ref)
+
+    @property
+    def size(self):
+        return unpack('<I', self.property_entries[PID_FIXED_COUNT].data)[0]
 
     @property
     def byte_size(self):
@@ -328,10 +332,6 @@ class TypeDefFixedArray(TypeDef):
                 bytes_left -= 1
 
         return result
-
-    def read_properties(self):
-        super(TypeDefFixedArray, self).read_properties()
-        self.size = self['ElementCount'].value
 
 PID_VAR_TYPE = 0x0019
 

@@ -21,6 +21,7 @@ from .utils import (
     encode_utf16le,
     encode_utf16_array,
     encode_u16le,
+    encode_u32le,
     encode_u8,
     encode_s64,
     mangle_name,
@@ -1189,6 +1190,13 @@ def add_bool_property(parent, pid, value):
         p.data = b"\x01"
     else:
         p.data = b"\x00"
+    parent.property_entries[pid] = p
+    return p
+
+def add_u32le_property(parent, pid, value):
+    p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
+    if value is not None:
+        p.data = encode_u32le(value)
     parent.property_entries[pid] = p
     return p
 

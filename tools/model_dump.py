@@ -402,8 +402,9 @@ def resolve_refs(typedefs, classdefs):
 
     new_fixed_arrays = {}
     for name, data in typedefs['fixed_arrays'].items():
-        typedef_name = typedefs['all'][data[1]]
-        new_fixed_arrays[name] = (data[0], typedef_name, data[2])
+        typedef_id = data[1]
+        typedef_name = typedefs['all'][typedef_id]
+        new_fixed_arrays[name] = (data[0], typedef_id, data[2])
     typedefs['fixed_arrays'] = new_fixed_arrays
 
     new_var_arrays = {}
