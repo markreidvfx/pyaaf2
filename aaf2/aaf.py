@@ -229,7 +229,6 @@ class AAFFile(object):
         self.root = self.create.Root()
         self.root.attach(self.cfb.find("/"))
         self.root['MetaDictionary'].value = self.metadict
-        self.metadict.setup_defaults()
         self.root['Header'].value = self.create.Header()
 
         self.header['Dictionary'].value = self.create.Dictionary()

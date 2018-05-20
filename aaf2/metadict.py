@@ -250,6 +250,7 @@ class MetaDictionary(core.AAFObject):
 
         self.root = root
         properties.add_strongref_set_property(self, PID_CLASSDEFS, "ClassDefinitions", PID_UUID)
+        properties.add_strongref_set_property(self, PID_TYPEDEFS, "TypeDefinitions", PID_UUID)
 
         self.classdefs_by_name = {}
         self.classdefs_by_uuid = {}
@@ -272,6 +273,7 @@ class MetaDictionary(core.AAFObject):
         for name, args in root_types.items():
             t = types.TypeDefStrongRef(self.root, name, *args)
             self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         self._register_typedefs(base_typedefs)
         self.register_extensions()
@@ -288,28 +290,37 @@ class MetaDictionary(core.AAFObject):
         for name, args in typedefs.ints.items():
             t = types.TypeDefInt(self.root, name, *args)
             self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.enums.items():
             t = types.TypeDefEnum(self.root, name, *args)
             self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.records.items():
             t = types.TypeDefRecord(self.root, name, *args)
             self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.var_arrays.items():
             t = types.TypeDefVarArray(self.root, name, *args)
             self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.fixed_arrays.items():
             t =  types.TypeDefFixedArray(self.root, name, *args)
             self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.renames.items():
-            self.typedefs_by_name[name] = types.TypeDefRename(self.root, name, *args)
+            t = types.TypeDefRename(self.root, name, *args)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.strings.items():
-            self.typedefs_by_name[name] = types.TypeDefString(self.root, name, *args)
+            t = types.TypeDefString(self.root, name, *args)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.extenums.items():
             # add new enums if already exists
@@ -319,31 +330,44 @@ class MetaDictionary(core.AAFObject):
                     typedef.register_element(element_name, UUID(element_value))
                     # typedef._elements[UUID(key)] = value
             else:
-                self.typedefs_by_name[name] = types.TypeDefExtEnum(self.root, name, *args)
+                t = types.TypeDefExtEnum(self.root, name, *args)
+                self.typedefs_by_name[name] = t
+                properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, auid in typedefs.chars.items():
-            self.typedefs_by_name[name] = types.TypeDefCharacter(self.root, name, auid)
+            t = types.TypeDefCharacter(self.root, name, auid)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, auid in typedefs.indirects.items():
-            self.typedefs_by_name[name] = types.TypeDefIndirect(self.root, name, auid)
+            t = types.TypeDefIndirect(self.root, name, auid)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, auid in typedefs.opaques.items():
-            self.typedefs_by_name[name] = types.TypeDefOpaque(self.root, name, auid)
+            t = types.TypeDefOpaque(self.root, name, auid)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.sets.items():
-            self.typedefs_by_name[name] = types.TypeDefSet(self.root, name, *args)
+            t = types.TypeDefSet(self.root, name, *args)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.strongrefs.items():
-            self.typedefs_by_name[name] = types.TypeDefStrongRef(self.root, name, *args)
+            t = types.TypeDefStrongRef(self.root, name, *args)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, args in typedefs.weakrefs.items():
-            self.typedefs_by_name[name] = types.TypeDefWeakRef(self.root, name, *args)
+            t = types.TypeDefWeakRef(self.root, name, *args)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
         for name, auid in typedefs.streams.items():
-            self.typedefs_by_name[name] = types.TypeDefStream(self.root, name, auid)
-
-    def setup_defaults(self):
-        self['TypeDefinitions'].value = self.typedefs_by_uuid.values()
+            t = types.TypeDefStream(self.root, name, auid)
+            self.typedefs_by_name[name] = t
+            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
     def register_extensions(self):
         from .model.ext import classdefs as ext_classdefs
