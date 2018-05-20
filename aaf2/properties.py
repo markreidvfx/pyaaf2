@@ -839,10 +839,18 @@ class StrongRefSetProperty(Property):
         for item in values:
             key = item.unique_key
             assert key is not None
-            self.references[key] = self.next_free_key
+
             current = self.objects.get(key, None)
-            if current:
+            current_local_key = self.references.get(key, None)
+
+            if current and current is not item:
                 current.detach()
+
+            if current_local_key is None:
+                self.references[key] = self.next_free_key
+                self.next_free_key += 1
+
+            self.objects[key] = item
 
             if self.parent.dir:
                 ref = self.index_ref_name(key)
@@ -851,9 +859,6 @@ class StrongRefSetProperty(Property):
                     dir_entry = self.parent.dir.makedir(ref)
                 if item.dir != dir_entry:
                     item.attach(dir_entry)
-
-            self.objects[key] = item
-            self.next_free_key += 1
 
         self.add_pid_entry()
 
@@ -1283,6 +1288,30 @@ def add_strongref_set_property(parent, pid, property_name, unique_pid, key_size=
     parent.property_entries[pid] = p
 
     return p
+
+def add2set(self, pid, key, value):
+    """low level add to StrongRefSetProperty"""
+    prop = self.property_entries[pid]
+
+    current = prop.objects.get(key, None)
+    current_local_key = prop.references.get(key, None)
+
+    if current and current is not value:
+        current.detach()
+
+    if current_local_key is None:
+        prop.references[key] = prop.next_free_key
+        prop.next_free_key += 1
+
+    prop.objects[key] = value
+
+    if prop.parent.dir:
+        ref = prop.index_ref_name(key)
+        dir_entry = prop.parent.dir.get(ref)
+        if dir_entry is None:
+            dir_entry = prop.parent.dir.makedir(ref)
+        if value.dir != dir_entry:
+            value.attach(dir_entry)
 
 def add_typedef_weakref_vector_property(parent, pid, property_name, values):
     # kAAFTypeID_TypeDefinitionWeakReferenceVector

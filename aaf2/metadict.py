@@ -204,26 +204,8 @@ class ClassDef(core.AAFObject):
             typedef_uuid = typedef.uuid
 
         p = PropertyDef(self.root, name, property_uuid, pid, typedef_uuid, optional, unique)
-
-        # this is done low level to avoid recursion errors
-        prop = self.property_entries[PID_PROPERTIES]
-        key = p.uuid
-
-        if key in prop.references:
-            raise ValueError("%s %s already exists" % (str(name), str(key)))
-
-        prop.references[key] = prop.next_free_key
-        prop.objects[key] = p
-        prop.next_free_key += 1
-
-        if prop.parent.dir:
-            ref = prop.index_ref_name(key)
-            dir_entry = prop.parent.dir.get(ref)
-            if dir_entry is None:
-                dir_entry = prop.parent.dir.makedir(ref)
-            if p.dir != dir_entry:
-                p.attach(dir_entry)
-
+        # # this is done low level to avoid recursion errors
+        properties.add2set(self, PID_PROPERTIES, p.uuid, p)
         return p
 
     def relatives(self):
@@ -256,6 +238,9 @@ root_types = {
 "HeaderStrongRefence"             : ('05022800-0000-0000-060E-2B3401040101', "0d010101-0101-2f00-060e-2b3402060101"),
 "MetaDictionaryStrongReference"   : ('05022700-0000-0000-060E-2B3401040101', "0d010101-0225-0000-060e-2b3402060101"),
 }
+
+PID_CLASSDEFS = 0x0003
+PID_TYPEDEFS  = 0x0004
 
 @register_class
 class MetaDictionary(core.AAFObject):
@@ -409,7 +394,9 @@ class MetaDictionary(core.AAFObject):
 
         self.classdefs_by_name[name]   = c
         self.classdefs_by_uuid[c.uuid] = c
-        self['ClassDefinitions'].append(c)
+
+        if c.class_name != "Root":
+            properties.add2set(self, PID_CLASSDEFS, c.uuid, c)
         return c
 
     def lookup_class(self, class_id):
