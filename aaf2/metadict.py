@@ -247,7 +247,10 @@ class MetaDictionary(core.AAFObject):
     class_id = UUID("0d010101-0225-0000-060e-2b3402060101")
     def __init__(self, root):
         super(MetaDictionary, self).__init__(root)
+
         self.root = root
+        properties.add_strongref_set_property(self, PID_CLASSDEFS, "ClassDefinitions", PID_UUID)
+
         self.classdefs_by_name = {}
         self.classdefs_by_uuid = {}
         self.typedefs_by_name = {}
@@ -256,10 +259,10 @@ class MetaDictionary(core.AAFObject):
         self.typedefs_classes = {}
 
         for name, args in root_classes.items():
-            self.add_classdef(name, *args)
+            self.register_classdef(name, *args)
 
         for name, args in classdefs.classdefs.items():
-            self.add_classdef(name, *args)
+            self.register_classdef(name, *args)
 
         for alias, name in classdefs.aliases.items():
             self.classdefs_by_name[alias]= self.classdefs_by_name[name]
@@ -340,46 +343,29 @@ class MetaDictionary(core.AAFObject):
             self.typedefs_by_name[name] = types.TypeDefStream(self.root, name, auid)
 
     def setup_defaults(self):
-
         self['TypeDefinitions'].value = self.typedefs_by_uuid.values()
-        classes = []
-        for k, c in self.classdefs_by_uuid.items():
-            if c.class_name == "Root":
-                continue
-            classes.append(c)
-
-        self['ClassDefinitions'].value = classes
 
     def register_extensions(self):
         from .model.ext import classdefs as ext_classdefs
         from .model.ext import typedefs as ext_typedefs
 
         for name, args in ext_classdefs.classdefs.items():
-            self.add_classdef(name, *args)
+            self.register_classdef(name, *args)
 
         for alias, name in ext_classdefs.aliases.items():
             self.classdefs_by_name[alias]= self.classdefs_by_name[name]
 
         self._register_typedefs(ext_typedefs)
 
-
-    def add_classdef(self, name, *args):
-        if name in self.classdefs_by_name:
-            c = self.classdefs_by_name[name]
-        else:
-            c = ClassDef(self.root, name, *args[:3])
-
-        for prop_name, prop_args in args[3].items():
-            c.register_propertydef(prop_name, *prop_args)
-
-        self.classdefs_by_name[name]   = c
-        self.classdefs_by_uuid[c.uuid] = c
-
-    def register_classdef(self, name, class_uuid, parent, concrete):
+    def register_classdef(self, name, class_uuid, parent, concrete, propertydefs=None):
         if not isinstance(class_uuid, UUID):
             class_uuid = UUID(class_uuid)
 
-        if isinstance(parent, UUID):
+        parent = str2uuid(parent)
+
+        if parent is None:
+            parent_uuid = None
+        elif isinstance(parent, UUID):
             parent_uuid = parent
         else:
             parent_classdef = self.lookup_classdef(parent)
@@ -392,9 +378,14 @@ class MetaDictionary(core.AAFObject):
         else:
             c = ClassDef(self.root, name, class_uuid, parent_uuid, concrete)
 
+        if propertydefs:
+            for prop_name, prop_args in propertydefs.items():
+                c.register_propertydef(prop_name, *prop_args)
+
         self.classdefs_by_name[name]   = c
         self.classdefs_by_uuid[c.uuid] = c
 
+        # Root is not include in the data model for some reason
         if c.class_name != "Root":
             properties.add2set(self, PID_CLASSDEFS, c.uuid, c)
         return c
