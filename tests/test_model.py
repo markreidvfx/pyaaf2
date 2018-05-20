@@ -36,11 +36,8 @@ class ModelTests(unittest.TestCase):
         with aaf2.open(result_file, 'w') as f:
             test_classdef = f.metadict.register_classdef("TestClass", test_classdef_uuid, parent_class_name, True)
             assert isinstance(test_classdef, aaf2.metadict.ClassDef)
-            prop_typedef = f.metadict.lookup_typedef("aafInt64")
-             # uuid=None, pid=None, typedef=None, optional=None, unique
-            p = test_classdef.register_propertydef("TheAnswer", test_prop_uuid, test_prop_pid, prop_typedef.uuid, True, False)
+            p = test_classdef.register_propertydef("TheAnswer", test_prop_uuid, test_prop_pid, 'aafInt64', True, False)
             assert isinstance(p, aaf2.metadict.PropertyDef)
-
 
         with aaf2.open(result_file, 'r') as f:
             parent_classdef = f.metadict.lookup_classdef(parent_class_name)
@@ -55,6 +52,10 @@ class ModelTests(unittest.TestCase):
             self.assertTrue(p.pid == test_prop_pid)
 
             self.assertTrue(p.property_name == "TheAnswer")
+
+            prop_typedef = f.metadict.lookup_typedef("aafInt64")
+            self.assertTrue(p.typedef is prop_typedef)
+
 
 if __name__ == "__main__":
     import logging

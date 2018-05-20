@@ -101,6 +101,14 @@ def encode_uuid_array(values):
         result += item.bytes_le
     return result
 
+def str2uuid(value):
+    if isinstance(value, uuid.UUID):
+        return value
+    try:
+        return uuid.UUID(value)
+    except:
+        return value
+
 def encode_s64(value):
     return pack(b"<q", value)
 

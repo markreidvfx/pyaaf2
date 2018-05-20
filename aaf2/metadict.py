@@ -14,7 +14,7 @@ from . import properties
 
 from . import core
 from .utils import (register_class, read_u16le, decode_utf16le,
-                    encode_utf16le, AAFClaseID_dict, AAFClassName_dict)
+                    encode_utf16le, str2uuid, AAFClaseID_dict, AAFClassName_dict)
 
 import uuid
 from uuid import UUID
@@ -194,8 +194,16 @@ class ClassDef(core.AAFObject):
             return self.property_entries[PID_PROPERTIES].values()
         return []
 
-    def register_propertydef(self, name, uuid, pid, typedef, optional, unique=False):
-        p = PropertyDef(self.root, name, uuid, pid, typedef, optional, unique)
+    def register_propertydef(self, name, property_uuid, pid, typedef, optional, unique=False):
+
+        typedef = str2uuid(typedef)
+        if isinstance(typedef, UUID):
+            typedef_uuid = typedef
+        else:
+            typedef = self.root.metadict.lookup_typedef(typedef)
+            typedef_uuid = typedef.uuid
+
+        p = PropertyDef(self.root, name, property_uuid, pid, typedef_uuid, optional, unique)
 
         # this is done low level to avoid recursion errors
         prop = self.property_entries[PID_PROPERTIES]
@@ -435,23 +443,18 @@ class MetaDictionary(core.AAFObject):
         return core.AAFObject
 
     def lookup_typedef(self, t):
+        if isinstance(t, types.TypeDef):
+            return t
+
+        t = str2uuid(t)
         if isinstance(t, UUID):
             return self.typedefs_by_uuid.get(t, None)
-
-        # if t == 'MetaDictionaryStrongReference':
-
-
         return self.typedefs_by_name.get(t, None)
-
 
     def lookup_classdef(self, t):
         if isinstance(t, ClassDef):
             return t
-        try:
-            t = UUID(t)
-        except:
-            pass
-
+        t = str2uuid(t)
         if isinstance(t, UUID):
             return self.classdefs_by_uuid.get(t, None)
         return self.classdefs_by_name.get(t, None)
