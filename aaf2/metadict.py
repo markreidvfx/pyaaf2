@@ -269,105 +269,34 @@ class MetaDictionary(core.AAFObject):
             self.classdefs_by_name[alias]= self.classdefs_by_name[name]
 
         # setup typedefs
-
-        for name, args in root_types.items():
-            t = types.TypeDefStrongRef(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        self._register_typedefs(base_typedefs)
+        self.register_typedef_model({'strongrefs': root_types})
+        self.register_typedef_model(base_typedefs.__dict__)
         self.register_extensions()
 
-        for name, typedef in self.typedefs_by_name.items():
-            if typedef.auid is None:
-                continue
+    def register_typedef_model(self, typedef_model):
 
-            self.typedefs_by_uuid[typedef.auid] = typedef
-            self.typedefs_classes[typedef.auid] = typedef.__class__
+        for cat, classobj in types.categories.items():
+            for name, args in typedef_model.get(cat, {}).items():
 
-    def _register_typedefs(self, typedefs):
+                if not isinstance(args, (tuple,list)):
+                    args = [args]
 
-        for name, args in typedefs.ints.items():
-            t = types.TypeDefInt(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                if cat == "extenums":
+                    if name in self.typedefs_by_name:
+                        typedef = self.typedefs_by_name[name]
+                        for element_value, element_name in args[1].items():
+                            typedef.register_element(element_name, UUID(element_value))
+                    else:
+                        t = types.TypeDefExtEnum(self.root, name, *args)
+                        properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                else:
 
-        for name, args in typedefs.enums.items():
-            t = types.TypeDefEnum(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                    t = classobj(self.root, name, *args)
+                    properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
 
-        for name, args in typedefs.records.items():
-            t = types.TypeDefRecord(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.var_arrays.items():
-            t = types.TypeDefVarArray(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.fixed_arrays.items():
-            t =  types.TypeDefFixedArray(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.renames.items():
-            t = types.TypeDefRename(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.strings.items():
-            t = types.TypeDefString(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.extenums.items():
-            # add new enums if already exists
-            if name in self.typedefs_by_name:
-                typedef = self.typedefs_by_name[name]
-                for element_value, element_name in args[1].items():
-                    typedef.register_element(element_name, UUID(element_value))
-                    # typedef._elements[UUID(key)] = value
-            else:
-                t = types.TypeDefExtEnum(self.root, name, *args)
                 self.typedefs_by_name[name] = t
-                properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, auid in typedefs.chars.items():
-            t = types.TypeDefCharacter(self.root, name, auid)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, auid in typedefs.indirects.items():
-            t = types.TypeDefIndirect(self.root, name, auid)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, auid in typedefs.opaques.items():
-            t = types.TypeDefOpaque(self.root, name, auid)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.sets.items():
-            t = types.TypeDefSet(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.strongrefs.items():
-            t = types.TypeDefStrongRef(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, args in typedefs.weakrefs.items():
-            t = types.TypeDefWeakRef(self.root, name, *args)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
-
-        for name, auid in typedefs.streams.items():
-            t = types.TypeDefStream(self.root, name, auid)
-            self.typedefs_by_name[name] = t
-            properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                self.typedefs_by_uuid[t.uuid] = t
+                self.typedefs_classes[t.uuid] = t.__class__
 
     def register_extensions(self):
         from .model.ext import classdefs as ext_classdefs
@@ -379,7 +308,7 @@ class MetaDictionary(core.AAFObject):
         for alias, name in ext_classdefs.aliases.items():
             self.classdefs_by_name[alias]= self.classdefs_by_name[name]
 
-        self._register_typedefs(ext_typedefs)
+        self.register_typedef_model(ext_typedefs.__dict__)
 
     def register_classdef(self, name, class_uuid, parent, concrete, propertydefs=None):
         if not isinstance(class_uuid, UUID):

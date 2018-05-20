@@ -807,3 +807,22 @@ class TypeDefOpaque(TypeDefIndirect):
 class TypeDefCharacter(TypeDef):
     class_id = UUID("0d010101-0223-0000-060e-2b3402060101")
     __slots__ = ()
+
+
+categories = {
+"ints"         : TypeDefInt,
+"enums"        : TypeDefEnum,
+"records"      : TypeDefRecord,
+"fixed_arrays" : TypeDefFixedArray,
+"var_arrays"   : TypeDefVarArray,
+"renames"      : TypeDefRename,
+"strings"      : TypeDefString,
+"streams"      : TypeDefStream,
+"opaques"      : TypeDefOpaque,
+"extenums"     : TypeDefExtEnum,
+"chars"        : TypeDefCharacter,
+"indirects"    : TypeDefIndirect,
+"sets"         : TypeDefSet,
+"strongrefs"   : TypeDefStrongRef,
+"weakrefs"     : TypeDefWeakRef,
+}
