@@ -66,12 +66,6 @@ class TypeDef(core.AAFObject):
     def __repr__(self):
         return "<%s %s>" % (self.type_name, self.__class__.__name__)
 
-    def read_properties(self):
-        super(TypeDef, self).read_properties()
-
-    def setup_defaults(self):
-        return
-
 PID_INT_SIZE   = 0x000F
 PID_INT_SIGNED = 0x0010
 

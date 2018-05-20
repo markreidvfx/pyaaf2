@@ -357,8 +357,6 @@ class MetaDictionary(core.AAFObject):
     def setup_defaults(self):
 
         self['TypeDefinitions'].value = self.typedefs_by_uuid.values()
-
-
         classes = []
         for k, c in self.classdefs_by_uuid.items():
             if c.class_name == "Root":
@@ -366,22 +364,6 @@ class MetaDictionary(core.AAFObject):
             classes.append(c)
 
         self['ClassDefinitions'].value = classes
-
-        for name, typedef in self.typedefs_by_uuid.items():
-            typedef.setup_defaults()
-
-        done = set(["Root"])
-        for c in classes:
-            # print c.class_name
-
-            for p in reversed(list(c.relatives())):
-                if p.class_name in done:
-                    continue
-
-                done.add(p.class_name)
-
-        # for c in classes:
-        #     c.setup_defaults()
 
     def register_extensions(self):
         from .model.ext import classdefs as ext_classdefs
