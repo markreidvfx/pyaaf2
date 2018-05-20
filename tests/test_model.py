@@ -31,23 +31,30 @@ class ModelTests(unittest.TestCase):
 
         test_classdef_uuid = UUID(int=1)
         test_prop_uuid = UUID(int=42)
-
-
+        test_prop_pid = 0xBEEF
+        parent_class_name = 'EssenceDescriptor'
         with aaf2.open(result_file, 'w') as f:
-            test_classdef = f.metadict.register_classdef("TestClass", test_classdef_uuid, 'EssenceDescriptor', True)
+            test_classdef = f.metadict.register_classdef("TestClass", test_classdef_uuid, parent_class_name, True)
             assert isinstance(test_classdef, aaf2.metadict.ClassDef)
             prop_typedef = f.metadict.lookup_typedef("aafInt64")
              # uuid=None, pid=None, typedef=None, optional=None, unique
-            p = test_classdef.register_propertydef("TheAnswer", test_prop_uuid, 0xBEEF, prop_typedef.uuid, True, False)
+            p = test_classdef.register_propertydef("TheAnswer", test_prop_uuid, test_prop_pid, prop_typedef.uuid, True, False)
             assert isinstance(p, aaf2.metadict.PropertyDef)
 
 
         with aaf2.open(result_file, 'r') as f:
+            parent_classdef = f.metadict.lookup_classdef(parent_class_name)
             test_classdef = f.metadict.lookup_classdef('TestClass')
+
             self.assertTrue(test_classdef.uuid == test_classdef_uuid)
+            self.assertTrue(test_classdef.class_name == "TestClass")
+            self.assertTrue(test_classdef.parent is parent_classdef)
 
             p = test_classdef['Properties'].value[0]
             self.assertTrue(p.uuid == test_prop_uuid)
+            self.assertTrue(p.pid == test_prop_pid)
+
+            self.assertTrue(p.property_name == "TheAnswer")
 
 if __name__ == "__main__":
     import logging
