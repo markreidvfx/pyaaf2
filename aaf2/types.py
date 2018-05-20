@@ -30,20 +30,25 @@ class TypeDef(core.AAFObject):
     class_id = UUID("0d010101-0203-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, *args, **kwargs):
+    def __new__(cls, root=None, name=None, type_uuid=None, *args, **kwargs):
         self = super(TypeDef, cls).__new__(cls)
         self.root = root
         if root:
             properties.add_string_property(self, PID_NAME, name)
-            properties.add_uuid_property(self, PID_UUID, auid)
+            properties.add_uuid_property(self, PID_UUID, type_uuid)
         return self
 
     @property
     def unique_key(self):
         return self.auid
 
+    # will remove this
     @property
     def auid(self):
+        return self.uuid
+
+    @property
+    def uuid(self):
         data = self.property_entries[PID_UUID].data
         if data is not None:
             return UUID(bytes_le=self.property_entries[PID_UUID].data)

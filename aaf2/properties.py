@@ -1218,11 +1218,13 @@ def add_u8_property(parent, pid, value):
 
 def add_uuid_property(parent, pid, value):
     p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
-    if value is None:
-        p.data = b'\0' * 16
-    else:
-        p.data = UUID(value).bytes_le
 
+    if value is None:
+        value = UUID(int=0)
+    elif not isinstance(value, UUID):
+        value = UUID(value)
+
+    p.data = value.bytes_le
     parent.property_entries[pid] = p
     return p
 
@@ -1251,7 +1253,10 @@ def add_weakref_property(parent, pid, pid_path, key_pid, value):
     p.weakref_index = parent.root.weakref_index(pid_path)
     p.key_pid = key_pid
     p.key_size = 16
-    p.ref = UUID(value)
+    if not isinstance(value, UUID):
+        value = UUID(value)
+
+    p.ref = value
     p.data = p.encode()
 
     parent.property_entries[pid] = p

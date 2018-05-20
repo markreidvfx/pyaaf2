@@ -105,16 +105,16 @@ class ClassDef(core.AAFObject):
     class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, uuid=None, parent=None, concrete=None):
+    def __new__(cls, root=None, name=None, class_uuid=None, parent_uuid=None, concrete=None):
         self = super(ClassDef, cls).__new__(cls)
         self.root = root
         if root:
             properties.add_string_property(self, PID_NAME, name)
-            properties.add_uuid_property(self, PID_UUID, uuid)
+            properties.add_uuid_property(self, PID_UUID, class_uuid)
             properties.add_bool_property(self, PID_CONCRETE, concrete)
 
             # reference self uuid if no parent
-            properties.add_classdef_weakref_property(self, PID_PARENT, parent or uuid)
+            properties.add_classdef_weakref_property(self, PID_PARENT, parent_uuid or class_uuid)
             properties.add_strongref_set_property(self, PID_PROPERTIES, "Properties", PID_UUID)
 
         return self
@@ -207,6 +207,15 @@ class ClassDef(core.AAFObject):
         prop.references[key] = prop.next_free_key
         prop.objects[key] = p
         prop.next_free_key += 1
+
+        if prop.parent.dir:
+            ref = prop.index_ref_name(key)
+            dir_entry = prop.parent.dir.get(ref)
+            if dir_entry is None:
+                dir_entry = prop.parent.dir.makedir(ref)
+            if p.dir != dir_entry:
+                p.attach(dir_entry)
+
         return p
 
     def relatives(self):
@@ -391,6 +400,27 @@ class MetaDictionary(core.AAFObject):
         self.classdefs_by_name[name]   = c
         self.classdefs_by_uuid[c.uuid] = c
 
+    def register_classdef(self, name, class_uuid, parent, concrete):
+        if not isinstance(class_uuid, UUID):
+            class_uuid = UUID(class_uuid)
+
+        if isinstance(parent, UUID):
+            parent_uuid = parent
+        else:
+            parent_classdef = self.lookup_classdef(parent)
+            parent_uuid = parent_classdef.uuid
+
+        if name in self.classdefs_by_name:
+            c = self.classdefs_by_name[name]
+        elif class_uuid in self.classdefs_by_uuid:
+            c = self.classdefs_by_name[class_uuid]
+        else:
+            c = ClassDef(self.root, name, class_uuid, parent_uuid, concrete)
+
+        self.classdefs_by_name[name]   = c
+        self.classdefs_by_uuid[c.uuid] = c
+        self['ClassDefinitions'].append(c)
+        return c
 
     def lookup_class(self, class_id):
         if class_id in AAFClaseID_dict:
@@ -415,6 +445,13 @@ class MetaDictionary(core.AAFObject):
 
 
     def lookup_classdef(self, t):
+        if isinstance(t, ClassDef):
+            return t
+        try:
+            t = UUID(t)
+        except:
+            pass
+
         if isinstance(t, UUID):
             return self.classdefs_by_uuid.get(t, None)
         return self.classdefs_by_name.get(t, None)
