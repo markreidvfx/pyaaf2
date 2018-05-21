@@ -379,14 +379,9 @@ class MetaDictionary(core.AAFObject):
     def read_properties(self):
         super(MetaDictionary, self).read_properties()
         for key, typedef in self['TypeDefinitions'].items():
-            name = typedef.type_name
-            uuid = typedef.auid
-
-            self.typedefs_by_name[name] = typedef
-            self.typedefs_by_uuid[uuid] = typedef
+            self.typedefs_by_name[typedef.type_name] = typedef
+            self.typedefs_by_uuid[typedef.uuid] = typedef
 
         for key, classdef in self['ClassDefinitions'].items():
-            name = classdef.class_name
-            uuid = classdef.uuid
-            self.classdefs_by_name[name] = classdef
-            self.classdefs_by_uuid[uuid] = classdef
+            self.classdefs_by_name[classdef.class_name] = classdef
+            self.classdefs_by_uuid[classdef.uuid] = classdef

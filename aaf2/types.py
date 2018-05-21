@@ -40,11 +40,6 @@ class TypeDef(core.AAFObject):
 
     @property
     def unique_key(self):
-        return self.auid
-
-    # will remove this
-    @property
-    def auid(self):
         return self.uuid
 
     @property
@@ -74,8 +69,8 @@ class TypeDefInt(TypeDef):
     class_id = UUID("0d010101-0204-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, size=None, signed=None):
-        self = super(TypeDefInt, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, size=None, signed=None):
+        self = super(TypeDefInt, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_u8_property(self, PID_INT_SIZE, size)
             properties.add_bool_property(self, PID_INT_SIGNED, signed)
@@ -129,8 +124,8 @@ class TypeDefStrongRef(TypeDef):
     class_id = UUID("0d010101-0205-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, classdef=None):
-        self = super(TypeDefStrongRef, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, classdef=None):
+        self = super(TypeDefStrongRef, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_classdef_weakref_property(self, PID_STRONGREF_REF_TYPE, classdef)
         return self
@@ -152,8 +147,8 @@ class TypeDefWeakRef(TypeDef):
     class_id = UUID("0d010101-0206-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, classdef=None, path=None):
-        self = super(TypeDefWeakRef, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, classdef=None, path=None):
+        self = super(TypeDefWeakRef, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_classdef_weakref_property(self, PID_WEAKREF_REF_TYPE, classdef)
             properties.add_uuid_array_propertry(self, PID_WEAKREF_TARGET_SET, path)
@@ -185,10 +180,10 @@ class TypeDefWeakRef(TypeDef):
     def propertydef_path(self):
         path = []
         classdef = self.root.metadict.lookup_classdef("Root")
-        for auid in self.target_set_path:
+        for p_uuid in self.target_set_path:
             found = False
             for p in classdef.propertydefs:
-                if p.uuid == auid:
+                if p.uuid == p_uuid:
                     path.append((classdef, p))
                     classdef = p.typedef.ref_classdef
                     found = True
@@ -207,8 +202,8 @@ class TypeDefEnum(TypeDef):
     class_id = UUID("0d010101-0207-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, typedef=None, elements=None):
-        self = super(TypeDefEnum, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None, elements=None):
+        self = super(TypeDefEnum, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_typedef_weakref_property(self, PID_ENUM_TYPE, typedef)
             names = []
@@ -240,7 +235,7 @@ class TypeDefEnum(TypeDef):
     def decode(self, data):
 
         # Boolean
-        if self.auid == UUID("01040100-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("01040100-0000-0000-060e-2b3401040101"):
             return data == b'\x01'
 
         typedef = self.element_typedef
@@ -249,7 +244,7 @@ class TypeDefEnum(TypeDef):
 
     def encode(self, data):
         # Boolean
-        if self.auid == UUID("01040100-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("01040100-0000-0000-060e-2b3401040101"):
             return b'\x01' if data else b'\x00'
 
         typedef = self.element_typedef
@@ -277,8 +272,8 @@ class TypeDefFixedArray(TypeDef):
     class_id = UUID("0d010101-0208-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, typedef=None, size=None):
-        self = super(TypeDefFixedArray, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None, size=None):
+        self = super(TypeDefFixedArray, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_typedef_weakref_property(self, PID_FIXED_TYPE, typedef)
             properties.add_u32le_property(self, PID_FIXED_COUNT, size)
@@ -344,8 +339,8 @@ class TypeDefVarArray(TypeDef):
     class_id = UUID("0d010101-0209-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, typedef=None):
-        self = super(TypeDefVarArray, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
+        self = super(TypeDefVarArray, cls).__new__(cls, root, name, type_uuid)
 
         if root:
             properties.add_typedef_weakref_property(self, PID_VAR_TYPE, typedef)
@@ -370,7 +365,7 @@ class TypeDefVarArray(TypeDef):
         element_typedef = self.element_typedef
 
         #aafCharacter
-        if element_typedef.auid == UUID("01100100-0000-0000-060e-2b3401040101"):
+        if element_typedef.uuid == UUID("01100100-0000-0000-060e-2b3401040101"):
             return list(iter_utf16_array(data))
 
 
@@ -417,8 +412,8 @@ class TypeDefSet(TypeDef):
     class_id = UUID("0d010101-020a-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, typedef=None):
-        self = super(TypeDefSet, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
+        self = super(TypeDefSet, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_typedef_weakref_property(self, PID_SET_TYPE, typedef)
         return self
@@ -476,8 +471,8 @@ class TypeDefString(TypeDef):
     class_id = UUID("0d010101-020b-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, typedef=None):
-        self = super(TypeDefString, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
+        self = super(TypeDefString, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_typedef_weakref_property(self, PID_STR_TYPE, typedef)
         return self
@@ -509,8 +504,8 @@ class TypeDefRecord(TypeDef):
     class_id = UUID("0d010101-020d-0000-060e-2b3402060101")
     __slots__ = ('_fields')
 
-    def __new__(cls, root=None, name=None, auid=None, fields=None):
-        self = super(TypeDefRecord, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, fields=None):
+        self = super(TypeDefRecord, cls).__new__(cls, root, name, type_uuid)
         if root:
             names = []
             types = []
@@ -549,13 +544,13 @@ class TypeDefRecord(TypeDef):
     def decode(self, data):
 
         # MobID
-        if self.auid == UUID("01030200-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("01030200-0000-0000-060e-2b3401040101"):
             mobid = MobID(bytes_le=data)
             assert str(mobid) == str(MobID(str(mobid)))
             return mobid
 
         # AUID
-        if self.auid == UUID("01030100-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("01030100-0000-0000-060e-2b3401040101"):
             return UUID(bytes_le=data)
 
         start = 0
@@ -570,7 +565,7 @@ class TypeDefRecord(TypeDef):
 
 
         # TimeStruct
-        if self.auid == UUID("03010600-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010600-0000-0000-060e-2b3401040101"):
             t = datetime.time(result['hour'],
                               result['minute'],
                               result['second'],
@@ -578,17 +573,17 @@ class TypeDefRecord(TypeDef):
             return t
 
         # DateStruct
-        if self.auid == UUID("03010500-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010500-0000-0000-060e-2b3401040101"):
             d = datetime.date(**result)
             return d
 
         # TimeStamp
-        if self.auid == UUID("03010700-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010700-0000-0000-060e-2b3401040101"):
             d = datetime.datetime.combine(result['date'], result['time'])
             return d
 
         # Rational
-        if self.auid == UUID("03010100-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010100-0000-0000-060e-2b3401040101"):
             r = AAFRational(result['Numerator'], result['Denominator'])
             return r
 
@@ -596,16 +591,16 @@ class TypeDefRecord(TypeDef):
 
     def encode(self, data):
         # MobID
-        if self.auid == UUID("01030200-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("01030200-0000-0000-060e-2b3401040101"):
             return data.bytes_le
 
         # AUID
-        if self.auid == UUID("01030100-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("01030100-0000-0000-060e-2b3401040101"):
             return data.bytes_le
 
         result = b""
         # TimeStamp
-        if self.auid == UUID("03010700-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010700-0000-0000-060e-2b3401040101"):
             assert isinstance(data, datetime.datetime)
             f = [self.root.metadict.lookup_typedef(t) for k, t in self.fields]
             #date
@@ -617,7 +612,7 @@ class TypeDefRecord(TypeDef):
 
 
         # DateStruct
-        if self.auid == UUID("03010500-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010500-0000-0000-060e-2b3401040101"):
             assert isinstance(data, datetime.date)
             d = {'year' : data.year,
                  'month' : data.month,
@@ -626,7 +621,7 @@ class TypeDefRecord(TypeDef):
             data = d
 
         # TimeStruct
-        if self.auid == UUID("03010600-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010600-0000-0000-060e-2b3401040101"):
             assert isinstance(data, datetime.time)
             t = {'hour' : data.hour,
                  'minute' : data.minute,
@@ -636,7 +631,7 @@ class TypeDefRecord(TypeDef):
             data = t
 
         # Rational
-        if self.auid == UUID("03010100-0000-0000-060e-2b3401040101"):
+        if self.uuid == UUID("03010100-0000-0000-060e-2b3401040101"):
             r = AAFRational(data)
             data = {'Numerator': r.numerator, 'Denominator':r.denominator }
 
@@ -654,8 +649,8 @@ class TypeDefRename(TypeDef):
     class_id = UUID("0d010101-020e-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls,  root=None, name=None, auid=None, typedef=None):
-        self = super(TypeDefRename, cls).__new__(cls, root, name, auid)
+    def __new__(cls,  root=None, name=None, type_uuid=None, typedef=None):
+        self = super(TypeDefRename, cls).__new__(cls, root, name, type_uuid)
         if root:
             properties.add_typedef_weakref_property(self, PID_RENAME_TYPE, typedef)
         return self
@@ -682,7 +677,7 @@ def iter_uuid_array(data):
         if len(d) == 16:
             yield UUID(bytes_le=d)
         else:
-            raise Exception("auid length wrong: %d" % len(d))
+            raise Exception("uuid length wrong: %d" % len(d))
 
 PID_EXTENUM_NAMES  = 0x001f
 PID_EXTENUM_VALUES = 0x0020
@@ -692,8 +687,8 @@ class TypeDefExtEnum(TypeDef):
     class_id = UUID("0d010101-0220-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, auid=None, elements=None):
-        self = super(TypeDefExtEnum, cls).__new__(cls, root, name, auid)
+    def __new__(cls, root=None, name=None, type_uuid=None, elements=None):
+        self = super(TypeDefExtEnum, cls).__new__(cls, root, name, type_uuid)
 
         if root:
             names = []
@@ -777,7 +772,7 @@ class TypeDefIndirect(TypeDef):
             typedef = self.root.metadict.lookup_typedef(data_typedef)
             if typedef is None:
                 raise AAFPropertyError("unable to find typedef: %s" % (str(data_typedef)))
-            type_uuid = typedef.auid
+            type_uuid = typedef.uuid
 
         elif isinstance(data, (str, unicode)):
             # aafString
