@@ -5,7 +5,7 @@ from __future__ import (
     division,
     )
 import os
-from aaf2.aaf import AAFFile
+from aaf2.file import AAFFile
 from aaf2.cfb import CompoundFileBinary
 from aaf2.mobid import MobID
 from aaf2 import exceptions

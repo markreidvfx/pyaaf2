@@ -1,4 +1,4 @@
-from .aaf import AAFFile as open
+from .file import AAFFile as open
 from . import dictionary
 from . import content
 from . import misc

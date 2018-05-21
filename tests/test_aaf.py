@@ -6,7 +6,7 @@ from __future__ import (
     )
 
 import os
-from aaf2.aaf import AAFFile
+from aaf2.file import AAFFile
 
 base = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 test_dir = os.path.join(base, 'results')
