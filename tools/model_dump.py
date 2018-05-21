@@ -473,6 +473,7 @@ def resolve_refs(typedefs, classdefs):
             if typedef_name == typedef_id:
                 raise ValueError("cannot resolve typedef for %s.%s : " %(name, p_name, str(typedef_id) ))
             #     print(name, p_name, typedef_name)
+
             new_p_data = (p_data[0], p_data[1], typedef_id, p_data[3], p_data[4])
             propdefs[p_name] = new_p_data
 
@@ -763,9 +764,15 @@ def write_classdefs(classdefs, path='classdefs.py'):
              # "04020301-0b00-0000-060e-2b3401010108" ,  0x3D2E ,  "aafUInt32" , True ,  False )
             for p_name, p_data in sorted(data[3].items()):
                 pad = PAD(40, p_name)
+                pid = p_data[1]
+                if pid >= 0x8000:
+                    pid = None
+                else:
+                    pid = '0x{:04X}' % pid
+
                 m = '    "{}"{:>' + str(pad) +  '}'
-                m +=  ' ("{}", 0x{:04X}, "{}", {}, {}),\n'
-                m = m.format(p_name, ':', p_data[0], p_data[1], p_data[2], p_data[3], p_data[4])
+                m +=  ' ("{}", {}, "{}", {}, {}),\n'
+                m = m.format(p_name, ':', p_data[0], pid, p_data[2], p_data[3], p_data[4])
                 s+=m
 
             s += "    }\n),\n"

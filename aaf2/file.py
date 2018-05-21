@@ -166,7 +166,7 @@ class AAFFile(object):
         with aaf.open() as f:
     """
 
-    def __init__(self, path=None, mode='r', sector_size=4096):
+    def __init__(self, path=None, mode='r', sector_size=4096, extensions=True):
 
         if mode in ('r', 'rb'):
             mode = 'rb'
@@ -199,6 +199,9 @@ class AAFFile(object):
 
         elif self.mode in ("wb+",):
             self.setup_empty()
+
+        if extensions and self.mode in ("wb+", "rb+"):
+            self.metadict.register_extensions()
 
     @property
     def header(self):

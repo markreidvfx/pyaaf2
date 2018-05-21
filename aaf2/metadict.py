@@ -197,11 +197,22 @@ class ClassDef(core.AAFObject):
     def register_propertydef(self, name, property_uuid, pid, typedef, optional, unique=False):
 
         typedef = str2uuid(typedef)
+        property_uuid = str2uuid(property_uuid)
         if isinstance(typedef, UUID):
             typedef_uuid = typedef
         else:
             typedef = self.root.metadict.lookup_typedef(typedef)
             typedef_uuid = typedef.uuid
+
+        # check its not already defined
+        if property_uuid in self.property_entries[PID_PROPERTIES].references:
+            return self.property_entries[PID_PROPERTIES].get(property_uuid)
+
+        # None signifies Dynamically allocated Local Tags
+        # I think this is similar to MXF where pids > 0x8000 < 0xFFFF
+        # are extensions pids
+        if pid is None:
+            pid = self.root.metadict.next_free_pid()
 
         p = PropertyDef(self.root, name, property_uuid, pid, typedef_uuid, optional, unique)
         # # this is done low level to avoid recursion errors
@@ -259,6 +270,9 @@ class MetaDictionary(core.AAFObject):
 
         self.typedefs_classes = {}
 
+        self.local_pids = set()
+        self.next_pid = 0xFFFF
+
         for name, args in root_classes.items():
             self.register_classdef(name, *args)
 
@@ -271,7 +285,6 @@ class MetaDictionary(core.AAFObject):
         # setup typedefs
         self.register_typedef_model({'strongrefs': root_types})
         self.register_typedef_model(base_typedefs.__dict__)
-        self.register_extensions()
 
     def register_typedef_model(self, typedef_model):
 
@@ -384,6 +397,20 @@ class MetaDictionary(core.AAFObject):
     def classdef(self):
         return self.classdefs_by_name['MetaDictionary']
 
+    def next_free_pid(self):
+
+        while self.next_pid in self.local_pids:
+            self.next_pid -= 1
+            if self.next_pid < 0x8000:
+                raise ValueError("ran out of local pids")
+
+        result = self.next_pid
+        self.next_pid -= 1
+
+        self.local_pids.add(result)
+        return result
+
+
     def read_properties(self):
         super(MetaDictionary, self).read_properties()
         for key, typedef in self['TypeDefinitions'].items():
@@ -393,3 +420,6 @@ class MetaDictionary(core.AAFObject):
         for key, classdef in self['ClassDefinitions'].items():
             self.classdefs_by_name[classdef.class_name] = classdef
             self.classdefs_by_uuid[classdef.uuid] = classdef
+            for pdef in classdef['Properties'].values():
+                if pdef.pid >= 0x8000:
+                    self.local_pids.add(pdef.pid)

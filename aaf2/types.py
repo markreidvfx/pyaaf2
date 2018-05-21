@@ -240,9 +240,9 @@ class TypeDefEnum(TypeDef):
         values = []
         for val, name in sorted(self.elements.items()):
             if val == element_value:
-                raise ValueError("element value already defined: %s" % str(element_value))
+                return
             if name == element_name:
-                raise ValueError("element name already defined: %s" % str(element_name))
+                return
 
             names.append(name)
             values.append(val)
@@ -730,9 +730,9 @@ class TypeDefExtEnum(TypeDef):
         element_values = []
         for val, name in self.elements.items():
             if val == element_uuid:
-                raise ValueError("element uuid already defined: %s" % str(element_uuid))
+                return
             if name == element_name:
-                raise ValueError("element name already defined: %s" % str(element_name))
+                return
 
             element_values.append(val)
             element_names.append(name)
