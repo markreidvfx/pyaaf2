@@ -283,9 +283,9 @@ class MetaDictionary(core.AAFObject):
 
                 if cat == "extenums":
                     if name in self.typedefs_by_name:
-                        typedef = self.typedefs_by_name[name]
+                        t = self.typedefs_by_name[name]
                         for element_value, element_name in args[1].items():
-                            typedef.register_element(element_name, UUID(element_value))
+                            t.register_element(element_name, UUID(element_value))
                     else:
                         t = types.TypeDefExtEnum(self.root, name, *args)
                         properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
