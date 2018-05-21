@@ -79,7 +79,7 @@ def encode_utf16le(data):
     return data.encode("utf-16le") + b"\x00\x00"
 
 def encode_u16le(value):
-    return pack(b"<I", value)
+    return pack(b"<H", value)
 
 def encode_u32le(value):
     return pack(b"<I", value)
