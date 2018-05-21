@@ -517,10 +517,13 @@ def extract_extensions(typedefs, classdefs):
                     for key, value in data[2].items():
                         if key in member_data:
                             continue
-                        raise ValueError(value)
+                        # raise ValueError("%s %s" % (name, value))
+                        new_enum_members[key] = value
 
                 if new_extenum_members:
                     data = [data[0], new_extenum_members]
+                elif new_enum_members:
+                    data = [data[0], data[1], new_enum_members]
                 else:
                     continue
 

@@ -2,6 +2,11 @@ ints = {
 }
 
 enums = {
+"ColorSitingType"     : ("02010105-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101",{
+      5 : "LineAlternating",
+      6 : "VerticalMidpoint",
+   }
+),
 "AvidPannerKindType"  : ("3659b342-4f19-4316-9309-f139434a94e5", "01010300-0000-0000-060e-2b3401040101",{
       1 : "AvidPannerKind_Stereo",
       2 : "AvidPannerKind_LCR",
@@ -105,6 +110,8 @@ extenums = {
 "ColorPrimariesType"  : ("02020105-0000-0000-060e-2b3401040101", {
    "04010101-0304-0000-060e-2b340401010d" : "ColorPrimaries_ITU2020",
    "0e040501-0301-0000-060e-2b3404010101" : "ColorPrimaries_SMPTE_RP431",
+   "0e040501-0302-0000-060e-2b3404010101" : "ColorPrimaries_Sony_SGamut3",
+   "0e040501-0303-0000-060e-2b3404010101" : "ColorPrimaries_Sony_SGamut3_Cine",
    },
 ),
 "TransferCharacteristicType" : ("02020102-0000-0000-060e-2b3401040101", {
@@ -112,6 +119,10 @@ extenums = {
    "0e040501-0102-0000-060e-2b3404010101" : "TransferCharacteristic_DPXLogarithmic",
    "0e040501-0103-0000-060e-2b3404010101" : "TransferCharacteristic_SRGB",
    "0e040501-0105-0000-060e-2b3404010101" : "TransferCharacteristic_SMPTE_RP431",
+   "0e040501-0106-0000-060e-2b3404010101" : "TransferCharacteristic_SMPTE_ST2084",
+   "0e040501-0108-0000-060e-2b3404010101" : "TransferCharacteristic_ARIB_B67",
+   "0e040501-010a-0000-060e-2b3404010101" : "TransferCharacteristic_ITU709_Extended2",
+   "0e060401-0101-0605-060e-2b3404010106" : "TransferCharacteristic_Sony_SLog3",
    "0e170000-0001-0101-060e-2b340401010c" : "TransferCharacteristic_ARRI_LogC",
    },
 ),

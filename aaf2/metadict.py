@@ -289,6 +289,14 @@ class MetaDictionary(core.AAFObject):
                     else:
                         t = types.TypeDefExtEnum(self.root, name, *args)
                         properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                elif cat == "enums":
+                    if name in self.typedefs_by_name:
+                        t = self.typedefs_by_name[name]
+                        for element_value, element_name in args[2].items():
+                            t.register_element(element_name, element_value)
+                    else:
+                        t = types.TypeDefEnum(self.root, name, *args)
+                        properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
                 else:
 
                     t = classobj(self.root, name, *args)

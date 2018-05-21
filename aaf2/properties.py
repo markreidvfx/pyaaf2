@@ -24,7 +24,7 @@ from .utils import (
     encode_u16le,
     encode_u32le,
     encode_u8,
-    encode_s64,
+    encode_s64le,
     mangle_name,
     )
 from .mobid import MobID
@@ -1245,11 +1245,11 @@ def add_utf16_array_property(parent, pid, values):
     parent.property_entries[pid] = p
     return p
 
-def add_s64_array_property(parent, pid, values):
+def add_s64le_array_property(parent, pid, values):
     p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
     p.data = b''
     for i in values:
-        p.data += encode_s64(i)
+        p.data += encode_s64le(i)
     parent.property_entries[pid] = p
     return p
 

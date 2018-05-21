@@ -213,7 +213,7 @@ class TypeDefEnum(TypeDef):
                 values.append(val)
 
             properties.add_utf16_array_property(self, PID_ENUM_NAMES, names)
-            properties.add_s64_array_property(self, PID_ENUM_VALUES, values)
+            properties.add_s64le_array_property(self, PID_ENUM_VALUES, values)
 
         return self
 
@@ -223,14 +223,36 @@ class TypeDefEnum(TypeDef):
 
     @property
     def elements(self):
-        names = list(iter_utf16_array(self['ElementNames'].data))
-        elements = dict(zip(self['ElementValues'].value, names))
+        names = list(iter_utf16_array(self.property_entries[PID_ENUM_NAMES].data))
+        element_count = len(names)
+        fmt = b"<%dq" % element_count
+        values = unpack(fmt, self.property_entries[PID_ENUM_VALUES].data)
+        elements = dict(zip(values, names))
         return elements
 
     @property
     def element_typedef(self):
         if PID_ENUM_TYPE in self.property_entries:
             return self.root.metadict.lookup_typedef(self.property_entries[PID_ENUM_TYPE].ref)
+
+    def register_element(self, element_name, element_value):
+        names = []
+        values = []
+        for val, name in sorted(self.elements.items()):
+            if val == element_value:
+                raise ValueError("element value already defined: %s" % str(element_value))
+            if name == element_name:
+                raise ValueError("element name already defined: %s" % str(element_name))
+
+            names.append(name)
+            values.append(val)
+
+        names.append(element_name)
+        values.append(element_value)
+
+        self.property_entries[PID_ENUM_NAMES].data = encode_utf16_array(names)
+        fmt = b"<%dq" % len(values)
+        self.property_entries[PID_ENUM_VALUES].data = pack(fmt, *values)
 
     def decode(self, data):
 

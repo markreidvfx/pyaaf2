@@ -109,7 +109,7 @@ def str2uuid(value):
     except:
         return value
 
-def encode_s64(value):
+def encode_s64le(value):
     return pack(b"<q", value)
 
 def write_filetime(f, value):
