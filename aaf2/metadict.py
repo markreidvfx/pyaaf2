@@ -423,3 +423,26 @@ class MetaDictionary(core.AAFObject):
             for pdef in classdef['Properties'].values():
                 if pdef.pid >= 0x8000:
                     self.local_pids.add(pdef.pid)
+
+        # add typedefs not defined by file data model
+        if self.root.writeable:
+            for key, typedef in self.typedefs_by_uuid.items():
+                # skip root typedefs
+                if key in (UUID('05022800-0000-0000-060E-2B3401040101'),
+                           UUID('05022700-0000-0000-060E-2B3401040101')):
+                    # print("skipping root typedef")
+                    continue
+
+                if key not in self['TypeDefinitions']:
+                    self['TypeDefinitions'].append(typedef)
+
+        # add classdefs not defined by file data model
+        if self.root.writeable:
+            for key, classdef in self.classdefs_by_uuid.items():
+                # skip root classdefs
+                if key in (UUID('b3b398a5-1c90-11d4-8053-080036210804'), ):
+                    # print("skipping root")
+                    continue
+
+                if key not in self['ClassDefinitions']:
+                    self['ClassDefinitions'].append(classdef)

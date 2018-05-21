@@ -200,7 +200,7 @@ class AAFFile(object):
         elif self.mode in ("wb+",):
             self.setup_empty()
 
-        if extensions and self.mode in ("wb+", "rb+"):
+        if extensions and self.writeable:
             self.metadict.register_extensions()
 
     @property
@@ -255,6 +255,10 @@ class AAFFile(object):
         self.header['ByteOrder'].value = 0x4949
 
         self.content['Mobs'].value = []
+
+    @property
+    def writeable(self):
+        return self.mode in ("wb+", "rb+")
 
     def read_object(self, path):
         return self.manager.read_object(path)
