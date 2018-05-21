@@ -32,7 +32,6 @@ class AAFFactory(object):
 
     def __init__(self, root):
         self.root = root
-        self.metadict = root.metadict
         self.class_name = None
 
     def __getattr__(self, name):
@@ -41,14 +40,14 @@ class AAFFactory(object):
 
     def from_name(self, name, *args, **kwargs):
 
-        classdef = self.metadict.lookup_classdef(name)
+        classdef = self.root.metadict.lookup_classdef(name)
         if classdef is None:
             raise ValueError("no class found with name: %s" % name)
 
         if not classdef.concrete:
             raise ValueError("cannnot initialize abstract class: %s" % name)
 
-        classobj = self.metadict.lookup_class(name)
+        classobj = self.root.metadict.lookup_class(name)
 
         # obj = classobj(None, *args, **kwargs)
         obj = classobj.__new__(classobj)
@@ -187,16 +186,15 @@ class AAFFile(object):
         self.cfb = CompoundFileBinary(self.f, self.mode, sector_size=sector_size)
         self.weakref_table = []
         self.manager = AAFObjectManager(self)
-        self.metadict = MetaDictionary(self)
-        self.metadict.root = self
         self.create = AAFFactory(self)
         self.is_open = True
 
         if self.mode in ("rb", "rb+"):
+            self.read_reference_properties()
+            self.metadict = MetaDictionary(self)
             self.metadict.dir = self.cfb.find('/MetaDictionary-1')
             self.manager['/MetaDictionary-1'] = self.metadict
             self.root = self.read_object("/")
-            self.read_reference_properties()
             self.metadict.read_properties()
 
         elif self.mode in ("wb+",):
@@ -226,6 +224,7 @@ class AAFFile(object):
 
     def setup_empty(self):
         now = datetime.datetime.now()
+        self.metadict = MetaDictionary(self)
         self.root = self.create.Root()
         self.root.attach(self.cfb.find("/"))
         self.root['MetaDictionary'].value = self.metadict
