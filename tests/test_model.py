@@ -56,6 +56,34 @@ class ModelTests(unittest.TestCase):
             prop_typedef = f.metadict.lookup_typedef("aafInt64")
             self.assertTrue(p.typedef is prop_typedef)
 
+    def test_add_extensions(self):
+        result_file = common.get_test_file('basic_model.aaf')
+        # create a file with basic model
+        with aaf2.open(result_file, 'w', extensions=False) as f:
+            pass
+
+        # check there are no extensions
+        with aaf2.open(result_file, 'r') as f:
+            for classdef in f.metadict['ClassDefinitions'].values():
+                # make sure non of the properties and dynamics
+                for pdef in classdef['Properties'].values():
+                    self.assertTrue(pdef['LocalIdentification'].value < 0x8000)
+
+        # open files 'rw' and add extensions
+        with aaf2.open(result_file, 'rw', extensions=True) as f:
+            pass
+
+        dynamic_pids = set()
+        # check that dynamic properties got added
+        with aaf2.open(result_file, 'r') as f:
+            for classdef in f.metadict['ClassDefinitions'].values():
+                for pdef in classdef['Properties'].values():
+                    if pdef['LocalIdentification'].value >= 0x8000:
+                        pid = pdef['LocalIdentification'].value
+                        self.assertTrue(pid not in dynamic_pids)
+                        dynamic_pids.add(pid)
+
+        assert len(dynamic_pids) > 0
 
 if __name__ == "__main__":
     import logging

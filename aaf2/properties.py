@@ -1312,6 +1312,7 @@ def add2set(self, pid, key, value):
             dir_entry = prop.parent.dir.makedir(ref)
         if value.dir != dir_entry:
             value.attach(dir_entry)
+        prop.mark_modified()
 
 def add_typedef_weakref_vector_property(parent, pid, property_name, values):
     # kAAFTypeID_TypeDefinitionWeakReferenceVector
