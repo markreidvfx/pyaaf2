@@ -14,7 +14,8 @@ from . import properties
 
 from . import core
 from .utils import (register_class, read_u16le, decode_utf16le,
-                    encode_utf16le, str2uuid, AAFClaseID_dict, AAFClassName_dict)
+                    encode_utf16le, encode_u16le, str2uuid,
+                    AAFClaseID_dict, AAFClassName_dict)
 
 import uuid
 from uuid import UUID
@@ -71,6 +72,10 @@ class PropertyDef(core.AAFObject):
     @property
     def pid(self):
         return read_u16le(BytesIO(self.property_entries[PID_PID].data))
+
+    @pid.setter
+    def pid(self, value):
+        self.property_entries[PID_PID].data = encode_u16le(value)
 
     @property
     def uuid(self):
@@ -445,4 +450,11 @@ class MetaDictionary(core.AAFObject):
                     continue
 
                 if key not in self['ClassDefinitions']:
+
+                    # handle any conflicting dynamic pids
+                    for pdef in classdef['Properties'].values():
+                        if pdef.pid >= 0x8000:
+                            if pdef.pid in self.local_pids:
+                                pdef.pid = self.next_free_pid()
+
                     self['ClassDefinitions'].append(classdef)

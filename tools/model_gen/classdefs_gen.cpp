@@ -10,6 +10,21 @@ string parse_parent(string name)
     return "\"" + name + "\"";
 }
 
+static int DYNAMIC_PID=0xFFFF;
+
+string process_tag(int tag)
+{
+    char buffer[64] = {};
+    if (tag == 0x0000) {
+        tag = DYNAMIC_PID;
+        DYNAMIC_PID--;
+    }
+
+    sprintf(buffer, "0x%04x", tag);
+    // "0x" << std::hex <<
+    return string(buffer);
+}
+
 int main()
 {
     std::string indent("    ");
@@ -33,7 +48,7 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #define AAF_PROPERTY(name, id, tag, type, mandatory, uid, container) \
     cout << indent << QUOTE(name) <<  PAD(25, #name) ; \
-    cout << ": (" << id << ", " <<  #tag <<", "; \
+    cout << ": (" << id << ", " << process_tag(tag) <<", "; \
     cout << type << ", " << python_bool(!mandatory) << ", " << python_bool(uid) <<")," << endl;
 
 #define AAF_CLASS_SEPARATOR() \
