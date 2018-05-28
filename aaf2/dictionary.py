@@ -113,6 +113,10 @@ class OperationDef(DefinitionObject):
     def media_kind(self, value):
         self.datadef = self.root.dictionary.lookup_datadef(value)
 
+    @property
+    def parameters(self):
+        return self['ParametersDefined']
+
 @register_class
 class ParameterDef(DefinitionObject):
     class_id = UUID("0d010101-0101-1d00-060e-2b3402060101")
