@@ -359,6 +359,10 @@ class MetaDictionary(core.AAFObject):
 
         if propertydefs:
             for prop_name, prop_args in propertydefs.items():
+                pid = prop_args[1]
+                if pid and pid >= 0x8000:
+                    assert pid not in self.local_pids
+                    self.local_pids.add(pid)
                 c.register_propertydef(prop_name, *prop_args)
 
         self.classdefs_by_name[name]   = c
@@ -422,6 +426,8 @@ class MetaDictionary(core.AAFObject):
             self.typedefs_by_name[typedef.type_name] = typedef
             self.typedefs_by_uuid[typedef.uuid] = typedef
 
+        # reset local pids
+        self.local_pids = set()
         for key, classdef in self['ClassDefinitions'].items():
             self.classdefs_by_name[classdef.class_name] = classdef
             self.classdefs_by_uuid[classdef.uuid] = classdef

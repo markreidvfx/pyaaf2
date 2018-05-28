@@ -12,6 +12,16 @@ import unittest
 import common
 import shutil
 
+def has_duplicate_pid(f):
+    pids = []
+    for classdef in f.metadict['ClassDefinitions'].values():
+        for pdef in classdef['Properties'].values():
+            pid = pdef['LocalIdentification'].value
+            if pid in pids:
+                return True
+            pids.append(pid)
+    return False
+
 class ModelTests(unittest.TestCase):
 
     def test_no_root_class(self):
@@ -96,7 +106,42 @@ class ModelTests(unittest.TestCase):
 
         assert len(dynamic_pids) > 0
 
-    def test_add_extension_exiting(self):
+    def test_duplicate_pids(self):
+        result_file = common.get_test_file('duplicate_pids.aaf')
+        with aaf2.open(result_file, 'w', extensions=True) as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+    def test_duplicate_pids_add(self):
+        result_file = common.get_test_file('duplicate_pids_add.aaf')
+        with aaf2.open(result_file, 'w', extensions=False) as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+        with aaf2.open(result_file, 'r') as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+        with aaf2.open(result_file, 'rw', extensions=True) as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+        with aaf2.open(result_file, 'r') as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+    def test_duplicate_pids_existing(self):
+        result_file = common.get_test_file('duplicate_pids_existing.aaf')
+        shutil.copy(common.test_file_01(), result_file)
+
+        with aaf2.open(result_file, 'w', extensions=False) as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+        with aaf2.open(result_file, 'r') as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+        with aaf2.open(result_file, 'rw', extensions=True) as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+        with aaf2.open(result_file, 'r') as f:
+            self.assertFalse(has_duplicate_pid(f))
+
+    def test_add_extension_existing(self):
         test_file = common.get_test_file('extension_add_existing.aaf')
         shutil.copy(common.test_file_01(), test_file)
 
@@ -117,7 +162,7 @@ class ModelTests(unittest.TestCase):
         with aaf2.open(test_file, 'rw', extensions=True) as f:
             pass
 
-        all_pids = set()
+        all_pids = []
         with aaf2.open(test_file, 'r') as f:
             new_classdefs_count = len(f.metadict['ClassDefinitions'])
             new_typedef_count = len(f.metadict['TypeDefinitions'])
@@ -126,7 +171,7 @@ class ModelTests(unittest.TestCase):
                     pid = pdef['LocalIdentification'].value
                     # make sure there are no duplicate pids
                     self.assertTrue(pid not in all_pids)
-                    all_pids.add(pid)
+                    all_pids.append(pid)
 
         self.assertTrue(new_classdefs_count > original_classdefs_count)
         self.assertTrue(new_typedef_count > original_typedef_count)
