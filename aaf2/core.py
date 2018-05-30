@@ -290,11 +290,6 @@ class AAFObject(object):
         for propertydef in classdef.all_propertydefs():
             if propertydef.property_name == key:
                 fmt = propertydef.store_format
-
-                # OperationDef Parameters spec seems incorrect
-                if propertydef.uuid == UUID("06010104-060a-0000-060e-2b3401010102"):
-                    fmt = properties.SF_STRONG_OBJECT_REFERENCE_SET
-
                 p = property_formats[fmt](self, propertydef.pid, fmt)
                 return p
 
