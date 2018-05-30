@@ -209,6 +209,10 @@ class OperationGroup(Segment):
     def operation(self, value):
         self['Operation'].value = value
 
+    @property
+    def parameters(self):
+        return self['Parameters']
+
 class Event(Segment):
     class_id = UUID("0d010101-0101-0600-060e-2b3402060101")
     __slots__ = ()
