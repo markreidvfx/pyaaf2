@@ -97,3 +97,56 @@ class TaggedValue(core.AAFObject):
         s += " = " + str(self.value)
 
         return '<%s at 0x%x>' % (s, id(self))
+
+class Parameter(core.AAFObject):
+    class_id = UUID("0d010101-0101-3c00-060e-2b3402060101")
+    __slots__ = ()
+
+    @property
+    def uuid(self):
+        return self['Definition'].value
+    @uuid.setter
+    def uuid(self, value):
+        self['Definition'].value = value
+
+    @property
+    def parameterdef(self):
+        return self.root.dictionary.lookup_parameterdef(self['Definition'].value)
+
+    @parameterdef.setter
+    def parameterdef(self, value):
+        self['Definition'].value = value.uuid
+
+
+@register_class
+class ConstantValue(Parameter):
+    class_id = UUID("0d010101-0101-3d00-060e-2b3402060101")
+    __slots__ = ()
+    def __init__(self, parameterdef=None, value=None):
+        if parameterdef is not None:
+            self.parameterdef = parameterdef
+
+        if value is not None:
+            if parameterdef is None:
+                raise ValueError("need parameterdef to initialize value")
+            self.value = value
+
+    @property
+    def typedef(self):
+        return self.parameterdef.typedef
+
+    @property
+    def value(self):
+        return self['Value'].value
+
+    @value.setter
+    def value(self, value):
+        self['Value'].add_pid_entry()
+        self['Value'].data = self['Value'].typedef.encode(value, self.typedef)
+        self['Value'].mark_modified()
+
+
+@register_class
+class VaryingValue(Parameter):
+    class_id = UUID("0d010101-0101-3e00-060e-2b3402060101")
+    __slots__ = ()
