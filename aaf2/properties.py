@@ -1113,7 +1113,7 @@ class WeakRefArrayProperty(Property):
 
         if self.index_name is None:
             propdef = self.propertydef
-            self.index_name = mangle_name(propdef.property_name, self.pid, 32)
+            self.index_name = mangle_name(propdef.property_name, self.pid, 32-10)
             self.data = self.encode(self.index_name)
 
         if self.weakref_index is None:
