@@ -153,6 +153,11 @@ class ClassDef(core.AAFObject):
             if p.unique:
                 return p.pid
 
+        # Parameter work around
+        # Uses the DefinitionObject Identification PID
+        if self.isinstance(self.root.metadict.lookup_classdef(UUID("0d010101-0101-3c00-060e-2b3402060101"))):
+            return 0x1B01
+
     @property
     def unique_key_size(self):
         mob_classdef = self.root.metadict.lookup_classdef(UUID("0d010101-0101-3400-060e-2b3402060101"))

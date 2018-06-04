@@ -117,12 +117,31 @@ class Parameter(core.AAFObject):
     def parameterdef(self, value):
         self['Definition'].value = value.uuid
 
+    @property
+    def unique_property(self):
+        return self['Definition']
+
+    @property
+    def unique_key(self):
+        return self.unique_property.value
+
+    def __repr__(self):
+        s = "%s.%s" % (self.__class__.__module__,
+                                self.__class__.__name__)
+
+        parameterdef = self.parameterdef
+        if parameterdef:
+            s += ' %s' % parameterdef.name
+
+        return '<%s at 0x%x>' % (s, id(self))
 
 @register_class
 class ConstantValue(Parameter):
     class_id = UUID("0d010101-0101-3d00-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, parameterdef=None, value=None):
+        super(ConstantValue, self).__init__()
+
         if parameterdef is not None:
             self.parameterdef = parameterdef
 
@@ -142,9 +161,10 @@ class ConstantValue(Parameter):
     @value.setter
     def value(self, value):
         self['Value'].add_pid_entry()
-        self['Value'].data = self['Value'].typedef.encode(value, self.typedef)
+        indirect_typedef = self['Value'].typedef
+        parameter_typdef = self.typedef
+        self['Value'].data = indirect_typedef.encode(value, parameter_typdef)
         self['Value'].mark_modified()
-
 
 @register_class
 class VaryingValue(Parameter):

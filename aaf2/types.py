@@ -381,6 +381,10 @@ class TypeDefVarArray(TypeDef):
     def element_typedef(self):
         if PID_VAR_TYPE in self.property_entries:
             return self.root.metadict.lookup_typedef(self.property_entries[PID_VAR_TYPE].ref)
+    @property
+    def ref_classdef(self):
+        typedef = self.element_typedef
+        return typedef.ref_classdef
 
     def decode(self, data):
 
