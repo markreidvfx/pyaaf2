@@ -184,33 +184,6 @@ def cubic_bezier(p0, p1, p2, p3, t):
             t * t * t * p3
     return value
 
-def cubic_catmullrom(p0, p1, p2, p3, t):
-
-    tt = t * t
-    ttt = tt * t
-
-    q0 = -ttt + (2.0 * tt) - t
-    q1 = (3.0 * ttt) - (5.0 * tt) + 2.0
-    q2 = (-3.0 * ttt) + (4.0 * tt) + t
-    q3 = ttt - tt
-
-    value = (p0 * q0) + (p1 * q1) + (p2 * q2) + (p3 * q3)
-    value *= 0.5
-    return value
-
-def cubic_interp(p0, p1, m0, m1, t,):
-    t = float(t)
-    tt = t * t
-    ttt = tt * t
-
-    q0 = (2.0 * ttt) - (3.0 * tt) + 1
-    q1 = ttt - (2.0 * tt) + t
-    q2 = (-2.0 * ttt) + (3.0 * tt)
-    q3 = ttt - tt
-
-    value = (q0 * p0) + (q1 * m0) + (q2 * p1) + (q3 * m1)
-    return value
-
 def cubic_bezier_interpolate(p0, p1, p2, p3, t):
 
     t_len = p3[0] - p0[0]
@@ -241,108 +214,69 @@ def cubic_bezier_interpolate(p0, p1, p2, p3, t):
 
     return y
 
-def cubic_catmullrom_interpolate(p0, p1, p2, p3, t):
-    t_len = p2[0] - p1[0]
-    t_diff = t - p1[0]
-    t_mix = t_diff/t_len
+def sign_no_zero(v):
+    if 0 < v:
+        return -1
+    return 1
 
-    guess_t = t_mix
+def calculate_tanget(p0, p1, p2, in_tanget=False):
 
-    for i in range(20):
-        x = cubic_catmullrom(p0[0], p1[0], p2[0], p3[0], guess_t)
-        if x == t:
-            break
-        offset = x - t
-        guess_t -= offset/t_len
-        # print("  ", offset)
-    # print(p0, p1, p2, p3, t_mix)
-
-    y = cubic_catmullrom(p0[1], p1[1], p2[1], p3[1], guess_t)
-    # print(t, x, y)
-    return y
-
-def cubic_interpolate(p0, p1, p2, p3, t):
     # Note:
-    # This code is a lot of guess work
-    # not sure what Avid MC actually does
+    # This code was a lot of guess work
     # MC docs refer to spline as "Natural Spline" or "Cardinal Spline"
     # and AAF files export it with CubicInterpolator definition
-    # This is a hacked Cardinal spline that "looks" pretty close...
+    # MC has some wacky way of calculating the y coord of tangets
 
-    # Finite difference
-    # https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Finite_difference
+    # in_tanget <---- x ----> out_tanget
 
-    # m0x = (p2[0] - p1[0]) + (p1[0] - p0[0])
-    # m0y = (p2[1] - p1[1]) + (p1[1] - p0[1])
-    #
-    # m1x = (p3[0] - p2[0]) + (p2[0] - p1[0])
-    # m1y = (p3[1] - p2[1]) + (p2[1] - p1[1])
+    x = p1[0]
+    y = p1[1]
 
-    # Cardinal spline
-    # https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Cardinal_spline
+    px = p0[0]
+    nx = p2[0]
 
-    # m0x = (p2[0] - p0[0])
-    # m0y = (p2[1] - p0[1])
-    #
-    # m1x = (p3[0] - p2[0])
-    # m1y = (p3[1] - p2[1])
+    py = p0[1]
+    ny = p2[1]
 
-    # Note: the tangets are both really the same??
-    m0x = (p3[0] - p0[0])
-    m0y = (p3[1] - p0[1])
+    if in_tanget:
+        tan_x = 0.4 * (x - px)
+    else:
+        tan_x = 0.4 * (nx - x)
 
-    m1x = (p3[0] - p0[0])
-    m1y = (p3[1] - p0[1])
+    slope = (ny - py) / (nx - px)
+    prev_slope = (y - py) / (x - px)
+    next_slope = (ny - y) / (nx - x)
 
-    # tension control
-    c = 0.75
+    if sign_no_zero(prev_slope) != sign_no_zero(next_slope) or sign_no_zero(slope) != sign_no_zero(next_slope):
+        tan_y = 0
+    else:
+        height = abs(ny - py)
 
-    flatten = 0
-    # MC appears to flatten tangets if point is
-    # higher/lower the its neighbor points
-    if p1[1] >= p0[1] and p1[1] >= p2[1]:
-        m0y *= flatten
+        h1 = abs(ny - y)
+        h2 = abs(y - py)
 
-    if p1[1] <= p0[1] and p1[1] <= p2[1]:
-        m0y *= flatten
+        # took me ages to figure this out
+        scale = min(h1, h2) / height * 2.0
+        tan_y = scale * slope * tan_x
 
-    if p2[1] >= p3[1] and p2[1] >= p1[1]:
-        m1y *= flatten
+    if in_tanget:
+        tan_x *= -1.0
+        tan_y *= -1.0
 
-    if p2[1] <= p3[1] and p2[1] <= p1[1]:
-        m1y *= flatten
+    return (tan_x, tan_y)
 
-    m0x *= c * 0.5
-    m0y *= c * 0.5
+def cubic_interpolate(p0, p1, p2, p3, t):
 
-    m1x *= c * 0.5
-    m1y *= c * 0.5
+    tan_x0, tan_y0 = calculate_tanget(p0, p1, p2, False)
+    tan_x1, tan_y1 = calculate_tanget(p1, p2, p3, True)
 
-    t_len = p2[0] - p1[0]
-    t_diff = t - p1[0]
-    t_mix = t_diff/t_len
+    p0 = p1
+    p3 = p2
 
-    guess_t = t_mix
+    p1 = (p0[0] + tan_x0, p0[1] + tan_y0)
+    p2 = (p3[0] + tan_x1, p3[1] + tan_y1)
 
-    for i in range(20):
-        x =  cubic_interp(p1[0], p2[0], m0x, m1x, guess_t)
-        if x == t:
-            break
-        offset = x - t
-        guess_t -= offset/t_len
-
-        if guess_t < 0:
-            guess_t = 0
-        if guess_t > 1.0:
-            guess_t = 1.0
-
-    c = c
-
-    y = cubic_interp(p1[1], p2[1], m0y, m1y, guess_t)
-
-    # print(t, x, y, i, t_mix, guess_t)
-    return y
-
+    return cubic_bezier_interpolate(p0, p1, p2, p3, t)
 
 @register_class
 class VaryingValue(Parameter):
@@ -407,8 +341,8 @@ class VaryingValue(Parameter):
             t2 = float(bounds[1].time)
             v2 = float(bounds[1].value)
 
-            start = self.bounds(t1 - .0001)
-            end = self.bounds(t2 + .0001)
+            start = self.bounds(t1 - .001)
+            end = self.bounds(t2 + .001)
 
             # print('s', t, bounds[0].time, [float(item.time) for item in start])
             # print('e', t, bounds[1].time, [float(item.time) for item in end])
