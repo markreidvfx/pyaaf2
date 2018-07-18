@@ -290,40 +290,44 @@ class VaryingValue(Parameter):
     def value_at(self, t):
         t = float(t)
 
-        bounds = self.bounds(t)
-        if not bounds:
-            raise ValueError("No PointList property")
+        index = self.nearest_index(t)
+        pointlist = self['PointList']
 
-        if len(bounds) == 1:
-            return float(bounds[0].value)
+        p1 = pointlist[index]
+
+        # clamp if t outside of range
+        if t < p1.time or index + 1 >= len(pointlist):
+            return float(p1.value)
 
         #ConstantInterp
         if self.interpolation.uuid == UUID("5b6c85a5-0ede-11d3-80a9-006008143e6f"):
-            return float(bounds[0].value)
+            return float(p1.value)
 
-        t_len = float(bounds[1].time) - float(bounds[0].time)
-        t_diff = t - float(bounds[0].time)
-        t_mix = t_diff/t_len
+        p2 = pointlist[index+1]
 
         # LinearInterp
         if self.interpolation.uuid == UUID("5b6c85a4-0ede-11d3-80a9-006008143e6f"):
-            v0 = float(bounds[0].value)
-            v1 = float(bounds[1].value)
+            t_len = float(p2.time) - float(p1.time)
+            t_diff = t - float(p1.time)
+            t_mix = t_diff/t_len
+
+            v0 = float(p1.value)
+            v1 = float(p2.value)
             return lerp(v0, v1, t_mix)
 
         # BezierInterpolator
         elif self.interpolation.uuid  == UUID("df394eda-6ac6-4566-8dbe-f28b0bdd781a"):
-            t0 = float(bounds[0].time)
-            v0 = float(bounds[0].value)
+            t0 = float(p1.time)
+            v0 = float(p1.value)
 
-            t3 = float(bounds[1].time)
-            v3 = float(bounds[1].value)
+            t3 = float(p2.time)
+            v3 = float(p2.value)
 
-            tangets = bounds[0].tangets[1]
+            tangets = p1.tangets[1]
             t1 = t0 + tangets[0]
             v1 = v0 + tangets[1]
 
-            tangets = bounds[1].tangets[0]
+            tangets = p2.tangets[0]
             t2 = t3 + tangets[0]
             v2 = v3 + tangets[1]
 
@@ -335,65 +339,50 @@ class VaryingValue(Parameter):
         # CubicInterpolator
         elif self.interpolation.uuid  == UUID("a04a5439-8a0e-4cb7-975f-a5b255866883"):
 
-            t1 = float(bounds[0].time)
-            v1 = float(bounds[0].value)
+            t1 = float(p1.time)
+            v1 = float(p1.value)
 
-            t2 = float(bounds[1].time)
-            v2 = float(bounds[1].value)
+            t2 = float(p2.time)
+            v2 = float(p2.value)
 
-            start = self.bounds(t1 - .001)
-            end = self.bounds(t2 + .001)
-
-            # print('s', t, bounds[0].time, [float(item.time) for item in start])
-            # print('e', t, bounds[1].time, [float(item.time) for item in end])
-
-            if len(start) == 1:
+            if index - 1 >= 0:
+                p0 = pointlist[index - 1]
+                t0 = float(p0.time)
+                v0 = float(p0.value)
+            else:
                 t0 = t1 - ((t2 - t1) * 0.5)
                 v0 = v1
-            else:
-                t0 = float(start[0].time)
-                v0 = float(start[0].value)
 
-            if len(end) == 1:
+            if index + 2 < len(pointlist):
+                p3 = pointlist[index + 2]
+                t3 = float(p3.time)
+                v3 = float(p3.value)
+            else:
                 t3 = t2 + ((t2 - t1) * 0.5)
                 v3 = v2
-            else:
-                t3 = float(end[1].time)
-                v3 = float(end[1].value)
 
-            # return lerp(v1, v2, t_mix)
             return cubic_interpolate((t0, v0),
                                      (t1, v1),
                                      (t2, v2),
                                      (t3, v3), t)
-
 
         else:
 
             raise NotImplementedError("Interpolation not implemented for %s %s" %
                            (self.interpolation.name, str(self.interpolation.uuid)))
 
-
-    def bounds(self, t):
+    def nearest_index(self, t):
+        """
+        index of point.time <= t
+        """
         t = float(t)
-        min_point = None
-        max_point = None
-
-        for point in self['PointList']:
-
+        index = 0
+        for i, point in enumerate(self['PointList']):
             if point.time > t:
-                max_point = point
                 break
+            index = i
 
-            min_point = point
-
-        if min_point is None:
-            return [max_point]
-
-        if max_point is None:
-            return [min_point]
-
-        return [min_point, max_point]
+        return index
 
 @register_class
 class ControlPoint(core.AAFObject):
