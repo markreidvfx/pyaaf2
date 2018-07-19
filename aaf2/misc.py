@@ -376,13 +376,10 @@ class VaryingValue(Parameter):
         index of point.time <= t
         """
         t = float(t)
-        index = 0
         for i, point in enumerate(self['PointList']):
             if point.time > t:
-                break
-            index = i
-
-        return index
+                return max(0, i-1)
+        return i
 
 @register_class
 class ControlPoint(core.AAFObject):
