@@ -373,13 +373,23 @@ class VaryingValue(Parameter):
 
     def nearest_index(self, t):
         """
-        index of point.time <= t
+        binary search for index of point.time <= t
         """
-        t = float(t)
-        for i, point in enumerate(self['PointList']):
-            if point.time > t:
-                return max(0, i-1)
-        return i
+        pointlist = self['PointList']
+        start = 0
+        end = len(pointlist) - 1
+        while True:
+            if end < start:
+                return max(0, end)
+
+            m = (start + end) // 2
+            p = pointlist[m]
+            if p.time < t:
+                start = m + 1
+            elif p.time > t:
+                end = m - 1
+            else:
+                return m
 
 @register_class
 class ControlPoint(core.AAFObject):
