@@ -278,6 +278,75 @@ def cubic_interpolate(p0, p1, p2, p3, t):
 
     return cubic_bezier_interpolate(p0, p1, p2, p3, t)
 
+
+def mc_trapezoidal_integrate(f, a, b, n=5):
+    # this attempts to integrate a function the same way MC does.
+    # for most correct results abs(a-b) == 0.5 and n = 5
+
+    h = float(b - a) / n
+    pv = f(a-h)
+    result = 0
+    for i in range(n):
+        v =  f(a + (i * h))
+        result += (v + pv) * h * 0.5
+        pv = v
+    return result
+
+def integrate_iter(speed_map, start, end):
+    pos = 0
+    for i in range(start, end-1):
+        t = float(i)
+        pos += mc_trapezoidal_integrate(speed_map.value_at, t-0.5, t)
+        yield t, pos
+        t += 0.5
+        pos += mc_trapezoidal_integrate(speed_map.value_at, t-0.5, t)
+        yield t, pos
+
+    t += 0.5
+    pos += mc_trapezoidal_integrate(speed_map.value_at, t-0.5, t)
+    yield t, pos
+
+def generate_offset_map(speed_map, start=0, end=None):
+    pointlist = speed_map['PointList']
+
+    # first speed map key frame is the zero point
+    # of the offset map curve
+    first = pointlist.value[0]
+    center = int(first.time)
+    if end is None:
+        last = pointlist.value[-1]
+        end = int(last.time)
+
+    if start > end:
+        raise ValueError("start needs to be less then end")
+
+    time = []
+    value = []
+    offset_index = None
+
+    inter_start = min(start, center)
+    inter_end = max(center,  end+1)
+
+    for i, (t,v) in enumerate(integrate_iter(speed_map, inter_start, inter_end)):
+        time.append(t)
+        value.append(v)
+
+        if t == center:
+            offset_index = i
+
+    center_offset = value[offset_index]
+
+    result = []
+    for i, t in enumerate(time):
+        if t > end:
+            break
+
+        if t >= start:
+            v = value[i] - center_offset
+            result.append((t, v))
+
+    return result
+
 @register_class
 class VaryingValue(Parameter):
     class_id = UUID("0d010101-0101-3e00-060e-2b3402060101")
