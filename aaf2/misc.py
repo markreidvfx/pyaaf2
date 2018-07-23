@@ -12,6 +12,11 @@ import io
 from . import core
 from . utils import register_class
 
+ConstantInterp     = UUID("5b6c85a5-0ede-11d3-80a9-006008143e6f")
+LinearInterp       = UUID("5b6c85a4-0ede-11d3-80a9-006008143e6f")
+BezierInterpolator = UUID("df394eda-6ac6-4566-8dbe-f28b0bdd781a")
+CubicInterpolator  = UUID("a04a5439-8a0e-4cb7-975f-a5b255866883")
+
 class TaggedValueHelper(object):
     def __init__(self, poperty_vector):
         self.p = poperty_vector
@@ -336,6 +341,10 @@ def generate_offset_map(speed_map, start=0, end=None):
 
     center_offset = value[offset_index]
 
+    # not really sure what this base fream offset is about
+    # but appears to contain the how much calculation is off...
+    center_offset -= first.base_frame
+
     result = []
     for i, t in enumerate(time):
         if t > end:
@@ -368,14 +377,12 @@ class VaryingValue(Parameter):
         if t < p1.time or index + 1 >= len(pointlist):
             return float(p1.value)
 
-        #ConstantInterp
-        if self.interpolation.uuid == UUID("5b6c85a5-0ede-11d3-80a9-006008143e6f"):
+        if self.interpolation.uuid == ConstantInterp:
             return float(p1.value)
 
         p2 = pointlist[index+1]
 
-        # LinearInterp
-        if self.interpolation.uuid == UUID("5b6c85a4-0ede-11d3-80a9-006008143e6f"):
+        if self.interpolation.uuid == LinearInterp:
             t_len = float(p2.time) - float(p1.time)
             t_diff = t - float(p1.time)
             t_mix = t_diff/t_len
@@ -384,8 +391,7 @@ class VaryingValue(Parameter):
             v1 = float(p2.value)
             return lerp(v0, v1, t_mix)
 
-        # BezierInterpolator
-        elif self.interpolation.uuid  == UUID("df394eda-6ac6-4566-8dbe-f28b0bdd781a"):
+        elif self.interpolation.uuid  == BezierInterpolator:
             t0 = float(p1.time)
             v0 = float(p1.value)
 
@@ -405,8 +411,7 @@ class VaryingValue(Parameter):
                                             (t2, v2),
                                             (t3, v3), t)
 
-        # CubicInterpolator
-        elif self.interpolation.uuid  == UUID("a04a5439-8a0e-4cb7-975f-a5b255866883"):
+        elif self.interpolation.uuid  == CubicInterpolator:
 
             t1 = float(p1.time)
             v1 = float(p1.value)
@@ -474,12 +479,20 @@ class ControlPoint(core.AAFObject):
         return float(self['Value'].value)
 
     @property
-    def tangets(self):
+    def point_properties(self):
         props = {}
         if 'ControlPointPointProperties' in self:
             for p in self['ControlPointPointProperties'].value:
                 props[p.name] = p.value
+        return props
 
+    @property
+    def base_frame(self):
+        return self.point_properties.get("PP_BASE_FRAME_U", 0)
+
+    @property
+    def tangets(self):
+        props = self.point_properties
         return [(float(props.get("PP_IN_TANGENT_POS_U", 0)),
                  float(props.get("PP_IN_TANGENT_VAL_U", 0))),
                 (float(props.get("PP_OUT_TANGENT_POS_U", 0)),
