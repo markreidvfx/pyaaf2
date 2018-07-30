@@ -353,6 +353,7 @@ def create_aaf(path, media_streams, mobname, tape_name=None, start_timecode=None
                 import_video_essence(f, mastermob, stream, compmob, tapemob)
                 print "imported video in %f secs" % (time.time()- start)
 
+        for stream in media_streams:
             if stream['type'] == 'audio':
                 print "importing audio..."
                 start = time.time()
@@ -451,10 +452,10 @@ if __name__ == "__main__":
 
     aaf_file = args[0]
 
-    tempdir = os.path.join(os.getcwd(), 'samples', 'convert')
-    if not os.path.exists(tempdir):
-        os.makedirs(tempdir)
-    # tempdir = tempfile.mkdtemp("-aaf_import")
+    # tempdir = os.path.join(os.getcwd(), 'samples', 'convert')
+    # if not os.path.exists(tempdir):
+    #     os.makedirs(tempdir)
+    tempdir = tempfile.mkdtemp("-aaf_import")
     print tempdir
 
     media_streams = []
@@ -482,7 +483,7 @@ if __name__ == "__main__":
                                  )
     except:
         print traceback.format_exc()
-        # shutil.rmtree(tempdir)
+        shutil.rmtree(tempdir)
         parser.error("error conforming media")
 
     try:
@@ -493,4 +494,4 @@ if __name__ == "__main__":
         create_aaf(aaf_file, media_streams, name, options.tape_name, options.start_timecode)
     finally:
         pass
-        # shutil.rmtree(tempdir)
+        shutil.rmtree(tempdir)
