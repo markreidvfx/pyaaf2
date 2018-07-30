@@ -137,7 +137,8 @@ def conform_media(path,
                   height=None,
                   frame_rate=None,
                   video_profile_name=None,
-                  audio_profile_name=None):
+                  audio_profile_name=None,
+                  ignore_alpha=False):
 
     if not video_profile_name:
         video_profile_name = 'dnx_1080p_36_23.97'
@@ -206,7 +207,7 @@ def conform_media(path,
             # pprint(stream)
             alpha = has_alpha(stream)
             passes = 1
-            if alpha:
+            if alpha and not ignore_alpha:
                 passes = 2
             for i in range(passes):
                 if i == 1:
@@ -367,7 +368,7 @@ def import_video_essence(f, mastermob, stream, compmob=None, tapemob=None):
         op_group.segments.append(mastermob.create_source_clip(alpha_slot.slot_id, length=length))
 
 
-def create_aaf(path, media_streams, mobname, tape_name=None):
+def create_aaf(path, media_streams, mobname, tape_name=None, start_timecode=None):
 
     with aaf2.open(path, 'w') as f:
 
@@ -396,7 +397,6 @@ def create_aaf(path, media_streams, mobname, tape_name=None):
 
         tapemob = None
         timecode_fps=  int(round(float(edit_rate)))
-        start_time = timecode_fps * 60 * 60
 
         if tape_name:
             tapemob = f.create.SourceMob()
@@ -437,7 +437,13 @@ if __name__ == "__main__":
                       help = "record duration in timecode or seconds")
 
     parser.add_option('--tape',  type="string", dest="tape_name",default=None,
-                      help = "Tape Name")
+                      help = "tape name")
+
+    parser.add_option('--start_timecode',  type="string", dest="start_timecode", default=None,
+                      help = "start timecode [default 01:00:00:00]")
+
+    parser.add_option('--ignore_alpha', action='store_true', dest="ignore_alpha", default=False,
+                      help = "ignore alpha channel if present")
 
     parser.add_option("-v", '--video-profile', type='string', dest = 'video_profile', default="dnx_1080p_36_23.97",
                       help = "encoding profile for video [default: 1080p_36_23.97]")
@@ -525,7 +531,8 @@ if __name__ == "__main__":
                                  height=height,
                                  frame_rate=options.framerate,
                                  video_profile_name = options.video_profile.lower(),
-                                 audio_profile_name = options.audio_profile.lower())
+                                 audio_profile_name = options.audio_profile.lower(),
+                                 ignore_alpha = options.ignore_alpha)
                                  )
     except:
         print traceback.format_exc()
@@ -537,7 +544,7 @@ if __name__ == "__main__":
         name,ext = os.path.splitext(basename)
         if details['format']['format_name'] == 'image2':
             name, padding = os.path.splitext(name)
-        create_aaf(aaf_file, media_streams, name, options.tape_name)
+        create_aaf(aaf_file, media_streams, name, options.tape_name, options.start_timecode)
     finally:
         pass
         # shutil.rmtree(tempdir)
