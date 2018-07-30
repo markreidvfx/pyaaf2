@@ -206,8 +206,11 @@ class ImportTests(unittest.TestCase):
 
                 tape = tape_mob.create_source_clip(1, start=start_time)
 
-                vs_mob = mob.import_dnxhd_essence(sample, frame_rate, tape=tape)
-                as_mob = mob.import_audio_essence(audio_sample, frame_rate)
+                vs_slot = mob.import_dnxhd_essence(sample, frame_rate, tape=tape)
+                as_slot = mob.import_audio_essence(audio_sample, frame_rate)
+
+                vs_mob = vs_slot.segment.mob
+                as_mob = as_slot.segment.mob
 
                 mob.comments['profile'] = profile_name
                 mob.comments['integer'] = 100

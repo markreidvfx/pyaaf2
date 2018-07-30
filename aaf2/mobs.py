@@ -159,7 +159,7 @@ class MasterMob(Mob):
 
         # set clip length
         slot.segment.length = source_slot.segment.length
-        return source_mob
+        return slot
 
     def import_audio_essence(self, path, edit_rate=None, tape=None):
         """
@@ -179,7 +179,7 @@ class MasterMob(Mob):
 
         # set clip length
         slot.segment.length = source_slot.segment.length
-        return source_mob
+        return slot
 
 @register_class
 class SourceMob(Mob):
