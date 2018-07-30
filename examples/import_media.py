@@ -16,60 +16,12 @@ from pprint import pprint
 
 FFMPEG_EXEC = "ffmpeg"
 FFPROBE_EXEC = "ffprobe"
+
+Audio_Profiles = aaf2.audio.pcm_profiles
+Video_Profiles = aaf2.video.dnx_profiles
+
 # FFMPEG_EXEC = "/Users/mark/Dev/ffmpeg/ffmpeg_g"
 # FFPROBE_EXEC = "/Users/mark/Dev/ffmpeg/ffprobe_g"
-
-Audio_Profiles = {
-'pcm_32000':{'sample_fmt':'s16le','sample_rate':32000},
-'pcm_44100':{'sample_fmt':'s16le','sample_rate':44100},
-'pcm_48000':{'sample_fmt': 's16le','sample_rate':48000}
-}
-
-Video_Profiles ={
-'dnx_1080p_175x_23.97': { "size":"1920x1080p", "bitrate":175, "pix_fmt":"yuv422p10", "frame_rate":"24000/1001", "codec": "dnxhd"},
-'dnx_1080p_365x_50'   : { "size":"1920x1080p", "bitrate":185, "pix_fmt":"yuv422p10", "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_1080p_365x_60'   : { "size":"1920x1080p", "bitrate":365, "pix_fmt":"yuv422p10", "frame_rate":"50/1",       "codec": "dnxhd"},
-'dnx_1080p_440x_23.97': { "size":"1920x1080p", "bitrate":440, "pix_fmt":"yuv422p10", "frame_rate":"60000/1001", "codec": "dnxhd"},
-'dnx_1080p_115_23.97' : { "size":"1920x1080p", "bitrate":115, "pix_fmt":"yuv422p",   "frame_rate":"24000/1001", "codec": "dnxhd"},
-'dnx_1080p_120_25'    : { "size":"1920x1080p", "bitrate":120, "pix_fmt":"yuv422p",   "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_1080p_145_29.97' : { "size":"1920x1080p", "bitrate":145, "pix_fmt":"yuv422p",   "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_1080p_240_50'    : { "size":"1920x1080p", "bitrate":240, "pix_fmt":"yuv422p",   "frame_rate":"50/1",       "codec": "dnxhd"},
-'dnx_1080p_290_59.94' : { "size":"1920x1080p", "bitrate":290, "pix_fmt":"yuv422p",   "frame_rate":"60000/1001", "codec": "dnxhd"},
-'dnx_1080p_175_23.97' : { "size":"1920x1080p", "bitrate":175, "pix_fmt":"yuv422p",   "frame_rate":"24000/1001", "codec": "dnxhd"},
-'dnx_1080p_185_25'    : { "size":"1920x1080p", "bitrate":185, "pix_fmt":"yuv422p",   "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_1080p_220_29.97' : { "size":"1920x1080p", "bitrate":220, "pix_fmt":"yuv422p",   "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_1080p_365_50'    : { "size":"1920x1080p", "bitrate":365, "pix_fmt":"yuv422p",   "frame_rate":"50/1",       "codec": "dnxhd"},
-'dnx_1080p_440_59.94' : { "size":"1920x1080p", "bitrate":440, "pix_fmt":"yuv422p",   "frame_rate":"60000/1001", "codec": "dnxhd"},
-'dnx_1080i_185x_25'   : { "size":"1920x1080i", "bitrate":185, "pix_fmt":"yuv422p10", "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_1080i_220x_29.97': { "size":"1920x1080i", "bitrate":220, "pix_fmt":"yuv422p10", "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_1080i_120_25'    : { "size":"1920x1080i", "bitrate":120, "pix_fmt":"yuv422p",   "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_1080i_145_29.97' : { "size":"1920x1080i", "bitrate":145, "pix_fmt":"yuv422p",   "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_1080i_185_25'    : { "size":"1920x1080i", "bitrate":185, "pix_fmt":"yuv422p",   "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_1080i_220_29.97' : { "size":"1920x1080i", "bitrate":220, "pix_fmt":"yuv422p",   "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_720p_90x_23.97'  : { "size":"1280x720p",  "bitrate":90,  "pix_fmt":"yuv422p10", "frame_rate":"24000/1001", "codec": "dnxhd"},
-'dnx_720p_90x_25'     : { "size":"1280x720p",  "bitrate":90,  "pix_fmt":"yuv422p10", "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_720p_180x_50'    : { "size":"1280x720p",  "bitrate":180, "pix_fmt":"yuv422p10", "frame_rate":"50/1",       "codec": "dnxhd"},
-'dnx_720p_220x_59.94' : { "size":"1280x720p",  "bitrate":220, "pix_fmt":"yuv422p10", "frame_rate":"60000/1001", "codec": "dnxhd"},
-'dnx_720p_90_23.97'   : { "size":"1280x720p",  "bitrate":90,  "pix_fmt":"yuv422p",   "frame_rate":"24000/1001", "codec": "dnxhd"},
-'dnx_720p_90_25'      : { "size":"1280x720p",  "bitrate":90,  "pix_fmt":"yuv422p",   "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_720p_110_29.97'  : { "size":"1280x720p",  "bitrate":110, "pix_fmt":"yuv422p",   "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_720p_180_50'     : { "size":"1280x720p",  "bitrate":180, "pix_fmt":"yuv422p",   "frame_rate":"50/1",       "codec": "dnxhd"},
-'dnx_720p_220_59.94'  : { "size":"1280x720p",  "bitrate":220, "pix_fmt":"yuv422p",   "frame_rate":"60000/1001", "codec": "dnxhd"},
-'dnx_720p_60_23.97'   : { "size":"1280x720p",  "bitrate":60,  "pix_fmt":"yuv422p",   "frame_rate":"24000/1001", "codec": "dnxhd"},
-'dnx_720p_60_25'      : { "size":"1280x720p",  "bitrate":60,  "pix_fmt":"yuv422p",   "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_720p_75_29.97'   : { "size":"1280x720p",  "bitrate":75,  "pix_fmt":"yuv422p",   "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_720p_120_50'     : { "size":"1280x720p",  "bitrate":120, "pix_fmt":"yuv422p",   "frame_rate":"50/1",       "codec": "dnxhd"},
-'dnx_720p_145_59.94'  : { "size":"1280x720p",  "bitrate":145, "pix_fmt":"yuv422p",   "frame_rate":"60000/1001", "codec": "dnxhd"},
-'dnx_1080p_36_23.97'  : { "size":"1920x1080p", "bitrate":36,  "pix_fmt":"yuv422p",   "frame_rate":"24000/1001", "codec": "dnxhd"},
-'dnx_1080p_36_25'     : { "size":"1920x1080p", "bitrate":36,  "pix_fmt":"yuv422p",   "frame_rate":"25/1",       "codec": "dnxhd"},
-'dnx_1080p_45_29.97'  : { "size":"1920x1080p", "bitrate":45,  "pix_fmt":"yuv422p",   "frame_rate":"30000/1001", "codec": "dnxhd"},
-'dnx_1080p_75_50'     : { "size":"1920x1080p", "bitrate":75,  "pix_fmt":"yuv422p",   "frame_rate":"50/1",       "codec": "dnxhd"},
-'dnx_1080p_90_59.94'  : { "size":"1920x1080p", "bitrate":90,  "pix_fmt":"yuv422p",   "frame_rate":"60000/1001", "codec": "dnxhd"},
-'dnxhr_lb'            : { "size": None,        "bitrate":None,"pix_fmt":"yuv422p",   "frame_rate":None,         "codec": "dnxhd", "profile": "dnxhr_lb"},
-'dnxhr_sq'            : { "size": None,        "bitrate":None,"pix_fmt":"yuv422p",   "frame_rate":None,         "codec": "dnxhd", "profile": "dnxhr_sq"},
-'dnxhr_hq'            : { "size": None,        "bitrate":None,"pix_fmt":"yuv422p",   "frame_rate":None,         "codec": "dnxhd", "profile": "dnxhr_hq"},
-}
-
 
 def probe(path, show_packets=False):
 
@@ -85,9 +37,7 @@ def probe(path, show_packets=False):
     if p.returncode != 0:
         raise subprocess.CalledProcessError(p.returncode, subprocess.list2cmdline(cmd), stderr)
 
-
     return json.loads(stdout)
-
 
 def timecode_to_seconds(time_string):
     try:
@@ -143,9 +93,7 @@ def conform_media(path,
     if not video_profile_name:
         video_profile_name = 'dnx_1080p_36_23.97'
     if not audio_profile_name:
-        audio_profile_name = 'pcm_48000'
-    # if not frame_rate:
-    #     frame_rate = "24000/1001"
+        audio_profile_name = 'pcm_48000_s16le'
 
     video_profile = Video_Profiles[video_profile_name]
     audio_profile = Audio_Profiles[audio_profile_name]
@@ -175,25 +123,20 @@ def conform_media(path,
     frame_rate = video_profile['frame_rate']
     pix_fmt = video_profile['pix_fmt']
     bitrate = video_profile['bitrate']
-    dnxhd_profile = video_profile.get("profile", None)
+    dnxhd_profile = video_profile.get("video_profile", None)
 
     if format['format']['format_name'] == "image2":
         frame_rate = frame_rate or "24000/1001"
         cmd.extend([ '-framerate', frame_rate])
 
     cmd.extend(['-i', path,])
-
-    interlaced = False
     if video_profile['size']:
-        width, height = video_profile['size'].split('x')
-        width = int(width)
-        if height[-1] == 'i':
-            interlaced = True
+        width, height = video_profile['size']
+    else:
+        width = None
+        height = None
 
-        if not height[-1].isdigit():
-            height = int(height[:-1])
-        else:
-            height = int(height)
+    interlaced = video_profile['interlaced']
 
     #sample_rate =44100
     sample_rate = audio_profile['sample_rate']
@@ -270,8 +213,8 @@ def conform_media(path,
                     out_rate = frame_rate or str(stream['avg_frame_rate'])
                     out_file = os.path.join(output_dir, 'out_%d.dnxhd' % (stream_index))
                     out_meta = {'path':out_file, 'frame_rate':out_rate, 'type': 'video', 'profile':video_profile_name}
-                    out_meta['width'] = width
-                    out_meta['height'] = height
+                    out_meta['width'] = out_width
+                    out_meta['height'] = out_height
 
                 cmd.extend([out_file])
 
@@ -447,7 +390,7 @@ if __name__ == "__main__":
 
     parser.add_option("-v", '--video-profile', type='string', dest = 'video_profile', default="dnx_1080p_36_23.97",
                       help = "encoding profile for video [default: 1080p_36_23.97]")
-    parser.add_option("-a", '--audio-profile', type='string', dest = 'audio_profile',default='pcm_48000',
+    parser.add_option("-a", '--audio-profile', type='string', dest = 'audio_profile',default='pcm_48000_s16le',
                       help = 'encoding profile for audio [default: pcm_48000]')
 
     parser.add_option("--size", type='string', dest='size', default=None,
@@ -472,7 +415,7 @@ if __name__ == "__main__":
         print ""
 
         for key,value in sorted(Audio_Profiles.items()):
-            print row_format.format(key, value['sample_rate'], value['sample_fmt'])
+            print row_format.format(key, value['sample_rate'], value['sample_format'])
 
         titles = ['Video Profile', "Size", 'Frame Rate', "Bitrate", "Pix Fmt", "Codec"]
         row_format ="{:<25}{:<15}{:<15}{:<10}{:<12}{:<10}"
@@ -480,8 +423,11 @@ if __name__ == "__main__":
         print row_format.format( *titles)
         print ""
         for key, value in sorted(Video_Profiles.items()):
+            codec = 'dnxhd'
+            if key.startswith("dnxhr"):
+                codec = 'dnxhr'
             print row_format.format(key, value['size'],
-                                    value['frame_rate'], value['bitrate'], value['pix_fmt'], value['codec'])
+                                    value['frame_rate'], value['bitrate'], value['pix_fmt'], codec)
 
         sys.exit()
 
