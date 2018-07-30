@@ -224,6 +224,60 @@ class SourceMob(Mob):
 
         return slot, timecode_slot
 
+    def import_rawvideo_essence(self, path, edit_rate, width, height, pixel_layout, tape=None):
+        essencedata, slot = self.create_essence(edit_rate, 'picture')
+
+        if tape:
+            slot.segment = tape
+
+        # create essence descriptor
+        descriptor = self.root.create.RGBADescriptor()
+        self.descriptor = descriptor
+
+        alignment = 8192
+
+        # set minimal properties
+        descriptor['SampleRate'].value = edit_rate
+        descriptor['VideoLineMap'].value = [42, 0] # Not exactly sure what linemap is
+        descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
+
+        descriptor['StoredWidth'].value = width
+        descriptor['StoredHeight'].value = height
+        descriptor['ImageAlignmentFactor'].value = alignment
+        descriptor['PixelLayout'].value = pixel_layout
+        descriptor['FrameLayout'].value = "FullFrame"
+        descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
+
+        raw_frame_size_bits = 0
+        for layout in pixel_layout:
+            raw_frame_size_bits += layout.get('Size', 0) * width * height
+
+        raw_frame_size = (raw_frame_size_bits + 7) // 8
+        frame_size = (raw_frame_size + (alignment-1)) // alignment * alignment
+
+        descriptor['FrameSampleSize'].value = frame_size
+
+        # open essence stream
+        stream = essencedata.open('w')
+        length = 0
+        alignment_padding = bytearray(frame_size - raw_frame_size)
+
+        with io.open(path, 'rb') as f:
+            while True:
+                data = f.read(raw_frame_size)
+                if not data:
+                    break
+                stream.write(data)
+                if alignment_padding:
+                    stream.write(alignment_padding)
+                length += 1
+
+        descriptor['Length'].value = length
+        descriptor['ImageSize'].value = length * frame_size
+        slot.segment.length = length
+
+        return slot
+
     def import_dnxhd_essence(self, path, edit_rate, tape=None):
         """
         Import video essence from raw DNxHD/DNxHR stream
