@@ -280,8 +280,10 @@ def import_video_essence(f, mastermob, stream, compmob=None, tapemob=None):
 
         source_mob = f.create.SourceMob()
         f.content.mobs.append(source_mob)
+        if tapemob:
+            tape = tapemob.create_source_clip(1, start=start_time)
 
-        source_slot = source_mob.import_rawvideo_essence(alpha_path, edit_rate, width, height, pixel_layout)
+        source_slot = source_mob.import_rawvideo_essence(alpha_path, edit_rate, width, height, pixel_layout, tape=tape)
         length = source_slot.segment.length
         essence_group = f.create.EssenceGroup()
         alpha_slot = mastermob.create_picture_slot(edit_rate)
@@ -310,7 +312,6 @@ def import_video_essence(f, mastermob, stream, compmob=None, tapemob=None):
         op_group.segments.append(mastermob.create_source_clip(color_slot.slot_id, length=length))
         op_group.segments.append(mastermob.create_source_clip(alpha_slot.slot_id, length=length))
 
-
 def create_aaf(path, media_streams, mobname, tape_name=None, start_timecode=None):
 
     with aaf2.open(path, 'w') as f:
@@ -335,6 +336,7 @@ def create_aaf(path, media_streams, mobname, tape_name=None, start_timecode=None
 
                 # this hides the mastermob in avid bin
                 mastermob['AppCode'].value = 1
+                mastermob.usage = "Usage_LowerLevel"
 
                 break
 
