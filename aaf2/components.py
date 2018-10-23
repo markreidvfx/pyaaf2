@@ -63,6 +63,10 @@ class NestedScope(Segment):
     class_id = UUID("0d010101-0101-0b00-060e-2b3402060101")
     __slots__ = ()
 
+    @property
+    def slots(self):
+        return self['Slots']
+
 class SourceReference(Segment):
     class_id = UUID("0d010101-0101-1000-060e-2b3402060101")
     __slots__ = ()
