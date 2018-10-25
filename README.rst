@@ -1,4 +1,4 @@
-|python-versions| |travis-build| |appveyor-build| |docs|
+|python-versions| |travis-build| |appveyor-build| |docs| |donate|
 
 PyAAF 2.0
 =========
@@ -49,3 +49,7 @@ Have fun, `Read the Docs <http://pyaaf.readthedocs.io/>`_ and good luck!
 .. |docs| image:: https://readthedocs.org/projects/pyaaf/badge/?version=latest
     :alt: Documentation Status
     :target: http://pyaaf.readthedocs.io/en/latest/?badge=latest
+
+   |donate| image:: https://liberapay.com/assets/widgets/donate.svg
+     :alt: Donate
+     :target: https://liberapay.com/markreidvfx/donate
