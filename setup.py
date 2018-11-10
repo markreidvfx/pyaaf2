@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='pyaaf2',
-    version='2.0.0.dev1',
+    version='2.0.0.dev2',
     description='Read and Write Advanced Authoring Format Files',
     author='Mark Reid',
     author_email='mindmark@gmail.com',
