@@ -1,16 +1,23 @@
 language: python
 python:
-    - "2.7"
-    - "3.5"
-    - "3.6"
-    - "pypy"
-    - "pypy3"
+  - "2.7"
+  - "3.5"
+  - "3.6"
+  - "pypy"
+  - "pypy3"
 before_install:
-    - sudo add-apt-repository -y ppa:mc3man/trusty-media
-    - sudo apt-get update -qq
-    - sudo apt-get install ffmpeg
+  - sudo add-apt-repository -y ppa:mc3man/trusty-media
+  - sudo apt-get update -qq
+  - sudo apt-get install ffmpeg
 install:
-    - pip install coverage
+  - pip install coverage
 script:
-    - make test
-    - make coverage
+  - make test
+  - make coverage
+deploy:
+  provider: pypi
+  on:
+    tags: true
+  user: mindmark
+  password:
+    secure: o7SNiuDFAn/7j1mDxwePvty8IYs7SAlpTb7aHYH2ICYPiXP7gyTZdsTsIL2xcuWldicIMnkTJcsJUSGu9/8u3m/VdSE84OWPq9ChsJnl4G9dbgdg9U37gJN+3ITNx/U0hxi/keqbT3aU7UdelluPWuAQQD1WBJZ6aU0xz9sAbY/zg+gsPRD8Bgx9tdW/uAqM9Hs2bfJ/uwYbKsGEndQUjofhc9nJi+8rnvtI+NoOkUn9R8C2sTsdV3Ypzh36hW3KnTcbf9eKNp7ODEKW9R1szL2J83aAp/4s59Dchf+Mu56IL03Yam0S/wtcZm2+C6y+mmJTjnLJi+jcdZa2SvCRTZYGiwirMBRTo6iH940eD3Srnj+S333ARwcnlouXAmwZK9dhyj4MS+c8e1Njsm0ohjfA2EyQU0GCOkNscAF2maWggWhrN3PEpdoN3v7E4swHtZDoFyzVv6uf9rbL0zNh70NzdoFc7AuN779oYgPwfzuIeZ9QxdnfuL2E7AasOGQJ5Ee0fCcQDi6Hg83mTxKXmYfVYEUyHDBv1v+rN13ZgZLdC0E5lCwIG90cDpXcXeVXgF9Qo3eP3zW1UMjvFsOL53Tmr4t2Mtp2NtDqEzicqYCxuW4D5o6T9YJzaQNxAr9x1iycQKX08LXo2W7Llm7VROyBHD5C8hi5yCiZ7El2EFE=
