@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=source
 set BUILDDIR=build
-set SPHINXPROJ=PyAAF
+set SPHINXPROJ=pyaaf2
 
 if "%1" == "" goto help
 
