@@ -4,8 +4,8 @@ from setuptools import setup
 
 setup(
     name='pyaaf2',
-    version='1.0.0-dev4',
-    description='Read and Write Advanced Authoring Format Files',
+    version='1.0.0-dev5',
+    description='A python module for reading and writing advanced authoring format files',
     author='Mark Reid',
     author_email='mindmark@gmail.com',
     url='https://github.com/markreidvfx/pyaaf2',
