@@ -1,11 +1,9 @@
 |python-versions| |travis-build| |appveyor-build| |docs|
 
-PyAAF 2.0
-=========
+pyaaf2
+======
 
-A rewrite of `pyaaf <https://github.com/markreidvfx/pyaaf>`_ in pure python.
-Still a work in progress, but getting pretty close to being feature complete
-with pyaaf.
+A python module for reading and writing advanced authoring format files. pyaaf2 rewrite of `pyaaf1 <https://github.com/markreidvfx/pyaaf>`_ in pure python.
 
 Features
 --------
@@ -15,12 +13,30 @@ Features
 - Embedding DNxHD/DNxHR/WAV media
 - Low level read/write Compound File Binary access
 - Lazy file reading
-- Zero dependencies
+- Zero dependencies, does not use AAF SDK
 
 Requirements
 ------------
 
 - Python >= 2.7
+
+Installation
+------------
+
+You can install pyaaf2 via::
+
+    pip install pyaaf2
+
+or if you want to use the latest development git master::
+
+    git clone https://github.com/markreidvfx/pyaaf2
+    cd pyaaf2
+    python setup.py install
+
+Documentation
+-------------
+
+Documentation is available on `Read the Docs. <http://pyaaf.readthedocs.io/>`_
 
 TODO
 ----
@@ -28,13 +44,12 @@ TODO
 - More docs
 - More tests
 - More helper classes
-- Port pyaaf1 examples
+- Port more pyaaf1 examples
 - MXF linking improvements
 - AMA linking improvements
 - CFB stream shrinking
 - CFB red black tree
-
-Have fun, `Read the Docs <http://pyaaf.readthedocs.io/>`_ and good luck!
+- XML support
 
 .. |python-versions| image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6-blue.svg
 
