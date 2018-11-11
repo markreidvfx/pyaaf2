@@ -38,6 +38,7 @@ nosetests.xml
 tests/results
 *~
 docs/_*
+docs/source/api/*
 
 # Mac
 .DS_Store

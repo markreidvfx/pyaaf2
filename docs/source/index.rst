@@ -79,25 +79,10 @@ API Reference
 =============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 5
    :caption: Contents:
 
-   api/aaf
-   api/core
-   api/content
-   api/mobs
-   api/mobslots
-   api/mobid
-   api/components
-   api/essence
-   api/misc
-   api/dictionary
-   api/metadict
-   api/types
-
-   api/cfb
-
-
+   api/aaf2
 
 
 Indices and tables

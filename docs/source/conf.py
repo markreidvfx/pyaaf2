@@ -68,7 +68,7 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = []
+exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -171,3 +171,32 @@ intersphinx_mapping = {'http://docs.python.org/': None}
 
 autodoc_member_order = 'bysource'
 autodoc_default_flags = ['show-inheritance']
+
+def run_apidoc(_):
+    """This method is required by the setup method below."""
+    import os
+    dirname = os.path.dirname(__file__)
+    ignore_paths = [os.path.join(dirname, '../../aaf2/model'),]
+    # https://github.com/sphinx-doc/sphinx/blob/master/sphinx/ext/apidoc.py
+    argv = [
+        '--force',
+        '--no-toc',
+        '--separate',
+        '--module-first',
+        '--output-dir',
+        os.path.join(dirname, 'api'),
+        os.path.join(dirname, '../../aaf2'),
+     ] + ignore_paths
+
+    from sphinx.ext import apidoc
+    apidoc.main(argv)
+
+
+def setup(app):
+    """This method is a hook into the Sphinx builder system and injects the
+    apidoc module into it so it runs autodoc before running build.
+
+    If you mess with this, you may not see any effect in a local build, this
+    was added to get api documentation building on the ReadTheDocs server.
+    """
+    app.connect('builder-inited', run_apidoc)
