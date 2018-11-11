@@ -49,6 +49,13 @@ project = u'pyaaf2'
 copyright = u'2017, Mark Reid'
 author = u'Mark Reid'
 
+RELEASE = '1.0.0'
+import aaf2
+try:
+    RELEASE = aaf2.__version__
+except:
+    pass
+
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.

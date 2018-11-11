@@ -1,13 +1,47 @@
 import sys
-
+import os
 from setuptools import setup
+import setuptools.command.build_py
+
+PROJECT_METADATA = {
+    "version": "1.0.0.dev5",
+    "author": 'Mark Reid',
+    "author_email": 'mindmark@gmail.com',
+    "license": 'MIT',
+}
+
+METADATA_TEMPLATE = """
+__version__ = "{version}"
+__author__ = "{author}"
+__author_email__ = "{author_email}"
+__license__ = "{license}"
+"""
+
+
+class AddMetadata(setuptools.command.build_py.build_py):
+    """Stamps PROJECT_METADATA into __init__ files."""
+
+    def run(self):
+        setuptools.command.build_py.build_py.run(self)
+
+        if self.dry_run:
+            return
+
+        target_file = os.path.join(self.build_lib, 'aaf2', "__init__.py")
+        source_file = os.path.join(os.path.dirname(__file__), 'aaf2', "__init__.py")
+
+        # get the base data from the original file
+        with open(source_file, 'r') as fi:
+            src_data = fi.read()
+
+        # write that + the suffix to the target file
+        with open(target_file, 'w') as fo:
+            fo.write(src_data)
+            fo.write(METADATA_TEMPLATE.format(**PROJECT_METADATA))
 
 setup(
     name='pyaaf2',
-    version='1.0.0-dev5',
     description='A python module for reading and writing advanced authoring format files',
-    author='Mark Reid',
-    author_email='mindmark@gmail.com',
     url='https://github.com/markreidvfx/pyaaf2',
     project_urls={
         'Source':
@@ -43,4 +77,8 @@ setup(
         'aaf2.model',
         'aaf2.model.ext',
     ],
+
+    cmdclass={'build_py': AddMetadata},
+
+    **PROJECT_METADATA
 )
