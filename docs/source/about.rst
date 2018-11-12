@@ -1,14 +1,14 @@
 About the AAF File Format
 =========================
 
-AAF is a file format use for professional multimedia creation and authoring.
+AAF is a file format used for professional multimedia creation and authoring.
 The file specification is managed by the `Advanced Media Workflow Association
 (AMWA) <https://www.amwa.tv/>`_.
 
 AAF uses a object-oriented data model. The data model has a single inheritance
 class hierarchy and classes have properties that store metadata.  Classes, properties,
-and types uses 16-byte unique identifiers, known as Authoring Unique Identifiers (AUID).
-AAF and MXF are closely related, the AAF data model is the basis for the MXF data model.
+and types each have unique ids, known as a Authoring Unique Identifier (AUID).
+AAF and MXF are closely related, The AAF data model is the basis for the MXF data model.
 
 The Compound File Binary Format (CFBF) is what AAF uses for binary storage.  CFBF,
 also called Structured Storage or Object Linking and Embedding (OLE), is a file format developed
