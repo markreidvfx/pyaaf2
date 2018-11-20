@@ -50,6 +50,11 @@ class Segment(Component):
     __slots__ = ()
 
 @register_class
+class Transition(Component):
+    class_id = UUID("0d010101-0101-1700-060e-2b3402060101")
+    __slots__ = ()
+
+@register_class
 class Sequence(Segment):
     class_id = UUID("0d010101-0101-0f00-060e-2b3402060101")
     __slots__ = ()
