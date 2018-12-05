@@ -146,15 +146,19 @@ class SourceClip(SourceReference):
                 yield item
 
         elif isinstance(segment, Sequence):
-            clip = segment.component_at_time(self.start)
-            if isinstance(clip, SourceClip):
-                yield clip
-                for item in clip.walk():
-                    yield item
+            try:
+                clip = segment.component_at_time(self.start)
+            except AttributeError as e:
+                print(e)
             else:
-                raise NotImplementedError("Sequence returned {} not "
-                                          "implemented".format(
-                                              str(type(segment))))
+                if isinstance(clip, SourceClip):
+                    yield clip
+                    for item in clip.walk():
+                        yield item
+                else:
+                    raise NotImplementedError("Sequence returned {} not "
+                                              "implemented".format(
+                                                  type(segment)))
 
         elif isinstance(segment, EssenceGroup):
             yield segment
@@ -163,7 +167,7 @@ class SourceClip(SourceReference):
             yield segment
         else:
             raise NotImplementedError("Walking {} not implemented".format(
-                                      str(type(segment))))
+                                      type(segment)))
 
 @register_class
 class Filler(Segment):

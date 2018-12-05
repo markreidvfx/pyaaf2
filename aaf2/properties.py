@@ -787,9 +787,9 @@ class StrongRefSetProperty(Property):
         return len(self.references)
 
     def get_object(self, key):
-        obj = [p for p in [self.read_object(i) for i in self.references.keys()]
-               if p.name == key]
-        return obj[0] if obj else None
+        for obj in self.value:
+            if obj.name == key:
+                return obj
 
     def get(self, key, default=None):
         if key not in self:
