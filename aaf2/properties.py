@@ -793,7 +793,7 @@ class StrongRefSetProperty(Property):
 
     def get(self, key, default=None):
         if key not in self:
-            return self.get_object(key) or default
+            return default or self.get_object(key)
         return self.read_object(key)
 
     def __getitem__(self, key):
