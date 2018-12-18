@@ -134,6 +134,41 @@ class SourceClip(SourceReference):
     def start(self, value):
         self['StartTime'].value = value
 
+    def walk(self):
+        if not self.slot:
+            return
+
+        segment = self.slot.segment
+
+        if isinstance(segment, SourceClip):
+            yield segment
+            for item in segment.walk():
+                yield item
+
+        elif isinstance(segment, Sequence):
+            try:
+                clip = segment.component_at_time(self.start)
+            except AttributeError as e:
+                print(e)
+            else:
+                if isinstance(clip, SourceClip):
+                    yield clip
+                    for item in clip.walk():
+                        yield item
+                else:
+                    raise NotImplementedError("Sequence returned {} not "
+                                              "implemented".format(
+                                                  type(segment)))
+
+        elif isinstance(segment, EssenceGroup):
+            yield segment
+
+        elif isinstance(segment, Filler):
+            yield segment
+        else:
+            raise NotImplementedError("Walking {} not implemented".format(
+                                      type(segment)))
+
 @register_class
 class Filler(Segment):
     class_id = UUID("0d010101-0101-0900-060e-2b3402060101")

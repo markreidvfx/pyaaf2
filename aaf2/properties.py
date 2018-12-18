@@ -772,7 +772,6 @@ class StrongRefSetProperty(Property):
         return key in self.references
 
     def items(self):
-
         for key in self.references:
             obj = self.read_object(key)
             yield (key, obj)
@@ -787,9 +786,14 @@ class StrongRefSetProperty(Property):
     def __len__(self):
         return len(self.references)
 
+    def get_object(self, key):
+        for obj in self.value:
+            if obj.name == key:
+                return obj
+
     def get(self, key, default=None):
         if key not in self:
-            return default
+            return default or self.get_object(key)
         return self.read_object(key)
 
     def __getitem__(self, key):
