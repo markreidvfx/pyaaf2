@@ -17,16 +17,17 @@ def short_name(name):
     return name
 
 def lookup_def(dictionary, name, instance_type, key):
+    if isinstance(name, UUID):
+        return dictionary[key].get(name, None)
+
     if isinstance(name, instance_type):
         return name
-    if not isinstance(name, UUID):
-        name = short_name(name).lower()
+
+    name = short_name(name).lower()
 
     for key, value in dictionary[key].items():
         value_name = value.short_name or ''
         if name == value_name.lower():
-            return value
-        if name == key:
             return value
 
     raise Exception("No Definition: %s" % str(name))
