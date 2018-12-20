@@ -8,6 +8,7 @@ from __future__ import (
 
 from io import BytesIO
 import weakref
+import struct
 
 from .utils import (
     read_u8,
@@ -21,6 +22,8 @@ from uuid import UUID
 from .exceptions import AAFPropertyError, AAFAttachError
 from . import properties
 from .properties import property_formats
+
+P_HEADER_STRUCT = struct.Struct(str('<BBH'))
 
 class AAFObject(object):
     __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
@@ -68,24 +71,24 @@ class AAFObject(object):
             return
 
         s = stream.open()
+
         # read the whole stream
         f = BytesIO(s.read())
 
-        byte_order = read_u8(f)
+        (byte_order, version, entry_count) = P_HEADER_STRUCT.unpack(f.read(4))
+
         if byte_order != 0x4c:
             raise NotImplementedError("be byteorder")
-        version = read_u8(f)
-        entry_count = read_u16le(f)
 
-        props = []
+        props_fmt = str('<%dH'  % (3 * entry_count))
+        props = struct.unpack(props_fmt, f.read(6 * entry_count))
+
         for i in range(entry_count):
-            pid = read_u16le(f)
-            format = read_u16le(f)
-            byte_size = read_u16le(f)
+            index = i * 3
+            pid = props[index + 0]
+            format = props[index + 1]
+            byte_size = props[index + 2]
 
-            props.append([pid, format, byte_size])
-
-        for pid, format, byte_size in props:
             data = f.read(byte_size)
             p = property_formats[format](self, pid, format, version)
             p.data = data
