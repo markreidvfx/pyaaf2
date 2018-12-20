@@ -568,7 +568,7 @@ class DirEntry(object):
         return self.name
 
 class CompoundFileBinary(object):
-    def __init__(self, file_object, mode='rb', sector_size=4096, use_mmap=True):
+    def __init__(self, file_object, mode='rb', sector_size=4096, use_mmap=False):
 
         self.f = file_object
         self.file_object = self.f
