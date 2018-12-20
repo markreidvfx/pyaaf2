@@ -575,7 +575,7 @@ class CompoundFileBinary(object):
         self.mm = None
 
         if use_mmap and mode == 'rb' and hasattr(file_object, 'fileno'):
-            self.mm = mmap.mmap(file_object.fileno(), 0, prot=mmap.PROT_READ)
+            self.mm = mmap.mmap(file_object.fileno(), 0, access=mmap.ACCESS_READ)
             self.f = self.mm
 
         self.difat = [[]]
