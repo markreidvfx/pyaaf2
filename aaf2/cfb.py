@@ -14,6 +14,7 @@ import math
 import weakref
 from array import array
 from struct import Struct
+import mmap
 
 from .utils import (
     read_u8, read_u16le,
@@ -567,9 +568,15 @@ class DirEntry(object):
         return self.name
 
 class CompoundFileBinary(object):
-    def __init__(self, file_object, mode='rb', sector_size=4096):
+    def __init__(self, file_object, mode='rb', sector_size=4096, use_mmap=True):
 
         self.f = file_object
+        self.file_object = self.f
+        self.mm = None
+
+        if use_mmap and mode == 'rb' and hasattr(file_object, 'fileno'):
+            self.mm = mmap.mmap(file_object.fileno(), 0, prot=mmap.PROT_READ)
+            self.f = self.mm
 
         self.difat = [[]]
         self.fat = array(str('I'))
@@ -639,7 +646,8 @@ class CompoundFileBinary(object):
         self.write_minifat()
         self.write_dir_entries()
         self.is_open = False
-
+        if self.mm:
+            self.mm.close()
 
     def setup_empty(self, sector_size):
 
