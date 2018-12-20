@@ -23,8 +23,8 @@ def lookup_def(dictionary, name, instance_type, key):
         name = short_name(name).lower()
 
     for key, value in dictionary[key].items():
-
-        if name == value.short_name.lower():
+        value_name = value.short_name or ''
+        if name == value_name.lower():
             return value
         if name == key:
             return value
