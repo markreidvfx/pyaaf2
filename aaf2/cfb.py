@@ -328,7 +328,7 @@ class DirEntry(object):
             self.child_id = entry.dir_id
 
         if self.dir_id in self.storage.children_cache:
-            self.storage.children_cache[self.dir_id].append(entry)
+            self.storage.children_cache[self.dir_id][entry.name] = entry
 
     def pop(self):
         """
@@ -371,11 +371,11 @@ class DirEntry(object):
 
         # clear from cache
         if parent.dir_id in self.storage.children_cache:
-            self.storage.children_cache[parent.dir_id].remove(entry)
+            del self.storage.children_cache[parent.dir_id][entry.name]
             if left:
-                self.storage.children_cache[parent.dir_id].remove(left)
+                del self.storage.children_cache[parent.dir_id][left.name]
             if right:
-                self.storage.children_cache[parent.dir_id].remove(right)
+                del self.storage.children_cache[parent.dir_id][right.name]
 
         if left is not None:
             parent.add_child(left)
@@ -1384,6 +1384,15 @@ class CompoundFileBinary(object):
         given by path.
         """
 
+        result = self.listdir_dict(path)
+        return result.values()
+
+    def listdir_dict(self, path = None):
+        """
+        Return a dict containing the ``DirEntry`` objects in the directory
+        given by path with name of the dir as key.
+        """
+
         if path is None:
             path = self.root
 
@@ -1399,7 +1408,7 @@ class CompoundFileBinary(object):
 
         child = root.child()
 
-        result = []
+        result = {}
         if not child:
             self.children_cache[root.dir_id] = result
             return result
@@ -1424,7 +1433,7 @@ class CompoundFileBinary(object):
                 break
 
             current = stack.pop()
-            result.append(current)
+            result[current.name] = current
             current = current.right()
 
         self.children_cache[root.dir_id] = result
@@ -1449,14 +1458,12 @@ class CompoundFileBinary(object):
 
         while True:
 
-            match = None
-            for item in self.listdir(root):
-                if item.name == split_path[i]:
-                    match = item
-                    break
+            children = self.listdir_dict(root)
+            match = children.get(split_path[i], None)
+
             if match:
                 if i == len(split_path) - 1:
-                    return item
+                    return match
                 root = match
                 i += 1
             else:
@@ -1581,7 +1588,7 @@ class CompoundFileBinary(object):
         src_entry.name = dst_basename
         dst_entry.add_child(src_entry)
 
-        self.children_cache[dst_entry.dir_id].append(src_entry)
+        self.children_cache[dst_entry.dir_id][src_entry.name] = src_entry
 
         return src_entry
 

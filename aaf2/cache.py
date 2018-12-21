@@ -17,7 +17,7 @@ class LRUNode(object):
 
 class LRUCacheDict(object):
 
-    def __init__(self, size=128):
+    def __init__(self, size=512):
         self.data = {}
 
         # create circlular double link list
