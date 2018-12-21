@@ -47,11 +47,14 @@ def read_s64be(f):
 def write_u64le(f, value):
     return f.write(pack(b"<Q", value))
 
-def read_sid(f):
-    sid = read_u32le(f)
+def decode_sid(sid):
     if sid in (0xFFFFFFFF,):
         return None
     return sid
+
+def read_sid(f):
+    sid = read_u32le(f)
+    return decode_sid(sid)
 
 def write_sid(f, value):
     if value is None:

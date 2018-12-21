@@ -24,6 +24,7 @@ from .utils import (
     write_u32le, write_u64le,
     write_filetime, write_sid, write_uuid,
     decode_utf16le,
+    decode_sid,
 )
 from .exceptions import CompoundFileBinaryError
 from .cache import LRUCacheDict
@@ -52,6 +53,22 @@ fat_sector_types = {DIFSECT    : "DIFSECT",
                     FATSECT    : "FATSECT",
                     ENDOFCHAIN : "ENDOFCHAIN",
                     FREESECT   : "FREESECT"}
+
+DIR_STRUCT = Struct(str(''.join(( '<',
+    '64s', # name
+    'H',   # name_size
+    'B',   # dir_type
+    'B',   # color
+    'I',   # left_id
+    'I',   # right_id
+    'I',   # child_id
+    '16s', # class_id
+    'I',   # flags
+    'Q',   # create_time
+    'Q',   # modify_time
+    'I',   # sector_id
+    'Q',   # byte_size
+))))
 
 def pretty_sectors(fat):
     return [fat_sector_types.get(item, item) for item in fat]
@@ -538,31 +555,36 @@ class DirEntry(object):
         d = self.__dict__
         f = self.storage.f
         f.seek(self.storage.dir_entry_pos(self.dir_id))
-        f = BytesIO(f.read(128))
 
-        name_data = f.read(64)
-        name_size = read_u16le(f)
+        (name_data,
+         name_size,
+         dir_type,
+         color,
+         left_id,
+         right_id,
+         child_id,
+         class_id,
+         d['flags'],
+         d['create_time'],
+         d['modify_time'],
+         sector_id,
+         d['byte_size'] ) = DIR_STRUCT.unpack(f.read(128))
+
         d['name']  = decode_utf16le(name_data[:name_size])
 
-        dir_type = read_u8(f)
-        color = read_u8(f)
         if color == 0x01:
             d['color'] = 'black'
         else:
             d['color'] = 'red'
 
         d['type'] = dir_types.get(dir_type , "unknown")
-        d['left_id'] = read_sid(f)
-        d['right_id'] = read_sid(f)
-        d['child_id'] = read_sid(f)
+        d['left_id'] = decode_sid(left_id)
+        d['right_id'] = decode_sid(right_id)
+        d['child_id'] = decode_sid(child_id)
 
-        d['class_id'] = read_uuid(f)
-        d['flags'] = read_u32le(f)
-        d['create_time'] = read_filetime(f)
-        d['modify_time'] = read_filetime(f)
+        d['class_id'] = uuid.UUID(bytes_le=class_id)
+        d['sector_id'] = decode_sid(sector_id)
 
-        d['sector_id'] = read_sid(f)
-        d['byte_size'] = read_u64le(f)
 
     def __repr__(self):
         return self.name
