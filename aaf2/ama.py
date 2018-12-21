@@ -171,6 +171,8 @@ def guess_edit_rate(metadata):
         codec_type = st['codec_type']
         if codec_type == 'video':
             return AAFRational(st['avg_frame_rate'])
+        elif codec_type == 'audio':
+            return AAFRational(f"{st['sample_rate']}/1")
 
 def guess_length(metadata, edit_rate):
     for st in metadata['streams']:
