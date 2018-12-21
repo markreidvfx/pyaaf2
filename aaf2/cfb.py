@@ -490,10 +490,8 @@ class DirEntry(object):
         return self.type == 'stream'
 
     def get(self, name, default=None):
-        for item in self.listdir():
-            if item.name == name:
-                return item
-        return default
+        dir_dict = self.storage.listdir_dict(self)
+        return dir_dict.get(name, default)
 
     def touch(self, name):
         item = self.get(name, None)
