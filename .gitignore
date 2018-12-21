@@ -42,3 +42,6 @@ docs/source/api/*
 
 # Mac
 .DS_Store
+
+# vim
+*.swp
