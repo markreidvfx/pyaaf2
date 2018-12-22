@@ -151,7 +151,7 @@ class Stream(object):
             seek_pos = ((sid + 1) *  sector_size) + offset
             return seek_pos
 
-    def read1(self, n=-1):
+    def readinto1(self, buf, n=-1):
         if n == -1:
             n = max(0, self.dir.byte_size - self.tell())
         else:
@@ -167,9 +167,10 @@ class Stream(object):
         f = self.storage.f
         pos = self.abs_pos()
         f.seek(pos)
-        result = f.read(n)
+        bytes_read = f.readinto(buf[:n])
+        assert bytes_read == n
         self.pos += n
-        return result
+        return n
 
     def read(self, n=-1):
         if n == -1:
@@ -178,16 +179,16 @@ class Stream(object):
             n = max(0, min(n, self.dir.byte_size - self.tell()))
 
         result = bytearray(n)
+        mv = memoryview(result)
         i = 0
         while i < n:
-            buf = self.read1(n - i)
-            if not buf:
+            bytes_read = self.readinto1(mv[i:], n - i)
+            if bytes_read <= 0:
                 logging.warn('file appears to be truncated')
                 break
-            result[i:i + len(buf)] = buf
-            i += len(buf)
+            i += bytes_read
 
-        return bytes(result)
+        return result
 
     def write1(self, data):
         sector_size = self.sector_size()
