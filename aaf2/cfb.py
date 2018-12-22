@@ -279,11 +279,9 @@ class DirEntry(object):
         d['dir_id'] = dir_id
         d['parent'] = None
 
-    def __setattr__(self, name, value):
-        super(DirEntry, self).__setattr__(name, value)
-        if name in ('parent',):
-            return
+        d['data'] = bytearray(128)
 
+    def mark_modified(self):
         if self.storage.mode in ('r', 'rb'):
             return
 
@@ -293,6 +291,13 @@ class DirEntry(object):
         self.storage.modified[self.dir_id] = self
         if len(self.storage.modified) > 128:
             self.storage.write_modified_dir_entries()
+
+    def __setattr__(self, name, value):
+        super(DirEntry, self).__setattr__(name, value)
+        if name in ('parent',):
+            return
+
+        self.mark_modified()
 
     def __lt__(self, other):
         if isinstance(other, DirEntry):
