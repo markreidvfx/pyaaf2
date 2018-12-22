@@ -162,7 +162,7 @@ class Stream(object):
 
         n = min(n, sector_size - sector_offset)
         if n == 0:
-            return b''
+            return 0
 
         f = self.storage.f
         pos = self.abs_pos()
