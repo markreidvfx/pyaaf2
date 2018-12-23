@@ -161,12 +161,10 @@ def create_audio_descriptor(f, meta):
     return d
 
 
-def create_network_locator(f, path):
+def create_network_locator(f, absolute_path):
     n = f.create.NetworkLocator()
-    n['URLString'].value = pathlib.Path(path).as_uri()
+    n['URLString'].value = pathlib.Path(absolute_path).as_uri()
     return n
-
-
 
 def guess_edit_rate(metadata):
 
@@ -198,7 +196,7 @@ def create_ama_link(f, path, metadata):
     tape_length = 4142016
     basename = os.path.basename(path)
     name, ext = os.path.splitext(basename)
-
+    path = os.path.abspath(path)
 
     if ext.lower() == '.mxf':
 
