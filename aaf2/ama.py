@@ -323,10 +323,10 @@ def create_ama_link(f, path, metadata):
 
 
 def wave_infochunk(path):
-"""
-Returns a bytearray of the WAVE RIFF header and fmt 
-chunk for a `WAVEDescriptor` `Summary`
-"""
+    """
+    Returns a bytearray of the WAVE RIFF header and fmt 
+    chunk for a `WAVEDescriptor` `Summary`
+    """
     with open(path,'rb') as file:
         if file.read(4) != b"RIFF":
             return None
@@ -365,16 +365,16 @@ def create_wav_descriptor(f, source_mob, path, stream_meta):
 
 def create_wav_link(f, metadata):
     """
-This will return three MOBs for the given `metadata`: master_mob, source_mob, 
-tape_mob
+    This will return three MOBs for the given `metadata`: master_mob, source_mob, 
+    tape_mob
 
-The parameter `metadata` is presumed to be a dictionary from a run of ffprobe.
+    The parameter `metadata` is presumed to be a dictionary from a run of ffprobe.
 
-It's not clear for the purposes of Pro Tools that a tape_mob needs to be made, 
-it'll open the AAF perfectly well without out one.
+    It's not clear for the purposes of Pro Tools that a tape_mob needs to be made, 
+    it'll open the AAF perfectly well without out one.
 
-A lot of this recaps the AMA link code but it's subtly different enough, but it 
-could all bear to be refactored.
+    A lot of this recaps the AMA link code but it's subtly different enough, but it 
+    could all bear to be refactored.
     """
     path       = metadata['format']['filename']
     master_mob = f.create.MasterMob()
