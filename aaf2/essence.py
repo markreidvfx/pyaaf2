@@ -93,6 +93,12 @@ class SoundDescriptor(FileDescriptor):
     __slots__ = ()
 
 @register_class
+class WAVEDescriptor(FileDescriptor):
+    # from ... https://github.com/ebu/ebu-libmxf/blob/master/tools/MXFDump/AAFMetaDictionary.h
+    class_id = UUID("0D010101-0101-2C00-060E-2B3402060101")
+    __slots__ = ()
+
+@register_class
 class DataEssenceDescriptor(FileDescriptor):
     class_id = UUID("0d010101-0101-4300-060e-2b3402060101")
     __slots__ = ()
