@@ -181,7 +181,8 @@ def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_form
         return Exception("error encoding footage")
     return outfile
 
-def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2):
+def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2,  sample_format='s16le', fmt='s16le'):
+    # this default value for `fmt` looks like a mistake but we preserve it here
 
     outfile = os.path.join(sample_dir(), '%s.pcm' % name)
 
@@ -190,7 +191,7 @@ def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2):
     #mono
     #cmd = ['ffmpeg','-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)::s=48000:d=10']
 
-    cmd.extend([ '-f','s16le', '-acodec', 'pcm_s16le'])
+    cmd.extend([ '-f',fmt, '-acodec', sample_format])
 
     cmd.extend([outfile])
 
