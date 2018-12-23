@@ -6,9 +6,11 @@ from __future__ import (
     division,
     )
 
+import sys
 from io import BytesIO
 import weakref
 import struct
+import array
 
 from .utils import (
     read_u8,
@@ -80,8 +82,14 @@ class AAFObject(object):
         if byte_order != 0x4c:
             raise NotImplementedError("be byteorder")
 
-        props_fmt = str('<%dH'  % (3 * entry_count))
-        props = struct.unpack(props_fmt, f.read(6 * entry_count))
+        props = array.array(str('H'))
+        if hasattr(props, 'frombytes'):
+            props.frombytes(f.read(6 * entry_count))
+        else:
+            props.fromstring(f.read(6 * entry_count))
+
+        if sys.byteorder == 'big':
+            props.byteswap()
 
         for i in range(entry_count):
             index = i * 3

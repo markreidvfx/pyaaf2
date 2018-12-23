@@ -7,6 +7,7 @@ from __future__ import (
 
 import logging
 
+import sys
 import os
 import uuid
 import io
@@ -150,7 +151,7 @@ class Stream(object):
             seek_pos = ((sid + 1) *  sector_size) + offset
             return seek_pos
 
-    def read1(self, n=-1):
+    def readinto1(self, buf, n=-1):
         if n == -1:
             n = max(0, self.dir.byte_size - self.tell())
         else:
@@ -161,14 +162,15 @@ class Stream(object):
 
         n = min(n, sector_size - sector_offset)
         if n == 0:
-            return b''
+            return 0
 
         f = self.storage.f
         pos = self.abs_pos()
         f.seek(pos)
-        result = f.read(n)
+        bytes_read = f.readinto(buf[:n])
+        assert bytes_read == n
         self.pos += n
-        return result
+        return n
 
     def read(self, n=-1):
         if n == -1:
@@ -177,16 +179,16 @@ class Stream(object):
             n = max(0, min(n, self.dir.byte_size - self.tell()))
 
         result = bytearray(n)
+        mv = memoryview(result)
         i = 0
         while i < n:
-            buf = self.read1(n - i)
-            if not buf:
+            bytes_read = self.readinto1(mv[i:], n - i)
+            if bytes_read <= 0:
                 logging.warn('file appears to be truncated')
                 break
-            result[i:i + len(buf)] = buf
-            i += len(buf)
+            i += bytes_read
 
-        return bytes(result)
+        return result
 
     def write1(self, data):
         sector_size = self.sector_size()
@@ -587,6 +589,16 @@ class DirEntry(object):
     def __repr__(self):
         return self.name
 
+def extend_sid_table(f, table, byte_size):
+    n = byte_size // 4
+    if isinstance(f, io.RawIOBase):
+        table.fromfile(f, n)
+    elif hasattr(table, 'frombytes'):
+        table.frombytes(f.read(byte_size))
+    else:
+        # try deprecated from string
+        table.fromstring(f.read(byte_size))
+
 class CompoundFileBinary(object):
     def __init__(self, file_object, mode='rb', sector_size=4096, use_mmap=False):
 
@@ -919,13 +931,14 @@ class CompoundFileBinary(object):
             logging.warn("fat sector count missmatch difat: %d header: %d" % (len(fat_sectors), self.fat_sector_count))
             self.fat_sector_count = len(fat_sectors)
 
-        st = Struct(b'<%dI' % (self.sector_size // 4))
         for sid in fat_sectors:
-
             pos = (sid + 1) *  self.sector_size
             f.seek(pos)
-            self.fat.extend(st.unpack(f.read(self.sector_size)))
+            extend_sid_table(f, self.fat, self.sector_size)
             sector_count += 1
+
+        if sys.byteorder == 'big':
+            self.fat.byteswap()
 
         for i,v in enumerate(self.fat):
             if v == FREESECT:
@@ -970,13 +983,17 @@ class CompoundFileBinary(object):
     def read_minifat(self):
         f = self.f
         sector_count = 0
-        st = Struct(b'<%dI' % (self.sector_size // 4))
+        self.minifat = array(str('I'))
+
         for sid in self.get_fat_chain(self.minifat_sector_start):
             self.minifat_chain.append(sid)
-
             f.seek((sid + 1) *  self.sector_size)
+            extend_sid_table(f, self.minifat, self.sector_size)
             sector_count += 1
-            self.minifat.extend(st.unpack(f.read(self.sector_size)))
+
+        if sys.byteorder == 'big':
+             self.minifat.byteswap()
+
         for i,v in enumerate(self.minifat):
             if v == FREESECT:
                 self.minifat_freelist.append(i)

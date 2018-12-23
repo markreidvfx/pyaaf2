@@ -10,6 +10,7 @@ import uuid
 from uuid import UUID
 from io import BytesIO
 import weakref
+import struct
 from .utils import (
     read_u8,
     read_u16le,
@@ -457,9 +458,8 @@ class StrongRefVectorProperty(Property):
         self.next_free_key = read_u32le(f)
         self.last_free_key = read_u32le(f)
 
-        for i in range(count):
-            local_key = read_u32le(f)
-            self.references.append(local_key)
+        pack_fmt = str("<%dI" % count)
+        self.references = list(struct.unpack(pack_fmt, f.read(4 * count)))
 
     @writeonly
     def write_index(self):
@@ -719,18 +719,29 @@ class StrongRefSetProperty(Property):
         self.key_size = read_u8(f)
         assert self.key_size in (16, 32)
 
+        fmt = ''.join((
+            'I', # local_key
+            'I', # ref_count
+            '%ds' % self.key_size))
+
+        index_fmt  = struct.Struct(str('<' + fmt * count))
+        index_data = index_fmt.unpack(f.read())
+
         for i in range(count):
-            local_key = read_u32le(f)
-            ref_count = read_u32le(f)
+            index = i * 3
+
+            local_key = index_data[index + 0]
+            ref_count = index_data[index + 1]
+            key       = index_data[index + 2]
 
             # not sure if ref count is actually used
             # doesn't apear to be
             assert ref_count == 1
 
             if self.key_size == 16:
-                key = UUID(bytes_le=f.read(self.key_size))
+                key = UUID(bytes_le=key)
             else:
-                key = MobID(bytes_le=f.read(self.key_size))
+                key = MobID(bytes_le=key)
 
             self.references[key] = local_key
 
