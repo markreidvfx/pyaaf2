@@ -20,11 +20,11 @@ class WAVETests(unittest.TestCase):
         test_outfile = os.path.join(common.sandbox(), 'wav_link.aaf')
 
         test_link_targets = [
-            generate_pcm_audio_mono('testmono', sample_rate=48000, duration=10,
+            common.generate_pcm_audio_mono('testmono', sample_rate=48000, duration=10,
                 sample_format='s16le', fmt='wav'),
-            generate_pcm_audio_mono('testmono24', sample_rate=48000, duration=10,
+            common.generate_pcm_audio_mono('testmono24', sample_rate=48000, duration=10,
                 sample_format='s24le', fmt='wav'),
-            generate_pcm_audio_stereo('testmono', sample_rate=48000, duration=10,
+            common.generate_pcm_audio_stereo('testmono', sample_rate=48000, duration=10,
                 sample_format='s24le', fmt='wav')
                 ]
 
