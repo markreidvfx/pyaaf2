@@ -7,12 +7,11 @@ from __future__ import (
 
 from uuid import UUID
 import os
+import sys
 from .rational import AAFRational
 from . import video
 from . import audio
 from . import mxf
-
-import pathlib
 
 MediaContainerGUID = {
 "Generic"        : (UUID("b22697a2-3442-44e8-bb8f-7a1cd290ebf1"),
@@ -163,7 +162,13 @@ def create_audio_descriptor(f, meta):
 
 def create_network_locator(f, absolute_path):
     n = f.create.NetworkLocator()
-    n['URLString'].value = pathlib.Path(absolute_path).as_uri()
+    if sys.version_info[0] < 3:
+        import pathlib   
+        n['URLString'].value = pathlib.Path(absolute_path).as_uri()
+    else:
+        import urllib
+        n['URLString'].value = 'file://' + urllib.pathname2url(absolute_path)
+    
     return n
 
 def guess_edit_rate(metadata):
