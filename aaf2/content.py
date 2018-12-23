@@ -12,6 +12,7 @@ from .utils import register_class
 from . import mobs
 from . import mxf
 from . import ama
+from . import audio
 
 @register_class
 class Header(core.AAFObject):
@@ -73,6 +74,9 @@ class ContentStorage(core.AAFObject):
         if m.operation_pattern != "OPAtom":
             raise Exception("can only link OPAtom mxf files")
         return m.link(self.root)
+
+    def link_external_wav(self, metadata):
+        return audio.create_wav_link(self.root, metadata)
 
     def create_ama_link(self, path, metadata):
         return ama.create_ama_link(self.root, path, metadata)
