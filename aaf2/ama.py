@@ -163,8 +163,9 @@ def create_audio_descriptor(f, meta):
 
 def create_network_locator(f, path):
     n = f.create.NetworkLocator()
-    n['URLString'].value = path
+    n['URLString'].value = pathlib.Path(path).as_uri()
     return n
+
 
 
 def guess_edit_rate(metadata):
@@ -195,7 +196,6 @@ def get_container_guid(metadata):
 def create_ama_link(f, path, metadata):
 
     tape_length = 4142016
-    prefix ="file://"
     basename = os.path.basename(path)
     name, ext = os.path.splitext(basename)
 
@@ -207,7 +207,6 @@ def create_ama_link(f, path, metadata):
         m.dump()
         return m.link(f)
 
-    path = prefix + path
     edit_rate = guess_edit_rate(metadata)
     length = guess_length(metadata, edit_rate)
     container_guid, formats = get_container_guid(metadata)
@@ -347,11 +346,6 @@ def wave_infochunk(path):
                 file.seek(size,1)
             else:
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
-
-def create_network_locator(f, path):
-    n = f.create.NetworkLocator()
-    n['URLString'].value = pathlib.Path(path).as_uri()
-    return n
 
 def create_wav_descriptor(f, source_mob, path, stream_meta):
     d = f.create.WAVEDescriptor()
