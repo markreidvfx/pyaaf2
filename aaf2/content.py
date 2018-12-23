@@ -76,7 +76,7 @@ class ContentStorage(core.AAFObject):
         return m.link(self.root)
 
     def link_external_wav(self, metadata):
-        return audio.create_wav_link(self.root, metadata)
+        return ama.create_wav_link(self.root, metadata)
 
     def create_ama_link(self, path, metadata):
         return ama.create_ama_link(self.root, path, metadata)
