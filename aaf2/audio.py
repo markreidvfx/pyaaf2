@@ -124,7 +124,6 @@ could all bear to be refactored.
     source_mob.descriptor = descriptor
         
     for channel_index in range(metadata['streams'][0]['channels']):
-        print(f"Adding source channel {channel_index}")
         tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
         tape_slot.segment.length = length
         nul_ref = f.create.SourceClip(media_kind='sound')
