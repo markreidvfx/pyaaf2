@@ -407,7 +407,7 @@ def create_wav_link(f, metadata):
     t.segment.length = int(length)
     t.segment.components.append(tc)
     
-    descriptor = create_wav_descriptor(aaf, source_mob, path, metadata['streams'][0]) 
+    descriptor = create_wav_descriptor(f, source_mob, path, metadata['streams'][0]) 
     source_mob.descriptor = descriptor
         
     for channel_index in range(metadata['streams'][0]['channels']):
