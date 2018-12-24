@@ -99,7 +99,7 @@ def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwri
     sample_rate= 48000
     cmd = [FFMPEG_EXEC, '-y',]
     cmd.extend(['-i', video_file])
-    cmd.extend(['-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t):cos(430*2*PI*t)::s=%d' % (sample_rate, )])
+    cmd.extend(['-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)|cos(430*2*PI*t):s=%d' % (sample_rate, )])
 
     cmd.extend(['-c:a', 'aac'])
     cmd.extend(['-c:v', 'copy'])
