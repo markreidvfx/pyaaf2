@@ -163,11 +163,11 @@ def create_audio_descriptor(f, meta):
 def create_network_locator(f, absolute_path):
     n = f.create.NetworkLocator()
     if sys.version_info[0] < 3:
-        import pathlib   
-        n['URLString'].value = pathlib.Path(absolute_path).as_uri()
-    else:
         import urllib
         n['URLString'].value = 'file://' + urllib.pathname2url(absolute_path)
+    else:
+        import pathlib   
+        n['URLString'].value = pathlib.Path(absolute_path).as_uri()
     
     return n
 
