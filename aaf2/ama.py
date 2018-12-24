@@ -13,6 +13,8 @@ from . import video
 from . import audio
 from . import mxf
 
+import struct
+
 MediaContainerGUID = {
 "Generic"        : (UUID("b22697a2-3442-44e8-bb8f-7a1cd290ebf1"),
     ('.3g2',   '.3gp',  '.aac', '.au',  '.avi', '.bmp', '.dv', '.gif',
