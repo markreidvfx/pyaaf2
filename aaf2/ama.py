@@ -390,7 +390,7 @@ def create_wav_link(f, metadata):
     f.content.mobs.append(source_mob)
     f.content.mobs.append(tape_mob)
     
-    tape_mob.descriptor = aaf.create.TapeDescriptor()
+    tape_mob.descriptor = f.create.TapeDescriptor()
     tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
     
     # Tape timecode
