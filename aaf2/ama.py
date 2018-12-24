@@ -398,7 +398,8 @@ def create_wav_link(f, metadata):
     t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
     tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
     tc.length = int(length)
-    if 'tags' not in metadata['format'].keys(): 
+    if 'tags' not in metadata['format'].keys() or \
+            'time_reference' not in metadata['format']['tags']: 
         tc.start = 0
     else:
         tc.start = metadata['format']['tags']['time_reference'] or 0
