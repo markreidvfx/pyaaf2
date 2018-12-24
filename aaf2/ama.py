@@ -401,7 +401,7 @@ def create_wav_link(f, metadata):
     if 'tags' not in metadata['format'].keys(): 
         tc.start = 0
     else:
-        tc.start = int(metadata['format']['tags']['time_reference']) or 0
+        tc.start = metadata['format']['tags']['time_reference'] or 0
         
     t.segment.length = int(length)
     t.segment.components.append(tc)
