@@ -76,6 +76,12 @@ class ContentStorage(core.AAFObject):
         return m.link(self.root)
 
     def link_external_wav(self, metadata):
+        """
+        Create a link source MOB to a wav file, along with a corresponding master MOB and tape MOB.
+
+        Returns a 3-tuple: a master mob, the source MOB whose essence is a WAVEDescriptor link, 
+        and a source MOB whose essence is a TapeDescriptor.
+        """
         return ama.create_wav_link(self.root, metadata)
 
     def create_ama_link(self, path, metadata):
