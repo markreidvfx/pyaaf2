@@ -161,10 +161,10 @@ def generate_dnxhd(profile_name, name, frames,  size=None, pix_fmt=None, frame_r
     return outfile
 
 
-def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_format='s16le', fmt='wav'):
+def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_format='pcm_s16le', fmt='wav'):
 
-    cmd = [FFMPEG_EXEC,'-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)::s=%d:d=%f' % (sample_rate, duration)]
-    cmd.extend([ '-acodec', 'pcm_%s' % sample_format])
+    cmd = [FFMPEG_EXEC,'-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t):s=%d:d=%f' % (sample_rate, duration)]
+    cmd.extend([ '-acodec', '%s' % sample_format])
 
     cmd.extend(['-f', fmt])
     if fmt == 'mxf_opatom':
@@ -175,18 +175,18 @@ def generate_pcm_audio_mono(name, sample_rate = 48000, duration = 2, sample_form
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
     stdout,stderr = p.communicate()
 
-    if p.returncode < 0:
+    if p.returncode != 0:
         print(subprocess.list2cmdline(cmd))
         print(stderr)
         return Exception("error encoding footage")
     return outfile
 
-def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2,  sample_format='s16le', fmt='s16le'):
+def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2,  sample_format='pcm_s16le', fmt='wav'):
     # this default value for `fmt` looks like a mistake but we preserve it here
 
-    outfile = os.path.join(sample_dir(), '%s.pcm' % name)
+    outfile = os.path.join(sample_dir(), '%s.%s' % (name,fmt) )
 
-    cmd = [FFMPEG_EXEC,'-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t):cos(430*2*PI*t)::s=%d:d=%f'% ( sample_rate, duration)]
+    cmd = [FFMPEG_EXEC,'-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)|cos(430*2*PI*t):s=%d:d=%f'% ( sample_rate, duration)]
 
     #mono
     #cmd = ['ffmpeg','-y', '-f', 'lavfi', '-i', 'aevalsrc=sin(420*2*PI*t)::s=48000:d=10']
@@ -199,7 +199,7 @@ def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2,  sample_f
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
     stdout,stderr = p.communicate()
     print(stderr)
-    if p.returncode < 0:
+    if p.returncode != 0:
         return Exception("error encoding footage")
     return outfile
 
