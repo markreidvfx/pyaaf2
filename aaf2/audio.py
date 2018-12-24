@@ -9,14 +9,14 @@ import wave
 import struct
 
 pcm_profiles = {
-'pcm_32000_s16le' : {'sample_format' : 's16le', 'sample_rate' : 32000},
-'pcm_32000_s24le' : {'sample_format' : 's24le', 'sample_rate' : 32000},
+'pcm_32000_s16le' : {'sample_format' : 'pcm_s16le', 'sample_rate' : 32000},
+'pcm_32000_s24le' : {'sample_format' : 'pcm_s24le', 'sample_rate' : 32000},
 
-'pcm_44100_s16le' : {'sample_format' : 's16le', 'sample_rate' : 44100},
-'pcm_44100_s24le' : {'sample_format' : 's24le', 'sample_rate' : 44100},
+'pcm_44100_s16le' : {'sample_format' : 'pcm_s16le', 'sample_rate' : 44100},
+'pcm_44100_s24le' : {'sample_format' : 'pcm_s24le', 'sample_rate' : 44100},
 
-'pcm_48000_s16le' : {'sample_format' : 's16le', 'sample_rate' : 48000},
-'pcm_48000_s24le' : {'sample_format' : 's24le', 'sample_rate' : 48000},
+'pcm_48000_s16le' : {'sample_format' : 'pcm_s16le', 'sample_rate' : 48000},
+'pcm_48000_s24le' : {'sample_format' : 'pcm_s24le', 'sample_rate' : 48000},
 }
 
 audio_format_sizes = {
