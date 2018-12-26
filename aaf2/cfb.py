@@ -161,7 +161,7 @@ class Stream(object):
         sector_size = self.sector_size()
         sector_offset = self.sector_offset()
 
-        n = min(n, sector_size - sector_offset)
+        n = min(n, sector_size - sector_offset, len(buf))
         if n == 0:
             return 0
 
