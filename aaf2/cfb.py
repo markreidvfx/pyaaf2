@@ -257,19 +257,20 @@ class Stream(object):
 class DirEntry(object):
     __slots__ = ('storage', 'dir_id', 'parent', 'data', '__weakref__')
 
-    def __init__(self, storage, dir_id):
+    def __init__(self, storage, dir_id, data=None):
         self.storage = storage
 
         self.parent = None
-        self.data = bytearray(128)
-
-        # setting dir_id to None disable mark_modified
-
-        self.dir_id = None
-        self.left_id = None
-        self.right_id = None
-        self.child_id = None
-        self.sector_id = None
+        if data is None:
+            self.data = bytearray(128)
+            # setting dir_id to None disable mark_modified
+            self.dir_id = None
+            self.left_id = None
+            self.right_id = None
+            self.child_id = None
+            self.sector_id = None
+        else:
+            self.data = data
 
         # mark modified will now work
         self.dir_id = dir_id
@@ -708,6 +709,8 @@ class CompoundFileBinary(object):
         self.mini_stream_chain = []
 
         self.modified = {}
+
+        self.sector_cache = LRUCacheDict(size=1024)
         self.dir_cache = weakref.WeakValueDictionary()
         self.children_cache = LRUCacheDict()
         self.dir_freelist = array(str('I'))
@@ -1100,7 +1103,13 @@ class CompoundFileBinary(object):
 
     def write_modified_dir_entries(self):
         for entry in self.modified.values():
+            sid, sid_offset = self.dir_entry_sid_offset(entry.dir_id)
             entry.write()
+
+            # invalidate  sector
+            if sid in self.sector_cache:
+                del self.sector_cache[sid]
+
         self.modified = {}
 
     def write_dir_entries(self):
@@ -1229,13 +1238,26 @@ class CompoundFileBinary(object):
         return self.next_free_sect()
         # raise NotImplementedError("adding additional fat")
 
-    def dir_entry_pos(self, dir_id):
-        stream_pos = dir_id * 128
-        chain_index = stream_pos // self.sector_size
-        sid_offset = stream_pos % self.sector_size
-        sid = self.dir_fat_chain[chain_index]
-        pos = ((sid + 1) *  self.sector_size) + sid_offset
+    def read_sector_data(self, sid):
+        if sid in self.sector_cache:
+            return self.sector_cache[sid]
+        else:
+            pos = (sid + 1) *  self.sector_size
+            self.f.seek(pos)
+            sector_data = bytearray(self.sector_size)
+            self.f.readinto(sector_data)
+            self.sector_cache[sid] = sector_data
+            return sector_data
 
+    def dir_entry_sid_offset(self, dir_id):
+        stream_pos = dir_id * 128
+        chain_index, sid_offset = divmod(stream_pos, self.sector_size)
+        sid = self.dir_fat_chain[chain_index]
+        return sid, sid_offset
+
+    def dir_entry_pos(self, dir_id):
+        sid, sid_offset = self.dir_entry_sid_offset(dir_id)
+        pos = ((sid + 1) *  self.sector_size) + sid_offset
         return pos
 
     def read_dir_entry(self, dir_id, parent = None):
@@ -1247,8 +1269,14 @@ class CompoundFileBinary(object):
 
         # assert not dir_id in self.dir_freelist
 
-        entry = DirEntry(self, dir_id)
-        entry.read()
+        sid, sid_offset = self.dir_entry_sid_offset(dir_id)
+        sector_data = self.read_sector_data(sid)
+
+        # mv = memoryview(sector_data)
+        data= bytearray(sector_data[sid_offset:sid_offset+128])
+        # print(bytearray(data[:]))
+        entry = DirEntry(self, dir_id, data=data)
+        # entry.read()
         entry.parent = parent
         self.dir_cache[dir_id] = entry
         return entry
