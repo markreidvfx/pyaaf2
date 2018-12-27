@@ -14,16 +14,16 @@ from . dictionary import DataDef
 
 class Component(core.AAFObject):
     """
-    The :obj:`Component` class represents an essence element.
-    The :obj:`Component` class is an abstract class.
+    The `Component` class represents an essence element.
+    The `Component` class is an abstract class.
 
     Note on `length` property:
-        If a Component is in a `TimelineMobSlot`, then it shall have a Length 
-        property. If a Component is in a `StaticMobSlot`, then it shall not 
-        have a Length property. If a Component is in an `EventMobSlot`, then 
+        If a Component is in a :class:`aaf2.mobslots.TimelineMobSlot`, then it shall have a Length 
+        property. If a Component is in a :class:`aaf2.mobslots.StaticMobSlot`, then it shall not 
+        have a Length property. If a Component is in an :class:`aaf2.mobslots.EventMobSlot`, then 
         it may have a Length property.
         
-        If a Component in an EventMobSlot does not have a Length property, then
+        If a Component in an `EventMobSlot` does not have a Length property, then
         the Component describes an instantaneous event that does not have a 
         duration.
 
@@ -49,7 +49,7 @@ class Component(core.AAFObject):
     @property
     def datadef(self):
         """
-        The DataDefinition for this component.
+        The :class:`aaf2.dictionary.DataDefinition` for this component.
         """
         return self['DataDefinition'].value
 
@@ -60,7 +60,7 @@ class Component(core.AAFObject):
     @property
     def media_kind(self):
         """
-        Return the short name of the datadef: 'sound', 'picture' etc.
+        The short name of the datadef: 'sound', 'picture', `edgecode` etc.
         """
         datadef = self.datadef
         if datadef:
@@ -72,8 +72,14 @@ class Component(core.AAFObject):
 
 class Segment(Component):
     """
-    The Segment class represents a Component that is independent of any surrounding object. 
-    The Segment class is an abstract class.
+    The `Segment` class represents a :class:`aaf2.components.Component` that 
+    is independent of any surrounding object.
+    
+    The Segment class is an abstract class. 
+    
+    Segments appear in :class:`aaf2.components.Sequence` objects either by
+    themselves in an ordered list, or with other `Components`, to form 
+    compositions.
     """
     class_id = UUID("0d010101-0101-0300-060e-2b3402060101")
     __slots__ = ()
@@ -81,7 +87,6 @@ class Segment(Component):
 @register_class
 class Transition(Component):
     """
-    
     A `Transition` can occur in a `Sequence` between two `Segment`s. The 
     Transition causes the preceding and following Segments to overlap in time. 
     The Transition specifies an effect that is used to combine the overlapping 
@@ -133,7 +138,10 @@ class NestedScope(Segment):
 class SourceReference(Segment):
     """
     The `SourceReference` class represents the essence or other data described 
-    by a `MobSlot` in a `Mob`. The SourceReference class is an abstract class.
+    by a :class:`aaf2.mobslots.MobSlot` in a :class:`aaf2.mob.Mob`.
+    
+    The `SourceReference` class is an abstract class. :class:`aaf.components.SourceClip` is probably 
+    the most important subclass.
 
     A `SourceReference` object in a `Mob` refers to a MobSlot in another Mob by 
     specifying the second Mob's `MobID` and the `SlotID` of the MobSlot owned 
@@ -179,7 +187,7 @@ class SourceReference(Segment):
     @property
     def mob(self):
         """
-        Look up the `MobID` in the root's `ContentStorage` and get the referred 
+        Look up the :class:`aaf2.mobid.MobID` in the root's :class:`aaf2.content.ContentStorage` and get the referred 
         `Mob`.
         """
         mod_id = self.mob_id
@@ -194,7 +202,7 @@ class SourceReference(Segment):
     @property
     def slot(self):
         """
-        Look up the `MobID` in the root's `ContentStorage` and get the slot 
+        Look up the :class:`aaf2.mobid.MobID` in the root's :class:`aaf2.content.ContentStorage` and get the slot 
         for`slot_id`.
         """
 
@@ -211,24 +219,24 @@ class SourceReference(Segment):
 @register_class
 class SourceClip(SourceReference):
     """
-    A `Mob` can reference another Mob to indicate the source or derivation of 
-    the essence. A Mob refers to another Mob by having a `SourceClip` object. A 
+    A :class:`aaf2.mobs.Mob` can reference another Mob to indicate the source or derivation of 
+    the essence. A Mob refers to another Mob by having a :class:`aaf2.components.SourceClip` object. A 
     `SourceClip` object has a weak reference to a Mob using its identifying 
-    MobID value; shall identify a `MobSlot` within the referenced Mob with a 
-    `SlotID` value; and when referencing a `TimelineMobSlot` shall specify an 
-    offset in time within the referenced TimelineMobSlot.
+    MobID value; shall identify a :class:`aaf2.mobslots.MobSlot` within the referenced Mob with a 
+    `SlotID` value; and when referencing a :class:`aaf2.mobslots.TimelineMobSlot` shall specify an 
+    offset in time within the referenced `TimelineMobSlot`.
 
-    SourceClips in `CompositionMobs` specify the MobID of the MasterMob, and 
+    SourceClips in :class:`aaf2.mobs.CompositionMobs` specify the MobID of the MasterMob, and 
     are used to represent pieces of digital essence data. The MasterMob provides 
     a level of indirection between the digital essence data and the objects that 
     refer to them.
     
-    SourceClips in `File` SourceMobs specify the MobID of a Physical SourceMob. 
+    `SourceClips` in "File" SourceMobs specify the `MobID` of a Physical `SourceMob`. 
     For example, a video File SourceMob has a SourceClip that specifies the 
     Physical SourceMob describing a videotape used to generate the digital video 
     data.
 
-    SourceClips in Physical SourceMobs identify the MobID of a previous physical 
+    `SourceClips` in Physical SourceMobs identify the MobID of a previous physical 
     source of physical media. For example, a videotape SourceMob has a SourceClip 
     that specifies the Physical SourceMob describing the film that was used to 
     generate the videotape.
@@ -293,8 +301,8 @@ class Filler(Segment):
 
     Typically, a Filler object is used in a Sequence to allow positioning of a 
     `Segment` when not all of the preceding material has been specified. 
-    Another typical use of Filler objects is to fill time in `MobSlot`s and 
-    `NestedScope` tracks that are not referenced or played.
+    Another typical use of Filler objects is to fill time in :class:`aaf2.mobslots.MobSlot`s and 
+    :class:`aaf2.components.NestedScope` tracks that are not referenced or played.
     
     If a `Filler` object is played, applications can choose any appropriate 
     blank essence to play. Typically, a video Filler object would be played as 
@@ -313,7 +321,7 @@ class EssenceGroup(Segment):
 @register_class
 class EdgeCode(Segment):
     """
-    The Edgecode class stores film edge code information.
+    The `Edgecode` class stores film edge code information.
 
     An Edgecode object shall have an Edgecode data definition.
     """
@@ -322,11 +330,9 @@ class EdgeCode(Segment):
 
 @register_class
 class Pulldown(Segment):
-    """
-    The Pulldown class is a sub-class of the Segment class.
-    
-    Pulldown objects are typically used in file `SourceMobs` and physical 
-    `SourceMobs`.
+    """    
+    Pulldown objects are typically used in file :class:`aaf2.mobs.SourceMob` and physical 
+    :class:`aaf2.mobs.SourceMob` .
 
     A Pulldown object provides a mechanism to convert from essence between 
     video and film rates and describes the mechanism that was used to convert 
@@ -347,7 +353,7 @@ class ScopeReference(Segment):
 @register_class
 class Selector(Segment):
     """
-    Specifies a selected `Segment` and preserves references to some 
+    Specifies a selected :class:`aaf2.components.Segment` and preserves references to some 
     alternative Segments that were available during the editing session. The 
     alternative Segments can be ignored while playing a Composition Mob because 
     they do not effect the value of the Selector object and cannot be 
@@ -356,6 +362,7 @@ class Selector(Segment):
     object is used to present alternative presentations of the same content, 
     such as alternate camera angles of the same scene.
     """
+
     class_id = UUID("0d010101-0101-0e00-060e-2b3402060101")
     __slots__ = ()
 
@@ -363,11 +370,11 @@ class Selector(Segment):
 class Timecode(Segment):
     """
     The Timecode class stores videotape or audio tape timecode information. A 
-    Timecode object shall have a Timecode `DataDefinition`.
+    Timecode object shall have a Timecode :class:`aaf2.dictionary.DataDef`.
 
-    A Timecode object can typically appear in either a `SourceMob` or in a 
-    `Composition Mob`. In a `SourceMob`, it typically appears in a `MobSlot` in 
-    a `SourceMob` that describes a videotape or audio tape. In this context, it 
+    A Timecode object can typically appear in either a :class:`aaf2.mobs.SourceMob` or in a 
+    :class:`aaf2.mobs.CompositionMob`. In a `SourceMob`, it typically appears in a :class:`aaf2.mobslots.MobSlot` in 
+    a Source Mob that describes a videotape or audio tape. In this context, it 
     describes the timecode that exists on the tape. In a Composition Mob, it 
     represents the timecode associated with the virtual media represented by 
     the Composition Mob. If the Composition Mob is rendered to a videotape, the 
@@ -388,7 +395,8 @@ class Timecode(Segment):
     @property
     def start(self):
         """
-        Specifies the timecode at the beginning of the segment.
+        Specifies the timecode at the beginning of the segment, 
+        in edit_rate units, from SMPTE midnight.
         """
         return self['Start'].value
 
@@ -410,7 +418,7 @@ class Timecode(Segment):
     @property
     def drop(self):
         """
-        Indicates whether the timecode is drop (True value) or nondrop (False value)
+        Indicates whether the timecode is drop (`true`) or nondrop (`false`).
         """
         return self['Drop'].value
 
@@ -421,8 +429,8 @@ class Timecode(Segment):
 @register_class
 class OperationGroup(Segment):
     """
-    The `OperationGroup` class contains an ordered set of `Segments` and an 
-    operation that is performed on these Segments.
+    The :class:`aaf.components.OperationGroup` class contains an ordered set of :class:`aaf.components.Segment`s and an 
+    operation that is performed on these.
     
     """
     class_id = UUID("0d010101-0101-0a00-060e-2b3402060101")
@@ -454,7 +462,7 @@ class OperationGroup(Segment):
     @property
     def segments(self):
         """
-        The list of input segments.
+        The list of input :class:`aaf2..
         """
         return self['InputSegments']
 
@@ -472,9 +480,9 @@ class CommentMarker(Event):
     The `CommentMarker` class specifies a user comment that is associated with 
     a point in time.
     
-    To correlate `CommentMarker`s with a `MobSlot` to which they may refer, the 
-    `EventMobSlot` may be given the same data definition and the same 
-    `PhysicalTrackNumber` as the target `MobSlot`.
+    To correlate `CommentMarker`s with a :class:`aaf2.mobslots.MobSlot` to which they may refer, the 
+    :class:`aaf2.mobslots.EventMobSlot` may be given the same data definition and the same 
+    `PhysicalTrackNumber` as the target MobSlot.
     """
     class_id = UUID("0d010101-0101-0800-060e-2b3402060101")
     __slots__ = ()
