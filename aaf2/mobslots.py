@@ -16,7 +16,7 @@ class MobSlot(core.AAFObject):
     :class:`aaf2.components.Segment` (like a :class:`aaf2.components.SourceClip`
     or a :class:`aaf2.components.Sequence`).
     
-    `MobSlot has three subclasses, pertaining to the relationship the segment
+    `MobSlot` has three subclasses, pertaining to the relationship the segment
     has to time:
 
         * :class:`aaf2.mobslots.StaticMobSlot`: These contain a segment that is 
