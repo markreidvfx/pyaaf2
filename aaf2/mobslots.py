@@ -44,6 +44,9 @@ class MobSlot(core.AAFObject):
 
     @property
     def segment(self):
+        """
+        The :class:`aaf2.components.Segment` of this slot.
+        """
         return self['Segment'].value
 
     @segment.setter
@@ -52,6 +55,14 @@ class MobSlot(core.AAFObject):
 
     @property
     def name(self):
+        """
+         The name. 
+         
+         Client applications may use this to represent the `segment`. For 
+         example, in Avid Pro Tools, individual audio tracks are represented as
+         :class:`aaf2.mobslots.TimelineMobSlot`s and the name becomes the 
+         track name.
+        """
         return self['SlotName'].value
 
     @name.setter
@@ -60,18 +71,28 @@ class MobSlot(core.AAFObject):
 
     @property
     def datadef(self):
+        """
+        The :class:`aaf2.dictionary.DataDefinition`
+        """
         segment = self.segment
         if segment:
             return segment.datadef
 
     @property
     def media_kind(self):
+        """
+        A string representing the `media_kind` of the segment: 'picture`, 
+        'sound` etc.
+        """
         segment = self.segment
         if segment:
             return segment.media_kind
 
     @property
     def slot_id(self):
+        """
+        An integer. `MobSlot`s must have a unique SlotID.
+        """
         return self['SlotID'].value
 
     @slot_id.setter
@@ -93,11 +114,24 @@ class MobSlot(core.AAFObject):
 
 @register_class
 class EventMobSlot(MobSlot):
+    """
+    Events typically specify an action or define a behavior that takes place 
+    at a specified time. Typically, EventMobSlots specify events that are 
+    associated with the time-varying essence in a parallel TimelineMobSlot. 
+    Each `EventMobSlot` describes one kind of event.
+    """
+    
     class_id = UUID( "0d010101-0101-3900-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class TimelineMobSlot(MobSlot):
+    """
+    The `TimelineMobSlot` class describes a continuously time-varying timeline essence.
+
+    `TimelineMobSlot`s have an `edit_rate`, a rational number that defines the rate at 
+    which the `TimelineMobSlot`'s segment changes over time.
+    """
     class_id = UUID("0d010101-0101-3b00-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, slot_id=None, name=None, segment=None, origin=None, edit_rate=None):
