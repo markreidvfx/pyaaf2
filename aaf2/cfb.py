@@ -15,6 +15,7 @@ import math
 import weakref
 from array import array
 from struct import Struct
+import struct
 import mmap
 
 from .utils import (
@@ -25,7 +26,7 @@ from .utils import (
     write_u32le, write_u64le,
     write_filetime, write_sid, write_uuid,
     decode_utf16le,
-    decode_sid,
+    decode_sid, encode_sid,
 )
 from .exceptions import CompoundFileBinaryError
 from .cache import LRUCacheDict
@@ -56,19 +57,19 @@ fat_sector_types = {DIFSECT    : "DIFSECT",
                     FREESECT   : "FREESECT"}
 
 DIR_STRUCT = Struct(str(''.join(( '<',
-    '64s', # name
-    'H',   # name_size
-    'B',   # dir_type
-    'B',   # color
-    'I',   # left_id
-    'I',   # right_id
-    'I',   # child_id
-    '16s', # class_id
-    'I',   # flags
-    'Q',   # create_time
-    'Q',   # modify_time
-    'I',   # sector_id
-    'Q',   # byte_size
+    '64s', # name 0
+    'H',   # name_size 64
+    'B',   # dir_type 66
+    'B',   # color 67
+    'I',   # left_id 68
+    'I',   # right_id 72
+    'I',   # child_id 76
+    '16s', # class_id 80
+    'I',   # flags 96
+    'Q',   # create_time 100
+    'Q',   # modify_time 108
+    'I',   # sector_id 116
+    'Q',   # byte_size 120
 ))))
 
 def pretty_sectors(fat):
@@ -160,7 +161,7 @@ class Stream(object):
         sector_size = self.sector_size()
         sector_offset = self.sector_offset()
 
-        n = min(n, sector_size - sector_offset)
+        n = min(n, sector_size - sector_offset, len(buf))
         if n == 0:
             return 0
 
@@ -254,36 +255,189 @@ class Stream(object):
         pass
 
 class DirEntry(object):
+    __slots__ = ('storage', 'dir_id', 'parent', 'data', '__weakref__')
 
-    def __init__(self, storage, dir_id):
+    def __init__(self, storage, dir_id, data=None):
+        self.storage = storage
 
-        d = self.__dict__
-        d['storage'] = storage
-        d['name'] = None
-        d['type'] = None
-        d['color'] = 'black'
+        self.parent = None
+        if data is None:
+            self.data = bytearray(128)
+            # setting dir_id to None disable mark_modified
+            self.dir_id = None
+            self.left_id = None
+            self.right_id = None
+            self.child_id = None
+            self.sector_id = None
+        else:
+            self.data = data
 
-        d['left_id'] = None
-        d['right_id'] = None
-        d['child_id'] = None
+        # mark modified will now work
+        self.dir_id = dir_id
 
-        d['class_id'] = None
-        d['flags'] = 0
+    @property
+    def name(self):
+        name_size = struct.unpack_from(str('<H'), self.data, 64)[0]
+        assert name_size <= 64
+        name =  decode_utf16le(self.data[:name_size])
+        return name
 
-        d['create_time'] = 0
-        d['modify_time'] = 0
+    @name.setter
+    def name(self, value):
+        name_data = value.encode("utf-16le")
+        name_size = len(name_data)
+        assert name_size <= 64
+        self.data[:name_size] = name_data
+        pad = 64 - name_size
+        for i in range(pad):
+            self.data[name_size +i] = 0
 
-        d['sector_id'] = None
-        d['byte_size'] = 0
+        # includes null terminator? should re-verify this
+        struct.pack_into(str('<H'), self.data, 64, min(name_size+2, 64))
+        assert self.name == value
+        self.mark_modified()
 
-        d['dir_id'] = dir_id
-        d['parent'] = None
+    @property
+    def type(self):
+        return dir_types.get(self.data[66] , "unknown")
 
-    def __setattr__(self, name, value):
-        super(DirEntry, self).__setattr__(name, value)
-        if name in ('parent',):
-            return
+    @type.setter
+    def type(self, value):
+        t = None
+        for k,v in dir_types.items():
+            if v == value:
+                t = k
+                break
+        if t is None:
+            raise ValueError("invalid dir type: %s" % str(value))
 
+        self.data[66] = t
+        assert self.type == value
+        self.mark_modified()
+
+    @property
+    def color(self):
+        if self.data[67] == 0x01:
+            return 'black'
+        return 'red'
+
+    @color.setter
+    def color(self, value):
+        if value == 'black':
+            self.data[67] = 0x01
+        elif value == 'red':
+            self.data[67] = 0x00
+        else:
+            raise ValueError("invalid dir type: %s" % str(value))
+
+        assert self.color == value
+        self.mark_modified()
+
+    @property
+    def left_id(self):
+        sid = struct.unpack_from(str('<I'), self.data, 68)[0]
+        return decode_sid(sid)
+
+    @left_id.setter
+    def left_id(self, value):
+        struct.pack_into(str('<I'), self.data, 68, encode_sid(value))
+        assert self.left_id == value
+        self.mark_modified()
+
+    @property
+    def right_id(self):
+        sid = struct.unpack_from(str('<I'), self.data, 72)[0]
+        return decode_sid(sid)
+
+    @right_id.setter
+    def right_id(self, value):
+        struct.pack_into(str('<I'), self.data, 72, encode_sid(value))
+        assert self.right_id == value
+        self.mark_modified()
+
+    @property
+    def child_id(self):
+        sid = struct.unpack_from(str('<I'), self.data, 76)[0]
+        return decode_sid(sid)
+
+    @child_id.setter
+    def child_id(self, value):
+        struct.pack_into(str('<I'), self.data, 76, encode_sid(value))
+        assert self.child_id == value
+        self.mark_modified()
+
+    @property
+    def class_id(self):
+        value = uuid.UUID(bytes_le=bytes(self.data[80:96]))
+        if value.int == 0:
+            return None
+        return value
+
+    @class_id.setter
+    def class_id(self, value):
+        if value is None:
+            self.data[80:96] = bytearray(16)
+        else:
+            self.data[80:96] = value.bytes_le
+        assert self.class_id == value
+        self.mark_modified()
+
+    @property
+    def flags(self):
+        flags = struct.unpack_from(str('<I'), self.data, 96)[0]
+        return flags
+
+    @flags.setter
+    def flags(self, value):
+        struct.pack_into(str('<I'), self.data, 96, value)
+        assert self.flags == value
+        self.mark_modified()
+
+    @property
+    def create_time(self):
+        value = struct.unpack_from(str('<Q'), self.data, 100)[0]
+        return value
+
+    @create_time.setter
+    def create_time(self, value):
+        struct.pack_into(str('<Q'), self.data, 100, value)
+        assert self.create_time == value
+        self.mark_modified()
+
+    @property
+    def modify_time(self):
+        value = struct.unpack_from(str('<Q'), self.data, 108)[0]
+        return value
+
+    @modify_time.setter
+    def modify_time(self, value):
+        struct.pack_into(str('<Q'), self.data, 108, value)
+        assert self.modify_time == value
+        self.mark_modified()
+
+    @property
+    def sector_id(self):
+        sid = struct.unpack_from(str('<I'), self.data, 116)[0]
+        return decode_sid(sid)
+
+    @sector_id.setter
+    def sector_id(self, value):
+        struct.pack_into(str('<I'), self.data, 116, encode_sid(value))
+        assert self.sector_id == value
+        self.mark_modified()
+
+    @property
+    def byte_size(self):
+        value = struct.unpack_from(str('<Q'), self.data, 120)[0]
+        return value
+
+    @byte_size.setter
+    def byte_size(self, value):
+        struct.pack_into(str('<Q'), self.data, 120, value)
+        assert self.byte_size == value
+        self.mark_modified()
+
+    def mark_modified(self):
         if self.storage.mode in ('r', 'rb'):
             return
 
@@ -510,81 +664,12 @@ class DirEntry(object):
     def write(self):
         f = self.storage.f
         f.seek(self.storage.dir_entry_pos(self.dir_id))
-        pos = f.tell()
-
-        logging.debug("writing dir entry: %s id: %d type: %s at %d sid: %s bytes: %d" % (
-                       self.path(), self.dir_id, self.type, pos, str(self.sector_id), self.byte_size))
-
-        name_data = self.name.encode("utf-16le")
-        name_size = len(name_data)
-        assert name_size < 63
-
-        f.write(name_data)
-        pad = 64 - name_size
-        while pad:
-            f.write(b'\0')
-            pad -= 1
-
-        write_u16le(f, name_size+2)
-        dir_type = 0x00
-        for k,v in dir_types.items():
-            if v == self.type:
-                dir_type = k
-                break
-
-        write_u8(f, dir_type)
-        write_u8(f, 0x00 if self.color == 'red' else 0x01)
-
-        write_sid(f, self.left_id)
-        write_sid(f, self.right_id)
-        write_sid(f, self.child_id)
-
-        write_uuid(f, self.class_id)
-        write_u32le(f, self.flags)
-        write_filetime(f , self.create_time)
-        write_filetime(f , self.modify_time)
-
-        write_sid(f, self.sector_id)
-        write_u64le(f, self.byte_size)
-
-        size = f.tell() - pos
-
-        assert size == 128
+        f.write(self.data)
 
     def read(self):
-        d = self.__dict__
         f = self.storage.f
         f.seek(self.storage.dir_entry_pos(self.dir_id))
-
-        (name_data,
-         name_size,
-         dir_type,
-         color,
-         left_id,
-         right_id,
-         child_id,
-         class_id,
-         d['flags'],
-         d['create_time'],
-         d['modify_time'],
-         sector_id,
-         d['byte_size'] ) = DIR_STRUCT.unpack(f.read(128))
-
-        d['name']  = decode_utf16le(name_data[:name_size])
-
-        if color == 0x01:
-            d['color'] = 'black'
-        else:
-            d['color'] = 'red'
-
-        d['type'] = dir_types.get(dir_type , "unknown")
-        d['left_id'] = decode_sid(left_id)
-        d['right_id'] = decode_sid(right_id)
-        d['child_id'] = decode_sid(child_id)
-
-        d['class_id'] = uuid.UUID(bytes_le=class_id)
-        d['sector_id'] = decode_sid(sector_id)
-
+        f.readinto(self.data)
 
     def __repr__(self):
         return self.name
@@ -624,6 +709,8 @@ class CompoundFileBinary(object):
         self.mini_stream_chain = []
 
         self.modified = {}
+
+        self.sector_cache = LRUCacheDict(size=1024)
         self.dir_cache = weakref.WeakValueDictionary()
         self.children_cache = LRUCacheDict()
         self.dir_freelist = array(str('I'))
@@ -727,7 +814,7 @@ class CompoundFileBinary(object):
 
         self.root = DirEntry(self, 0)
         self.root.name = 'Root Entry'
-        self.root.sector_id = FREESECT
+        self.root.sector_id = None
         self.root.type = 'root storage'
         self.root.class_id = uuid.UUID("b3b398a5-1c90-11d4-8053-080036210804")
 
@@ -1016,7 +1103,13 @@ class CompoundFileBinary(object):
 
     def write_modified_dir_entries(self):
         for entry in self.modified.values():
+            sid, sid_offset = self.dir_entry_sid_offset(entry.dir_id)
             entry.write()
+
+            # invalidate  sector
+            if sid in self.sector_cache:
+                del self.sector_cache[sid]
+
         self.modified = {}
 
     def write_dir_entries(self):
@@ -1145,13 +1238,26 @@ class CompoundFileBinary(object):
         return self.next_free_sect()
         # raise NotImplementedError("adding additional fat")
 
-    def dir_entry_pos(self, dir_id):
-        stream_pos = dir_id * 128
-        chain_index = stream_pos // self.sector_size
-        sid_offset = stream_pos % self.sector_size
-        sid = self.dir_fat_chain[chain_index]
-        pos = ((sid + 1) *  self.sector_size) + sid_offset
+    def read_sector_data(self, sid):
+        if sid in self.sector_cache:
+            return self.sector_cache[sid]
+        else:
+            pos = (sid + 1) *  self.sector_size
+            self.f.seek(pos)
+            sector_data = bytearray(self.sector_size)
+            self.f.readinto(sector_data)
+            self.sector_cache[sid] = sector_data
+            return sector_data
 
+    def dir_entry_sid_offset(self, dir_id):
+        stream_pos = dir_id * 128
+        chain_index, sid_offset = divmod(stream_pos, self.sector_size)
+        sid = self.dir_fat_chain[chain_index]
+        return sid, sid_offset
+
+    def dir_entry_pos(self, dir_id):
+        sid, sid_offset = self.dir_entry_sid_offset(dir_id)
+        pos = ((sid + 1) *  self.sector_size) + sid_offset
         return pos
 
     def read_dir_entry(self, dir_id, parent = None):
@@ -1163,8 +1269,14 @@ class CompoundFileBinary(object):
 
         # assert not dir_id in self.dir_freelist
 
-        entry = DirEntry(self, dir_id)
-        entry.read()
+        sid, sid_offset = self.dir_entry_sid_offset(dir_id)
+        sector_data = self.read_sector_data(sid)
+
+        # mv = memoryview(sector_data)
+        data= bytearray(sector_data[sid_offset:sid_offset+128])
+        # print(bytearray(data[:]))
+        entry = DirEntry(self, dir_id, data=data)
+        # entry.read()
         entry.parent = parent
         self.dir_cache[dir_id] = entry
         return entry
@@ -1367,7 +1479,7 @@ class CompoundFileBinary(object):
         if entry.dir_id in self.modified:
             del self.modified[entry.dir_id]
 
-        entry.__dict__['dir_id'] = None
+        entry.dir_id = None
 
 
     def remove(self, path):

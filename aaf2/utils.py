@@ -56,9 +56,13 @@ def read_sid(f):
     sid = read_u32le(f)
     return decode_sid(sid)
 
+def encode_sid(sid):
+    if sid is None:
+        return 0xFFFFFFFF
+    return sid
+
 def write_sid(f, value):
-    if value is None:
-        value = 0xFFFFFFFF
+    value = encode_sid(value)
     write_u32le(f, value)
 
 def read_uuid(f):
