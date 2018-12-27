@@ -128,9 +128,6 @@ class EventMobSlot(MobSlot):
 class TimelineMobSlot(MobSlot):
     """
     The `TimelineMobSlot` class describes a continuously time-varying timeline essence.
-
-    `TimelineMobSlot`s have an `edit_rate`, a rational number that defines the rate at 
-    which the `TimelineMobSlot`'s segment changes over time.
     """
     class_id = UUID("0d010101-0101-3b00-060e-2b3402060101")
     __slots__ = ()
@@ -148,6 +145,12 @@ class TimelineMobSlot(MobSlot):
 
     @property
     def edit_rate(self):
+        """
+        A rational number that defines the rate at 
+        which the `TimelineMobSlot`'s segment changes over time. If the `segment` is
+        an audio or video :class:`aaf.components.Sequence`, this is the sample rate
+        or frame rate.
+        """
         return self['EditRate'].value
 
     @edit_rate.setter
