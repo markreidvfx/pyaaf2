@@ -13,6 +13,22 @@ from . mobid import MobID
 from . dictionary import DataDef
 
 class Component(core.AAFObject):
+    """
+    The :obj:`Component` class represents an essence element.
+    The :obj:`Component` class is an abstract class.
+
+    Note on `length` property:
+        If a Component is in a `TimelineMobSlot`, then it shall have a Length 
+        property. If a Component is in a `StaticMobSlot`, then it shall not 
+        have a Length property. If a Component is in an `EventMobSlot`, then 
+        it may have a Length property.
+        
+        If a Component in an EventMobSlot does not have a Length property, then
+        the Component describes an instantaneous event that does not have a 
+        duration.
+
+    """
+
     class_id = UUID("0d010101-0101-0200-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, media_kind=None, length=None):
@@ -21,6 +37,9 @@ class Component(core.AAFObject):
 
     @property
     def length(self):
+        """
+        Length of this component in edit units of this component.
+        """
         return self['Length'].value
 
     @length.setter
@@ -29,6 +48,9 @@ class Component(core.AAFObject):
 
     @property
     def datadef(self):
+        """
+        The DataDefinition for this component.
+        """
         return self['DataDefinition'].value
 
     @datadef.setter
@@ -37,6 +59,9 @@ class Component(core.AAFObject):
 
     @property
     def media_kind(self):
+        """
+        Return the short name of the datadef: 'sound', 'picture' etc.
+        """
         datadef = self.datadef
         if datadef:
             return datadef.short_name
@@ -46,16 +71,43 @@ class Component(core.AAFObject):
         self.datadef = self.root.dictionary.lookup_datadef(value)
 
 class Segment(Component):
+    """
+    The Segment class represents a Component that is independent of any surrounding object. 
+    The Segment class is an abstract class.
+    """
     class_id = UUID("0d010101-0101-0300-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Transition(Component):
+    """
+    
+    A `Transition` can occur in a `Sequence` between two `Segment`s. The 
+    Transition causes the preceding and following Segments to overlap in time. 
+    The Transition specifies an effect that is used to combine the overlapping 
+    Segments. Figure 24 below illustrates the Sequence containment showing 
+    Transition, which itself has an `Effect`. A Transition object shall be in a
+    `Sequence` within a `CompositionMob`.
+    """
+
     class_id = UUID("0d010101-0101-1700-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Sequence(Segment):
+    """
+    The `Sequence` object combines a series of timeline `Components` in 
+    sequential order. If the `Sequence` has only `Segments`, each `Segment` is 
+    played sequentially after the `Segment` that precedes it. The time in the 
+    Composition Mob that a `Segment` starts is determined by the Components 
+    that  precede it in the Sequence.
+
+    To calculate the duration of a Sequence with Transitions, you add the 
+    durations of the Segments and then subtract the duration of the 
+    Transitions. In the example in the above Figure, the duration of the 
+    Sequence is 125 + 100 + 80 - 75, which equals 230.
+          
+    """
     class_id = UUID("0d010101-0101-0f00-060e-2b3402060101")
     __slots__ = ()
 
@@ -65,6 +117,12 @@ class Sequence(Segment):
 
 @register_class
 class NestedScope(Segment):
+    """
+    Defines a scope of slots that can reference each other. The Nested Scope 
+    object produces the values of the last slot within it. Typically, Nested 
+    Scopes are used to enable layering or to allow a component to be shared.
+
+    """
     class_id = UUID("0d010101-0101-0b00-060e-2b3402060101")
     __slots__ = ()
 
@@ -73,11 +131,34 @@ class NestedScope(Segment):
         return self['Slots']
 
 class SourceReference(Segment):
+    """
+    The `SourceReference` class represents the essence or other data described 
+    by a `MobSlot` in a `Mob`. The SourceReference class is an abstract class.
+
+    A `SourceReference` object in a `Mob` refers to a MobSlot in another Mob by 
+    specifying the second Mob's `MobID` and the `SlotID` of the MobSlot owned 
+    by it.
+    
+    To reference a single channel of a multi-channel track from a mono track, 
+    the `SourceReference::ChannelIDs` property is used with a single element in 
+    the array. To reference multiple channels of a multi-channel track from a 
+    multi-channel track, the `SourceReference::ChannelIDs` property is used with 
+    multiple elements in the array.
+
+    Toreference multiple mono tracks from a multi-channel track, the 
+    `SourceReference::MonoSourceSlotIDs` is used with multiple elements in the 
+    array.
+    
+    """
     class_id = UUID("0d010101-0101-1000-060e-2b3402060101")
     __slots__ = ()
 
     @property
     def mob_id(self):
+        """
+        The `MobID` of the source MOB this object references.
+        """
+
         return self['SourceID'].value
 
     @mob_id.setter
@@ -86,6 +167,9 @@ class SourceReference(Segment):
 
     @property
     def slot_id(self):
+        """
+        The `SlotID` of this source MOB this object references.
+        """
         return self['SourceMobSlotID'].value
 
     @slot_id.setter
@@ -94,6 +178,10 @@ class SourceReference(Segment):
 
     @property
     def mob(self):
+        """
+        Look up the `MobID` in the root's `ContentStorage` and get the referred 
+        `Mob`.
+        """
         mod_id = self.mob_id
         if mod_id is None or mod_id.int == 0:
             return None
@@ -105,6 +193,11 @@ class SourceReference(Segment):
 
     @property
     def slot(self):
+        """
+        Look up the `MobID` in the root's `ContentStorage` and get the slot 
+        for`slot_id`.
+        """
+
         slot_id = self.slot_id
         mob = self.mob
         if mob is None or slot_id is None:
@@ -117,6 +210,29 @@ class SourceReference(Segment):
 
 @register_class
 class SourceClip(SourceReference):
+    """
+    A `Mob` can reference another Mob to indicate the source or derivation of 
+    the essence. A Mob refers to another Mob by having a `SourceClip` object. A 
+    `SourceClip` object has a weak reference to a Mob using its identifying 
+    MobID value; shall identify a `MobSlot` within the referenced Mob with a 
+    `SlotID` value; and when referencing a `TimelineMobSlot` shall specify an 
+    offset in time within the referenced TimelineMobSlot.
+
+    SourceClips in `CompositionMobs` specify the MobID of the MasterMob, and 
+    are used to represent pieces of digital essence data. The MasterMob provides 
+    a level of indirection between the digital essence data and the objects that 
+    refer to them.
+    
+    SourceClips in `File` SourceMobs specify the MobID of a Physical SourceMob. 
+    For example, a video File SourceMob has a SourceClip that specifies the 
+    Physical SourceMob describing a videotape used to generate the digital video 
+    data.
+
+    SourceClips in Physical SourceMobs identify the MobID of a previous physical 
+    source of physical media. For example, a videotape SourceMob has a SourceClip 
+    that specifies the Physical SourceMob describing the film that was used to 
+    generate the videotape.
+    """
     class_id = UUID("0d010101-0101-1100-060e-2b3402060101")
     __slots__ = ()
 
@@ -171,6 +287,21 @@ class SourceClip(SourceReference):
 
 @register_class
 class Filler(Segment):
+    """
+    The Filler class represents an unspecified value for the duration of the 
+    object.
+
+    Typically, a Filler object is used in a Sequence to allow positioning of a 
+    `Segment` when not all of the preceding material has been specified. 
+    Another typical use of Filler objects is to fill time in `MobSlot`s and 
+    `NestedScope` tracks that are not referenced or played.
+    
+    If a `Filler` object is played, applications can choose any appropriate 
+    blank essence to play. Typically, a video Filler object would be played as 
+    a black section, and an audio Filler object would be played as a silent 
+    section.
+    """
+
     class_id = UUID("0d010101-0101-0900-060e-2b3402060101")
     __slots__ = ()
 
@@ -181,26 +312,69 @@ class EssenceGroup(Segment):
 
 @register_class
 class EdgeCode(Segment):
+    """
+    The Edgecode class stores film edge code information.
+
+    An Edgecode object shall have an Edgecode data definition.
+    """
     class_id = UUID("0d010101-0101-0400-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Pulldown(Segment):
+    """
+    The Pulldown class is a sub-class of the Segment class.
+    
+    Pulldown objects are typically used in file `SourceMobs` and physical 
+    `SourceMobs`.
+
+    A Pulldown object provides a mechanism to convert from essence between 
+    video and film rates and describes the mechanism that was used to convert 
+    the essence.
+
+    """
     class_id = UUID("0d010101-0101-0c00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class ScopeReference(Segment):
+    """
+    Refers to a section in a Nested Scope slot.
+    """
     class_id = UUID("0d010101-0101-0d00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Selector(Segment):
+    """
+    Specifies a selected `Segment` and preserves references to some 
+    alternative Segments that were available during the editing session. The 
+    alternative Segments can be ignored while playing a Composition Mob because 
+    they do not effect the value of the Selector object and cannot be 
+    referenced from outside of it. The alternative Segments can be presented to 
+    the user when the Composition Mob is being edited. Typically, a Selector 
+    object is used to present alternative presentations of the same content, 
+    such as alternate camera angles of the same scene.
+    """
     class_id = UUID("0d010101-0101-0e00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Timecode(Segment):
+    """
+    The Timecode class stores videotape or audio tape timecode information. A 
+    Timecode object shall have a Timecode `DataDefinition`.
+
+    A Timecode object can typically appear in either a `SourceMob` or in a 
+    `Composition Mob`. In a `SourceMob`, it typically appears in a `MobSlot` in 
+    a `SourceMob` that describes a videotape or audio tape. In this context, it 
+    describes the timecode that exists on the tape. In a Composition Mob, it 
+    represents the timecode associated with the virtual media represented by 
+    the Composition Mob. If the Composition Mob is rendered to a videotape, the 
+    Timecode should be used to generate the timecode on the videotape.
+
+
+    """
     class_id = UUID("0d010101-0101-1400-060e-2b3402060101")
     __slots__ = ()
 
@@ -213,6 +387,9 @@ class Timecode(Segment):
 
     @property
     def start(self):
+        """
+        Specifies the timecode at the beginning of the segment.
+        """
         return self['Start'].value
 
     @start.setter
@@ -221,6 +398,9 @@ class Timecode(Segment):
 
     @property
     def fps(self):
+        """
+        Frames per second of the videotape or audio tape.
+        """
         return self['FPS'].value
 
     @fps.setter
@@ -229,6 +409,9 @@ class Timecode(Segment):
 
     @property
     def drop(self):
+        """
+        Indicates whether the timecode is drop (True value) or nondrop (False value)
+        """
         return self['Drop'].value
 
     @drop.setter
@@ -237,6 +420,11 @@ class Timecode(Segment):
 
 @register_class
 class OperationGroup(Segment):
+    """
+    The `OperationGroup` class contains an ordered set of `Segments` and an 
+    operation that is performed on these Segments.
+    
+    """
     class_id = UUID("0d010101-0101-0a00-060e-2b3402060101")
     __slots__ = ()
 
@@ -247,6 +435,9 @@ class OperationGroup(Segment):
 
     @property
     def operation(self):
+        """
+        The `OperationDefiniton`.
+        """
         return self['Operation'].value
 
     @operation.setter
@@ -255,10 +446,16 @@ class OperationGroup(Segment):
 
     @property
     def parameters(self):
+        """
+        The list of parameters.
+        """
         return self['Parameters']
 
     @property
     def segments(self):
+        """
+        The list of input segments.
+        """
         return self['InputSegments']
 
 class Event(Segment):
@@ -268,10 +465,20 @@ class Event(Segment):
     def __init__(self):
         super(Event, self).__init__(media_kind='DescriptiveMetadata')
 
+
 @register_class
 class CommentMarker(Event):
+    """
+    The `CommentMarker` class specifies a user comment that is associated with 
+    a point in time.
+    
+    To correlate `CommentMarker`s with a `MobSlot` to which they may refer, the 
+    `EventMobSlot` may be given the same data definition and the same 
+    `PhysicalTrackNumber` as the target `MobSlot`.
+    """
     class_id = UUID("0d010101-0101-0800-060e-2b3402060101")
     __slots__ = ()
+
 
 @register_class
 class DescriptiveMarker(CommentMarker):
