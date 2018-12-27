@@ -11,6 +11,26 @@ from .utils import register_class
 
 @register_class
 class MobSlot(core.AAFObject):
+    """
+    A :class:`aaf2.mobs.Mob` can have many `MobSlot`s, each one containing a 
+    :class:`aaf2.components.Segment` (like a :class:`aaf2.components.SourceClip`
+    or a :class:`aaf2.components.Sequence`).
+    
+    `MobSlot has three subclasses, pertaining to the relationship the segment
+    has to time:
+
+        * :class:`aaf2.mobslots.StaticMobSlot`: These contain a segment that is 
+          static over time, like a still image.
+
+        * :class:`aaf2.mobslots.TimelineMobSlot`: These contain a segment that
+          changes continusously and periodically over time, like moving picture,
+          audio, or compositions.
+
+        * :class:`aaf2.mobslots.EventMobSlot`: These contain segments that 
+          change intermittently and variably, like timed comments and GPI 
+          triggers.
+    """
+
     class_id = UUID("0d010101-0101-3800-060e-2b3402060101")
     __slots__ = ()
 
