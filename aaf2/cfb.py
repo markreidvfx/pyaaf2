@@ -1295,19 +1295,22 @@ class CompoundFileBinary(object):
         if dir_id is None:
             return None
 
-        if dir_id in self.dir_cache:
-            return self.dir_cache[dir_id]
+        entry = self.dir_cache.get(dir_id, None)
+        if entry is not None:
+            return entry
 
         # assert not dir_id in self.dir_freelist
 
-        sid, sid_offset = self.dir_entry_sid_offset(dir_id)
+        stream_pos = dir_id * 128
+        chain_index = stream_pos // self.sector_size
+        sid_offset  = stream_pos % self.sector_size
+        sid = self.dir_fat_chain[chain_index]
+
         sector_data = self.read_sector_data(sid)
 
-        # mv = memoryview(sector_data)
         data= bytearray(sector_data[sid_offset:sid_offset+128])
-        # print(bytearray(data[:]))
         entry = DirEntry(self, dir_id, data=data)
-        # entry.read()
+
         entry.parent = parent
         self.dir_cache[dir_id] = entry
         return entry
