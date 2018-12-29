@@ -157,15 +157,30 @@ class Stream(object):
         else:
             n = max(0, min(n, self.dir.byte_size - self.tell()))
 
-        sector_size = self.sector_size()
-        sector_offset = self.sector_offset()
+        sector_size = self.storage.sector_size
+        mini_sector_size = self.storage.mini_stream_sector_size
+
+        if self.dir.byte_size < self.storage.min_stream_max_size:
+
+            mini_fat_index, sector_offset = divmod(self.pos, mini_sector_size)
+            mini_stream_sid = self.fat_chain[mini_fat_index]
+            mini_steam_pos = (mini_stream_sid * mini_sector_size) + sector_offset
+
+            index, sid_offset  = divmod(mini_steam_pos, sector_size)
+            sid = self.storage.mini_stream_chain[index]
+
+            sector_size = mini_sector_size
+
+        else:
+            sector_size =  self.storage.sector_size
+            index, sid_offset  = divmod(self.pos, sector_size)
+
+            sid = self.fat_chain[index]
+            sector_offset = sid_offset
 
         n = min(n, sector_size - sector_offset, len(buf))
         if n == 0:
             return 0
-
-        pos = self.abs_pos()
-        sid, sid_offset = self.storage.get_sid_offset(pos)
 
         sector_data = self.storage.read_sector_data(sid)
         buf[:n] = sector_data[sid_offset:sid_offset+n]
