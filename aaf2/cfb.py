@@ -1586,8 +1586,9 @@ class CompoundFileBinary(object):
         if not root.isdir():
             raise ValueError("can only list storage types")
 
-        if root.dir_id in self.children_cache:
-           return self.children_cache[root.dir_id]
+        children = self.children_cache.get(root.dir_id, None)
+        if children is not None:
+            return children
 
         child = root.child()
 
