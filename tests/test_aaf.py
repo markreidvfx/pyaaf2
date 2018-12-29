@@ -7,55 +7,35 @@ from __future__ import (
 
 import os
 import unittest
+import aaf2
 from aaf2.file import AAFFile
 from aaf2 import properties
 
-base = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-test_dir = os.path.join(base, 'results')
-if not os.path.exists(test_dir):
-    os.makedirs(test_dir)
-
-test_files = os.path.join(base, 'test_files')
-
-
-def walk(root, space="", func=None):
-    indent = "  "
-
-    for p in root.properties():
-        if isinstance(p, properties.StrongRefProperty):
-            func(space, p.name, p.typedef)
-            walk(p.value, space + indent, func)
-
-        if isinstance(p, properties.StrongRefVectorProperty):
-            func(space, p.name, p.typedef)
-            for obj in p.value:
-                func(space + indent, obj)
-                walk(obj, space + indent*2, func)
-            continue
-
-        if isinstance(p, properties.StrongRefSetProperty):
-            func(space, p.name, p.typedef)
-            for key, obj in p.items():
-                func(space + indent, obj)
-                walk(obj, space + indent*2, func)
-
-            continue
-
-        func(space, p.name, p.typedef, p.value)
-
-
-def procces(*args):
-    line = " ".join([str(item) for item in args])
-
+import common
+import shutil
 
 class AAFTests(unittest.TestCase):
 
 
-    def test_wall_all(self):
-
-        test_file = os.path.join(test_files, "test_file_01.aaf")
+    def test_walk_all(self):
+        test_file = os.path.join(common.test_files_dir(),"test_file_01.aaf")
         with AAFFile(test_file) as f:
-            walk(f.root, '', func=procces)
+            common.walk_aaf(f.root)
+
+    def test_save_as(self):
+
+        new_file = os.path.join(common.sandbox(), 'save_r+.aaf')
+        test_file = common.test_file_01()
+        shutil.copy(test_file, new_file)
+
+        with aaf2.open(new_file, 'r+') as f:
+            f.save()
+
+
+        # should contents compare!
+        with aaf2.open(new_file, 'r') as f:
+            common.walk_aaf(f.root)
+
 
 if __name__ == "__main__":
     import logging
