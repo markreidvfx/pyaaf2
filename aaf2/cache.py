@@ -14,6 +14,7 @@ class LRUNode(object):
         self.empty = True
         self.key = None
 
+sentinel = object()
 
 class LRUCacheDict(object):
 
@@ -72,8 +73,16 @@ class LRUCacheDict(object):
         self.data[key] = node
 
     def __getitem__(self, key):
+        value = self.get(key, sentinel)
+        if value is sentinel:
+            raise KeyError()
+        return value
 
-        node = self.data[key]
+    def get(self, key, default=None):
+        node = self.data.get(key, sentinel)
+        if node is sentinel:
+            return default
+
         self.make_first(node)
         self.head = node
 

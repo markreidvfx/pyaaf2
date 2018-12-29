@@ -1245,8 +1245,10 @@ class CompoundFileBinary(object):
         # raise NotImplementedError("adding additional fat")
 
     def read_sector_data(self, sid):
-        if sid in self.sector_cache:
-            return self.sector_cache[sid]
+
+        sector_data = self.sector_cache.get(sid, None)
+        if sector_data is not None:
+            return sector_data
         else:
             pos = (sid + 1) *  self.sector_size
             self.f.seek(pos)
