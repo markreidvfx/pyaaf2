@@ -160,20 +160,25 @@ class Stream(object):
         sector_size = self.storage.sector_size
         mini_sector_size = self.storage.mini_stream_sector_size
 
+        # inlined on purpose this method gets called alot
         if self.dir.byte_size < self.storage.min_stream_max_size:
+            mini_fat_index = self.pos // mini_sector_size
+            sector_offset  = self.pos % mini_sector_size
 
-            mini_fat_index, sector_offset = divmod(self.pos, mini_sector_size)
             mini_stream_sid = self.fat_chain[mini_fat_index]
-            mini_steam_pos = (mini_stream_sid * mini_sector_size) + sector_offset
+            mini_steam_pos  = (mini_stream_sid * mini_sector_size) + sector_offset
 
-            index, sid_offset  = divmod(mini_steam_pos, sector_size)
+            index      = mini_steam_pos // sector_size
+            sid_offset = mini_steam_pos % sector_size
+
             sid = self.storage.mini_stream_chain[index]
 
             sector_size = mini_sector_size
 
         else:
-            sector_size =  self.storage.sector_size
-            index, sid_offset  = divmod(self.pos, sector_size)
+            sector_size = self.storage.sector_size
+            index       = self.pos // sector_size
+            sid_offset  = self.pos % sector_size
 
             sid = self.fat_chain[index]
             sector_offset = sid_offset
