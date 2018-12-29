@@ -103,10 +103,12 @@ class AAFObjectManager(object):
         if isinstance(path, DirEntry):
             dir_entry = path
             path = dir_entry.path()
-            if path in self.path_cache:
-                return self.path_cache[path]
+            obj = self.path_cache.get(path, None)
+            if obj is not None:
+                return obj
         else:
-            if path in self.path_cache:
+            obj = self.path_cache.get(path, None)
+            if obj is not None:
                 return self.path_cache[path]
 
             dir_entry = self.root.cfb.find(path)
