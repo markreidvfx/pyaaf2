@@ -291,7 +291,8 @@ class AAFFile(object):
         return index
 
     def read_reference_properties(self):
-        f = self.cfb.open("/referenced properties")
+        s = self.cfb.open("/referenced properties")
+        f = io.BytesIO(s.read())
 
         byte_order = read_u8(f)
         if byte_order != 0x4c:
