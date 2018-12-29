@@ -81,7 +81,6 @@ class Stream(object):
         self.storage = storage
         self.dir = entry
         self.mode = mode
-        self.buf = ""
         self.pos = 0
         self.fat_chain = array(str('I'))
         if not mode in ('r', 'w'):
