@@ -165,11 +165,12 @@ class Stream(object):
         if n == 0:
             return 0
 
-        f = self.storage.f
         pos = self.abs_pos()
-        f.seek(pos)
-        bytes_read = f.readinto(buf[:n])
-        assert bytes_read == n
+        sid, sid_offset = self.storage.get_sid_offset(pos)
+
+        sector_data = self.storage.read_sector_data(sid)
+        buf[:n] = sector_data[sid_offset:sid_offset+n]
+
         self.pos += n
         return n
 
@@ -198,6 +199,11 @@ class Stream(object):
         byte_writeable = min(len(data), sector_size - sector_offset)
         f = self.storage.f
         pos = self.abs_pos()
+        sid, sid_offset = self.storage.get_sid_offset(pos)
+
+        if sid in self.storage.sector_cache:
+            del self.storage.sector_cache[sid]
+
         f.seek(pos)
         # logging.debug("write stream %d bytes at %d" % (byte_writeable, pos))
         f.write(data[:byte_writeable])
@@ -1248,6 +1254,10 @@ class CompoundFileBinary(object):
             self.f.readinto(sector_data)
             self.sector_cache[sid] = sector_data
             return sector_data
+
+    def get_sid_offset(self, abs_pos):
+        sid, sid_offset = divmod(abs_pos, self.sector_size)
+        return sid-1, sid_offset
 
     def dir_entry_sid_offset(self, dir_id):
         stream_pos = dir_id * 128
