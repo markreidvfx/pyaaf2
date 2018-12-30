@@ -6,30 +6,38 @@ from __future__ import (
     )
 
 import os
+import unittest
+import aaf2
 from aaf2.file import AAFFile
+from aaf2 import properties
 
-base = os.path.join(os.path.dirname(os.path.abspath(__file__)))
-test_dir = os.path.join(base, 'results')
-if not os.path.exists(test_dir):
-    os.makedirs(test_dir)
+import common
+import shutil
 
-test_files = os.path.join(base, 'test_files')
+class AAFTests(unittest.TestCase):
+
+
+    def test_walk_all(self):
+        test_file = os.path.join(common.test_files_dir(),"test_file_01.aaf")
+        with AAFFile(test_file) as f:
+            common.walk_aaf(f.root)
+
+    def test_save_as(self):
+
+        new_file = os.path.join(common.sandbox(), 'save_r+.aaf')
+        test_file = common.test_file_01()
+        shutil.copy(test_file, new_file)
+
+        with aaf2.open(new_file, 'r+') as f:
+            f.save()
+
+
+        # should contents compare!
+        with aaf2.open(new_file, 'r') as f:
+            common.walk_aaf(f.root)
+
 
 if __name__ == "__main__":
     import logging
     # logging.basicConfig(level=logging.DEBUG)
-
-    test_file = os.path.join(test_files, "test_file_01.aaf")
-    # test_file = os.path.join(test_files, "empty.aaf")
-    with AAFFile(test_file) as f:
-        pass
-        # test = f.read_object("/Header-2/Content-3b03/Mobs-1901{a0}")
-        # print test['MobID'].value
-        # test = f.read_object("/Header-2/Content-3b03/Mobs-1901{27}/Slots-4403{1}/Segment-4803/Components-1001{0}")
-        f.dump()
-        # for root, storage, stream in f.cfb.walk():
-        #     print root.path()
-
-        # for item in f.root.walk_references(topdown=True):
-        #     space = " " * len(item.dir.path().split("/"))
-        #     print space, item
+    unittest.main()

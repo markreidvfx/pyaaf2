@@ -17,6 +17,8 @@ from .utils import (register_class, read_u16le, decode_utf16le,
                     encode_utf16le, encode_u16le, str2uuid,
                     AAFClaseID_dict, AAFClassName_dict)
 
+from .cache import PidValueCache
+
 import uuid
 from uuid import UUID
 
@@ -78,6 +80,7 @@ class PropertyDef(core.AAFObject):
         self.property_entries[PID_PID].data = encode_u16le(value)
 
     @property
+    @PidValueCache(PID_UUID)
     def uuid(self):
         data = self.property_entries[PID_UUID].data
         if data is not None:
@@ -88,11 +91,13 @@ class PropertyDef(core.AAFObject):
         return self.property_entries[PID_OPTIONAL].data == b"\x01"
 
     @property
+    @PidValueCache(PID_TYPE)
     def typedef_id(self):
         if PID_TYPE in self.property_entries:
             return UUID(bytes_le=self.property_entries[PID_TYPE].data)
 
     @property
+    @PidValueCache(PID_TYPE)
     def typedef(self):
         type_id = self.typedef_id
         if type_id:

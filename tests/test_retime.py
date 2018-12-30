@@ -56,7 +56,7 @@ def compare_speedmap_to_offset_map(path):
         return sum(error_list) / len(error_list)
 
 def error_ok(value, path):
-    print(os.path.basename(path), 'error =', value)
+    # print(os.path.basename(path), 'error =', value)
     if value > 1.0e-07:
         return False
     return True

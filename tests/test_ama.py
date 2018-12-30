@@ -47,8 +47,8 @@ class AMATests(unittest.TestCase):
                 mobs = f.content.create_ama_link(mov, meta)
 
 
-        # with aaf2.open(new_file, 'r') as f:
-        #     f.content.dump()
+        with aaf2.open(new_file, 'r') as f:
+            common.walk_aaf(f.root)
 
     def test_prores(self):
 
@@ -63,8 +63,7 @@ class AMATests(unittest.TestCase):
             # for (pix_fmt, profile) in avc_profiles:
 
         with aaf2.open(new_file, 'r') as f:
-            f.content.dump()
-
+            common.walk_aaf(f.root)
 
 
 if __name__ == "__main__":
