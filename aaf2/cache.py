@@ -14,6 +14,7 @@ class LRUNode(object):
         self.empty = True
         self.key = None
 
+sentinel = object()
 
 class LRUCacheDict(object):
 
@@ -72,8 +73,16 @@ class LRUCacheDict(object):
         self.data[key] = node
 
     def __getitem__(self, key):
+        value = self.get(key, sentinel)
+        if value is sentinel:
+            raise KeyError()
+        return value
 
-        node = self.data[key]
+    def get(self, key, default=None):
+        node = self.data.get(key, sentinel)
+        if node is sentinel:
+            return default
+
         self.make_first(node)
         self.head = node
 
@@ -89,3 +98,28 @@ class LRUCacheDict(object):
 
         self.make_first(node)
         self.head = node.next
+
+class PidValueCache(object):
+
+    def __init__(self, pid):
+        self.pid = pid
+        self.data = None
+        self.result = None
+
+    def __call__(self, func):
+
+        def pid_cache_wrapper(obj):
+            prop = obj.property_entries.get(self.pid, None)
+            if prop is None:
+                func(obj)
+
+            data = prop.data
+
+            if data is self.data:
+                return self.result
+
+            self.result = func(obj)
+            self.data = data
+            return self.result
+
+        return pid_cache_wrapper

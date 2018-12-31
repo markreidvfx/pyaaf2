@@ -16,7 +16,6 @@ import weakref
 from array import array
 from struct import Struct
 import struct
-import mmap
 
 from .utils import (
     read_u8, read_u16le,
@@ -81,7 +80,6 @@ class Stream(object):
         self.storage = storage
         self.dir = entry
         self.mode = mode
-        self.buf = ""
         self.pos = 0
         self.fat_chain = array(str('I'))
         if not mode in ('r', 'w'):
@@ -158,18 +156,39 @@ class Stream(object):
         else:
             n = max(0, min(n, self.dir.byte_size - self.tell()))
 
-        sector_size = self.sector_size()
-        sector_offset = self.sector_offset()
+        sector_size = self.storage.sector_size
+        mini_sector_size = self.storage.mini_stream_sector_size
+
+        # inlined on purpose this method gets called alot
+        if self.dir.byte_size < self.storage.min_stream_max_size:
+            mini_fat_index = self.pos // mini_sector_size
+            sector_offset  = self.pos % mini_sector_size
+
+            mini_stream_sid = self.fat_chain[mini_fat_index]
+            mini_steam_pos  = (mini_stream_sid * mini_sector_size) + sector_offset
+
+            index      = mini_steam_pos // sector_size
+            sid_offset = mini_steam_pos % sector_size
+
+            sid = self.storage.mini_stream_chain[index]
+
+            sector_size = mini_sector_size
+
+        else:
+            sector_size = self.storage.sector_size
+            index       = self.pos // sector_size
+            sid_offset  = self.pos % sector_size
+
+            sid = self.fat_chain[index]
+            sector_offset = sid_offset
 
         n = min(n, sector_size - sector_offset, len(buf))
         if n == 0:
             return 0
 
-        f = self.storage.f
-        pos = self.abs_pos()
-        f.seek(pos)
-        bytes_read = f.readinto(buf[:n])
-        assert bytes_read == n
+        sector_data = self.storage.read_sector_data(sid)
+        buf[:n] = sector_data[sid_offset:sid_offset+n]
+
         self.pos += n
         return n
 
@@ -198,6 +217,11 @@ class Stream(object):
         byte_writeable = min(len(data), sector_size - sector_offset)
         f = self.storage.f
         pos = self.abs_pos()
+        sid, sid_offset = self.storage.get_sid_offset(pos)
+
+        if sid in self.storage.sector_cache:
+            del self.storage.sector_cache[sid]
+
         f.seek(pos)
         # logging.debug("write stream %d bytes at %d" % (byte_writeable, pos))
         f.write(data[:byte_writeable])
@@ -685,15 +709,9 @@ def extend_sid_table(f, table, byte_size):
         table.fromstring(f.read(byte_size))
 
 class CompoundFileBinary(object):
-    def __init__(self, file_object, mode='rb', sector_size=4096, use_mmap=False):
+    def __init__(self, file_object, mode='rb', sector_size=4096):
 
         self.f = file_object
-        self.file_object = self.f
-        self.mm = None
-
-        if use_mmap and mode == 'rb' and hasattr(file_object, 'fileno'):
-            self.mm = mmap.mmap(file_object.fileno(), 0, access=mmap.ACCESS_READ)
-            self.f = self.mm
 
         self.difat = [[]]
         self.fat = array(str('I'))
@@ -765,8 +783,6 @@ class CompoundFileBinary(object):
         self.write_minifat()
         self.write_dir_entries()
         self.is_open = False
-        if self.mm:
-            self.mm.close()
 
     def setup_empty(self, sector_size):
 
@@ -1239,8 +1255,10 @@ class CompoundFileBinary(object):
         # raise NotImplementedError("adding additional fat")
 
     def read_sector_data(self, sid):
-        if sid in self.sector_cache:
-            return self.sector_cache[sid]
+
+        sector_data = self.sector_cache.get(sid, None)
+        if sector_data is not None:
+            return sector_data
         else:
             pos = (sid + 1) *  self.sector_size
             self.f.seek(pos)
@@ -1248,6 +1266,10 @@ class CompoundFileBinary(object):
             self.f.readinto(sector_data)
             self.sector_cache[sid] = sector_data
             return sector_data
+
+    def get_sid_offset(self, abs_pos):
+        sid, sid_offset = divmod(abs_pos, self.sector_size)
+        return sid-1, sid_offset
 
     def dir_entry_sid_offset(self, dir_id):
         stream_pos = dir_id * 128
@@ -1264,19 +1286,22 @@ class CompoundFileBinary(object):
         if dir_id is None:
             return None
 
-        if dir_id in self.dir_cache:
-            return self.dir_cache[dir_id]
+        entry = self.dir_cache.get(dir_id, None)
+        if entry is not None:
+            return entry
 
         # assert not dir_id in self.dir_freelist
 
-        sid, sid_offset = self.dir_entry_sid_offset(dir_id)
+        stream_pos = dir_id * 128
+        chain_index = stream_pos // self.sector_size
+        sid_offset  = stream_pos % self.sector_size
+        sid = self.dir_fat_chain[chain_index]
+
         sector_data = self.read_sector_data(sid)
 
-        # mv = memoryview(sector_data)
         data= bytearray(sector_data[sid_offset:sid_offset+128])
-        # print(bytearray(data[:]))
         entry = DirEntry(self, dir_id, data=data)
-        # entry.read()
+
         entry.parent = parent
         self.dir_cache[dir_id] = entry
         return entry
@@ -1552,8 +1577,9 @@ class CompoundFileBinary(object):
         if not root.isdir():
             raise ValueError("can only list storage types")
 
-        if root.dir_id in self.children_cache:
-           return self.children_cache[root.dir_id]
+        children = self.children_cache.get(root.dir_id, None)
+        if children is not None:
+            return children
 
         child = root.child()
 

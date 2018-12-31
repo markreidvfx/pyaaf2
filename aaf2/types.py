@@ -14,6 +14,8 @@ from .mobid import MobID
 from .rational import AAFRational
 from .exceptions import AAFPropertyError
 
+from .cache import PidValueCache
+
 import datetime
 
 from struct import (unpack, pack)
@@ -43,6 +45,7 @@ class TypeDef(core.AAFObject):
         return self.uuid
 
     @property
+    @PidValueCache(PID_UUID)
     def uuid(self):
         data = self.property_entries[PID_UUID].data
         if data is not None:
