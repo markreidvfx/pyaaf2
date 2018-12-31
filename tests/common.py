@@ -9,6 +9,7 @@ import os
 import json
 
 import subprocess
+import aaf2
 from aaf2 import video, audio
 
 FFMPEG_EXEC='ffmpeg'
@@ -43,6 +44,35 @@ def sample_dir():
         os.makedirs(s)
 
     return s
+
+def dummy_print(*args):
+    line = " ".join([str(item) for item in args])
+
+def walk_aaf(root, space="", func=dummy_print):
+    indent = "  "
+
+    for p in root.properties():
+        if isinstance(p, aaf2.properties.StrongRefProperty):
+            func(space, p.name, p.typedef)
+            walk_aaf(p.value, space + indent, func)
+
+        if isinstance(p, aaf2.properties.StrongRefVectorProperty):
+            func(space, p.name, p.typedef)
+            for obj in p.value:
+                func(space + indent, obj)
+                walk_aaf(obj, space + indent*2, func)
+            continue
+
+        if isinstance(p, aaf2.properties.StrongRefSetProperty):
+            func(space, p.name, p.typedef)
+            for key, obj in p.items():
+                func(space + indent, obj)
+                walk_aaf(obj, space + indent*2, func)
+
+            continue
+
+        func(space, p.name, p.typedef, p.value)
+
 
 def probe(path, show_packets=False):
 
@@ -195,11 +225,12 @@ def generate_pcm_audio_stereo(name, sample_rate = 48000, duration = 2,  sample_f
 
     cmd.extend([outfile])
 
-    print(subprocess.list2cmdline(cmd))
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
     stdout,stderr = p.communicate()
-    print(stderr)
+
     if p.returncode != 0:
+        print(subprocess.list2cmdline(cmd))
+        print(stderr)
         return Exception("error encoding footage")
     return outfile
 
