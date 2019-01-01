@@ -17,8 +17,6 @@ from .utils import (register_class, read_u16le, decode_utf16le,
                     encode_utf16le, encode_u16le, str2uuid,
                     AAFClaseID_dict, AAFClassName_dict)
 
-from .cache import PidValueCache
-
 import uuid
 from uuid import UUID
 
@@ -38,11 +36,13 @@ sentinel = object()
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
-    __slots__ = ()
+    __slots__ = ('_typedef_id', '_uuid')
 
     def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         self = super(PropertyDef, cls).__new__(cls)
         self.root = root
+        self._typedef_id = None
+        self._uuid = None
         if root:
             properties.add_string_property(self, PID_NAME, name)
             properties.add_bool_property(self, PID_OPTIONAL, optional)
@@ -82,24 +82,27 @@ class PropertyDef(core.AAFObject):
         self.property_entries[PID_PID].data = encode_u16le(value)
 
     @property
-    @PidValueCache(PID_UUID)
     def uuid(self):
-        data = self.property_entries[PID_UUID].data
-        if data is not None:
-            return UUID(bytes_le=self.property_entries[PID_UUID].data)
+        if self._uuid:
+            return self._uuid
+        p = self.property_entries.get(PID_UUID)
+        self._uuid = UUID(bytes_le=p.data)
+        return self._uuid
 
     @property
     def optional(self):
         return self.property_entries[PID_OPTIONAL].data == b"\x01"
 
     @property
-    @PidValueCache(PID_TYPE)
     def typedef_id(self):
-        if PID_TYPE in self.property_entries:
-            return UUID(bytes_le=self.property_entries[PID_TYPE].data)
+        if self._typedef_id:
+            return self._typedef_id
+
+        p = self.property_entries.get(PID_TYPE)
+        self._typedef_id = UUID(bytes_le=p.data)
+        return self._typedef_id
 
     @property
-    @PidValueCache(PID_TYPE)
     def typedef(self):
         type_id = self.typedef_id
         if type_id:
