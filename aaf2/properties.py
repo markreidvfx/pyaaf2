@@ -107,6 +107,13 @@ class Property(object):
         if classdef is None:
             return
 
+        p = classdef.get_propertydef_from_pid(self.pid)
+        if p:
+            self._propertydef = p
+            return p
+
+        # fall back to slow method if early in the bootstraping process
+        # seems to be on ClassDefinitions
         for p in classdef.all_propertydefs():
             if p.pid == self.pid:
                 self._propertydef = p
