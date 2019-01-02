@@ -27,6 +27,8 @@ from .properties import property_formats
 
 P_HEADER_STRUCT = struct.Struct(str('<BBH'))
 
+OPERATIONGROUP_PARAMETERS_UUID = UUID("06010104-060a-0000-060e-2b3401010102")
+
 class AAFObject(object):
     __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
 
@@ -305,7 +307,7 @@ class AAFObject(object):
                 # Workaround, for OperationDef Parameters
                 # AAF SDK uses a StrongRefSetProperty
                 # Spec says its suppose to be a StrongRefVectorProperty
-                if propertydef.uuid == UUID("06010104-060a-0000-060e-2b3401010102"):
+                if propertydef.uuid == OPERATIONGROUP_PARAMETERS_UUID:
                     fmt = properties.SF_STRONG_OBJECT_REFERENCE_SET
 
                 p = property_formats[fmt](self, propertydef.pid, fmt)
