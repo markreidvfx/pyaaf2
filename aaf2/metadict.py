@@ -36,13 +36,14 @@ sentinel = object()
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
-    __slots__ = ('_typedef_id', '_uuid')
+    __slots__ = ('_typedef_id', '_uuid', '_property_name')
 
     def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
         self = super(PropertyDef, cls).__new__(cls)
         self.root = root
         self._typedef_id = None
         self._uuid = None
+        self._property_name = name
         if root:
             properties.add_string_property(self, PID_NAME, name)
             properties.add_bool_property(self, PID_OPTIONAL, optional)
@@ -55,13 +56,17 @@ class PropertyDef(core.AAFObject):
 
     @property
     def property_name(self):
-        data = self.property_entries[PID_NAME].data
-        if data is not None:
-            return decode_utf16le(data)
+        if self._property_name:
+            return self._property_name
+
+        p = self.property_entries.get(PID_NAME)
+        self._property_name = decode_utf16le(p.data)
+        return self._property_name
 
     @property_name.setter
     def property_name(self, value):
        self.property_entries[PID_NAME].data = encode_utf16le(value)
+       self._property_name = value
 
     @property
     def unique_key(self):
