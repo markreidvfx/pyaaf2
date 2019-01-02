@@ -14,8 +14,6 @@ from .mobid import MobID
 from .rational import AAFRational
 from .exceptions import AAFPropertyError
 
-from .cache import PidValueCache
-
 import datetime
 
 from struct import (unpack, pack)
@@ -30,11 +28,12 @@ PID_UUID      = 0x0005
 @register_class
 class TypeDef(core.AAFObject):
     class_id = UUID("0d010101-0203-0000-060e-2b3402060101")
-    __slots__ = ()
+    __slots__ = ('_uuid')
 
     def __new__(cls, root=None, name=None, type_uuid=None, *args, **kwargs):
         self = super(TypeDef, cls).__new__(cls)
         self.root = root
+        self._uuid = None
         if root:
             properties.add_string_property(self, PID_NAME, name)
             properties.add_uuid_property(self, PID_UUID, type_uuid)
@@ -45,11 +44,12 @@ class TypeDef(core.AAFObject):
         return self.uuid
 
     @property
-    @PidValueCache(PID_UUID)
     def uuid(self):
-        data = self.property_entries[PID_UUID].data
-        if data is not None:
-            return UUID(bytes_le=self.property_entries[PID_UUID].data)
+        if self._uuid:
+            return self._uuid
+        p = self.property_entries.get(PID_UUID)
+        self._uuid = UUID(bytes_le=p.data)
+        return self._uuid
 
     @property
     def type_name(self):
