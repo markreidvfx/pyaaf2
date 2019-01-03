@@ -582,7 +582,6 @@ class TypeDefRecord(TypeDef):
         # MobID
         if self.uuid == MOBID_UUID:
             mobid = MobID(bytes_le=data)
-            assert str(mobid) == str(MobID(str(mobid)))
             return mobid
 
         # AUID
