@@ -409,14 +409,17 @@ class MetaDictionary(core.AAFObject):
         return c
 
     def lookup_class(self, class_id):
-        if class_id in AAFClaseID_dict:
-            return AAFClaseID_dict[class_id]
+        aaf_class = AAFClaseID_dict.get(class_id, None)
+        if aaf_class:
+            return aaf_class
 
-        if class_id in AAFClassName_dict:
-            return AAFClassName_dict[class_id]
+        aaf_class = AAFClassName_dict.get(class_id, None)
+        if aaf_class:
+            return aaf_class
 
-        if class_id in self.typedefs_classes:
-            return self.typedefs_classes[class_id]
+        aaf_class =  self.typedefs_classes.get(class_id, None)
+        if aaf_class:
+            return aaf_class
 
         return core.AAFObject
 
