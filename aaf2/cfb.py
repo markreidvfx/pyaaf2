@@ -318,7 +318,6 @@ class DirEntry(object):
 
         # includes null terminator? should re-verify this
         struct.pack_into(str('<H'), self.data, 64, min(name_size+2, 64))
-        assert self.name == value
         self.mark_modified()
 
     @property
@@ -336,7 +335,6 @@ class DirEntry(object):
             raise ValueError("invalid dir type: %s" % str(value))
 
         self.data[66] = t
-        assert self.type == value
         self.mark_modified()
 
     @property
@@ -354,7 +352,6 @@ class DirEntry(object):
         else:
             raise ValueError("invalid dir type: %s" % str(value))
 
-        assert self.color == value
         self.mark_modified()
 
     @property
@@ -365,7 +362,6 @@ class DirEntry(object):
     @left_id.setter
     def left_id(self, value):
         struct.pack_into(str('<I'), self.data, 68, encode_sid(value))
-        assert self.left_id == value
         self.mark_modified()
 
     @property
@@ -376,7 +372,6 @@ class DirEntry(object):
     @right_id.setter
     def right_id(self, value):
         struct.pack_into(str('<I'), self.data, 72, encode_sid(value))
-        assert self.right_id == value
         self.mark_modified()
 
     @property
@@ -387,7 +382,6 @@ class DirEntry(object):
     @child_id.setter
     def child_id(self, value):
         struct.pack_into(str('<I'), self.data, 76, encode_sid(value))
-        assert self.child_id == value
         self.mark_modified()
 
     @property
@@ -403,7 +397,6 @@ class DirEntry(object):
             self.data[80:96] = bytearray(16)
         else:
             self.data[80:96] = value.bytes_le
-        assert self.class_id == value
         self.mark_modified()
 
     @property
@@ -414,7 +407,6 @@ class DirEntry(object):
     @flags.setter
     def flags(self, value):
         struct.pack_into(str('<I'), self.data, 96, value)
-        assert self.flags == value
         self.mark_modified()
 
     @property
@@ -425,7 +417,6 @@ class DirEntry(object):
     @create_time.setter
     def create_time(self, value):
         struct.pack_into(str('<Q'), self.data, 100, value)
-        assert self.create_time == value
         self.mark_modified()
 
     @property
@@ -436,7 +427,6 @@ class DirEntry(object):
     @modify_time.setter
     def modify_time(self, value):
         struct.pack_into(str('<Q'), self.data, 108, value)
-        assert self.modify_time == value
         self.mark_modified()
 
     @property
@@ -447,7 +437,6 @@ class DirEntry(object):
     @sector_id.setter
     def sector_id(self, value):
         struct.pack_into(str('<I'), self.data, 116, encode_sid(value))
-        assert self.sector_id == value
         self.mark_modified()
 
     @property
@@ -458,7 +447,6 @@ class DirEntry(object):
     @byte_size.setter
     def byte_size(self, value):
         struct.pack_into(str('<Q'), self.data, 120, value)
-        assert self.byte_size == value
         self.mark_modified()
 
     def mark_modified(self):
