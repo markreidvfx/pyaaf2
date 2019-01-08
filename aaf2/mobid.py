@@ -346,12 +346,11 @@ class MobID(object):
 
     def __eq__(self, other):
         if isinstance(other, MobID):
-            return self.int == other.int
-        return NotImplemented
+            return self.bytes_le == other.bytes_le
+        return NotImplemented()
 
     def __hash__(self):
-        return hash(self.int)
-
+        return hash(self.bytes_le)
 
     @property
     def urn(self):
