@@ -24,6 +24,8 @@ class MobIDTests(unittest.TestCase):
         assert m.int == m2.int
 
         assert m == MobID(m_str)
+        assert hash(m) == hash(m2)
+        assert str(m) == m_str
 
     def test_int(self):
 
