@@ -59,6 +59,12 @@ def writeonly(func):
 
     return func_wrapper
 
+CLASSDEF_UUID = UUID("0d010101-0101-0100-060e-2b3402060101")
+TYPEDEF_UUID = UUID("0d010101-0203-0000-060e-2b3402060101")
+
+MOB_MOBID_UUID = UUID("01011510-0000-0000-060e-2b3401010101")
+ESSENCEDATA_MOBID_UUID = UUID("06010106-0100-0000-060e-2b3401010102")
+
 class Property(object):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         self.pid = pid
@@ -150,9 +156,9 @@ class Property(object):
     @writeonly
     def value(self, value):
         if self._data is not None and self.parent.dir and self.unique:
-            if self.propertydef.uuid == UUID("01011510-0000-0000-060e-2b3401010101"):
+            if self.propertydef.uuid == MOB_MOBID_UUID:
                 self.parent.root.content.mobs.swap_unique_key(self.value, value)
-            elif self.propertydef.uuid == UUID("06010106-0100-0000-060e-2b3401010102"):
+            elif self.propertydef.uuid == ESSENCEDATA_MOBID_UUID:
                 self.parent.root.content.essencedata.swap_unique_key(self.value, value)
             else:
                 raise AAFPropertyError("cannot change unique property value of attached object")
@@ -958,12 +964,9 @@ class StrongRefSetProperty(Property):
 
 def resolve_weakref(p, ref):
     ref_class_id = p.ref_classdef.uuid
-
-    # classdef
-    if ref_class_id   == UUID("0d010101-0101-0100-060e-2b3402060101"):
+    if ref_class_id   == CLASSDEF_UUID:
         return p.parent.root.metadict.lookup_classdef(ref)
-    # typedef
-    elif ref_class_id == UUID("0d010101-0203-0000-060e-2b3402060101"):
+    elif ref_class_id == TYPEDEF_UUID:
         return p.parent.root.metadict.lookup_typedef(ref)
     else:
         return p.parent.root.resovle_weakref(p.weakref_index, p.key_pid, ref)
