@@ -180,11 +180,11 @@ class MobID(object):
         else:
             self.bytes_le = bytearray(32)
 
-        if not mobid is None:
-            self.urn = mobid
+            if mobid is not None:
+                self.urn = mobid
 
-        if not int is None:
-            self.int = int
+            if int is not None:
+                self.int = int
 
     @staticmethod
     def new():
