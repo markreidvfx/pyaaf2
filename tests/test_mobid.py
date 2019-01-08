@@ -13,7 +13,8 @@ import unittest
 class MobIDTests(unittest.TestCase):
     def test_mob_id(self):
         m = MobID.new()
-        m.material = UUID("52c02cd8-6801-4806-986a-b68c0a0cf9d3")
+        material_uuid = UUID("52c02cd8-6801-4806-986a-b68c0a0cf9d3")
+        m.material = material_uuid
         m_str = "urn:smpte:umid:060a2b34.01010105.01010f20.13000000.52c02cd8.68014806.986ab68c.0a0cf9d3"
 
         m2 = MobID(str(m))
@@ -26,6 +27,8 @@ class MobIDTests(unittest.TestCase):
         assert m == MobID(m_str)
         assert hash(m) == hash(m2)
         assert str(m) == m_str
+
+        assert m.material == material_uuid
 
     def test_int(self):
 

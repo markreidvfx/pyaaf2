@@ -202,10 +202,7 @@ class MobID(object):
 
     @material.setter
     def material(self, value):
-        self.Data1 = value.time_low
-        self.Data2 = value.time_mid
-        self.Data3 = value.time_hi_version
-        self.Data4 = struct.unpack(b"8B", value.bytes[8:])
+        self.bytes_le[16:] = value.bytes_le
 
     @property
     def SMPTELabel(self):
