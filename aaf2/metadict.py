@@ -11,6 +11,7 @@ from . import types
 from .model import classdefs
 from .model import typedefs as base_typedefs
 from . import properties
+from .auid import AUID
 
 from . import core
 from .utils import (register_class, read_u16le, decode_utf16le,
@@ -35,7 +36,7 @@ sentinel = object()
 
 @register_class
 class PropertyDef(core.AAFObject):
-    class_id = UUID("0d010101-0202-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0202-0000-060e-2b3402060101")
     __slots__ = ('_typedef_id', '_uuid', '_property_name')
 
     def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
@@ -91,7 +92,7 @@ class PropertyDef(core.AAFObject):
         if self._uuid:
             return self._uuid
         p = self.property_entries.get(PID_UUID)
-        self._uuid = UUID(bytes_le=p.data)
+        self._uuid = AUID(bytes_le=p.data)
         return self._uuid
 
     @property
@@ -104,7 +105,7 @@ class PropertyDef(core.AAFObject):
             return self._typedef_id
 
         p = self.property_entries.get(PID_TYPE)
-        self._typedef_id = UUID(bytes_le=p.data)
+        self._typedef_id = AUID(bytes_le=p.data)
         return self._typedef_id
 
     @property
@@ -122,7 +123,7 @@ class PropertyDef(core.AAFObject):
 
 @register_class
 class ClassDef(core.AAFObject):
-    class_id = UUID("0d010101-0201-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0201-0000-060e-2b3402060101")
     __slots__ = ('propertydef_by_pid')
 
     def __new__(cls, root=None, name=None, class_uuid=None, parent_uuid=None, concrete=None):
@@ -147,7 +148,7 @@ class ClassDef(core.AAFObject):
     def uuid(self):
         data = self.property_entries[PID_UUID].data
         if data is not None:
-            return UUID(bytes_le=self.property_entries[PID_UUID].data)
+            return AUID(bytes_le=self.property_entries[PID_UUID].data)
 
     @property
     def concrete(self):
@@ -171,13 +172,13 @@ class ClassDef(core.AAFObject):
 
         # Parameter work around
         # Uses the DefinitionObject Identification PID
-        if self.isinstance(self.root.metadict.lookup_classdef(UUID("0d010101-0101-3c00-060e-2b3402060101"))):
+        if self.isinstance(self.root.metadict.lookup_classdef(AUID("0d010101-0101-3c00-060e-2b3402060101"))):
             return 0x1B01
 
     @property
     def unique_key_size(self):
-        mob_classdef = self.root.metadict.lookup_classdef(UUID("0d010101-0101-3400-060e-2b3402060101"))
-        essencedata_classdef = self.root.metadict.lookup_classdef(UUID("0d010101-0101-2300-060e-2b3402060101"))
+        mob_classdef = self.root.metadict.lookup_classdef(AUID("0d010101-0101-3400-060e-2b3402060101"))
+        essencedata_classdef = self.root.metadict.lookup_classdef(AUID("0d010101-0101-2300-060e-2b3402060101"))
         if self.isinstance(mob_classdef) or self.isinstance(essencedata_classdef):
             return 32
         return 16
@@ -224,7 +225,7 @@ class ClassDef(core.AAFObject):
 
         typedef = str2uuid(typedef)
         property_uuid = str2uuid(property_uuid)
-        if isinstance(typedef, UUID):
+        if isinstance(typedef, AUID):
             typedef_uuid = typedef
         else:
             typedef = self.root.metadict.lookup_typedef(typedef)
@@ -295,7 +296,7 @@ PID_TYPEDEFS  = 0x0004
 
 @register_class
 class MetaDictionary(core.AAFObject):
-    class_id = UUID("0d010101-0225-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0225-0000-060e-2b3402060101")
     def __init__(self, root):
         super(MetaDictionary, self).__init__(root)
 
@@ -338,7 +339,7 @@ class MetaDictionary(core.AAFObject):
                     if name in self.typedefs_by_name:
                         t = self.typedefs_by_name[name]
                         for element_value, element_name in args[1].items():
-                            t.register_element(element_name, UUID(element_value))
+                            t.register_element(element_name, AUID(element_value))
                     else:
                         t = types.TypeDefExtEnum(self.root, name, *args)
                         properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
@@ -372,14 +373,14 @@ class MetaDictionary(core.AAFObject):
         self.register_typedef_model(ext_typedefs.__dict__)
 
     def register_classdef(self, name, class_uuid, parent, concrete, propertydefs=None):
-        if not isinstance(class_uuid, UUID):
-            class_uuid = UUID(class_uuid)
+        if not isinstance(class_uuid, AUID):
+            class_uuid = AUID(class_uuid)
 
         parent = str2uuid(parent)
 
         if parent is None:
             parent_uuid = None
-        elif isinstance(parent, UUID):
+        elif isinstance(parent, AUID):
             parent_uuid = parent
         else:
             parent_classdef = self.lookup_classdef(parent)
@@ -428,7 +429,7 @@ class MetaDictionary(core.AAFObject):
             return t
 
         t = str2uuid(t)
-        if isinstance(t, UUID):
+        if isinstance(t, AUID):
             return self.typedefs_by_uuid.get(t, None)
         return self.typedefs_by_name.get(t, None)
 
@@ -436,7 +437,7 @@ class MetaDictionary(core.AAFObject):
         if isinstance(t, ClassDef):
             return t
         t = str2uuid(t)
-        if isinstance(t, UUID):
+        if isinstance(t, AUID):
             return self.classdefs_by_uuid.get(t, None)
         return self.classdefs_by_name.get(t, None)
 
@@ -483,8 +484,8 @@ class MetaDictionary(core.AAFObject):
         if self.root.writeable:
             for key, typedef in self.typedefs_by_uuid.items():
                 # skip root typedefs
-                if key in (UUID('05022800-0000-0000-060E-2B3401040101'),
-                           UUID('05022700-0000-0000-060E-2B3401040101')):
+                if key in (AUID('05022800-0000-0000-060E-2B3401040101'),
+                           AUID('05022700-0000-0000-060E-2B3401040101')):
                     # print("skipping root typedef")
                     continue
 
@@ -495,7 +496,7 @@ class MetaDictionary(core.AAFObject):
         if self.root.writeable:
             for key, classdef in self.classdefs_by_uuid.items():
                 # skip root classdefs
-                if key in (UUID('b3b398a5-1c90-11d4-8053-080036210804'), ):
+                if key in (AUID('b3b398a5-1c90-11d4-8053-080036210804'), ):
                     # print("skipping root")
                     continue
 

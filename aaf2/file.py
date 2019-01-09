@@ -22,7 +22,7 @@ from .utils import (
     write_u32le,
     )
 
-
+from .auid import AUID
 from .cfb import (CompoundFileBinary, DirEntry)
 from .core import AAFObject
 from .metadict import MetaDictionary
@@ -239,7 +239,7 @@ class AAFFile(object):
         self.dictionary.setup_defaults()
 
         self.header['Content'].value = self.create.ContentStorage()
-        self.header['OperationalPattern'].value = UUID("0d011201-0100-0000-060e-2b3404010105")
+        self.header['OperationalPattern'].value = AUID("0d011201-0100-0000-060e-2b3404010105")
         self.header['ObjectModelVersion'].value = 1
         self.header['Version'].value =  {u'major': 1, u'minor': 1}
 
@@ -247,7 +247,7 @@ class AAFFile(object):
         i['ProductName'].value = "PyAAF"
         i['CompanyName'].value = "CompanyName"
         i['ProductVersionString'].value = '2.0.0'
-        i['ProductID'].value = UUID("97e04c67-dbe6-4d11-bcd7-3a3a4253a2ef")
+        i['ProductID'].value = AUID("97e04c67-dbe6-4d11-bcd7-3a3a4253a2ef")
         i['Date'].value = now
         i['Platform'].value = sys.platform
         i['GenerationAUID'].value = uuid4()

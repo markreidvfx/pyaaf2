@@ -11,11 +11,13 @@ import io
 
 from . import core
 from . utils import register_class
+from .auid import AUID
 
-ConstantInterp     = UUID("5b6c85a5-0ede-11d3-80a9-006008143e6f")
-LinearInterp       = UUID("5b6c85a4-0ede-11d3-80a9-006008143e6f")
-BezierInterpolator = UUID("df394eda-6ac6-4566-8dbe-f28b0bdd781a")
-CubicInterpolator  = UUID("a04a5439-8a0e-4cb7-975f-a5b255866883")
+
+ConstantInterp     = AUID("5b6c85a5-0ede-11d3-80a9-006008143e6f")
+LinearInterp       = AUID("5b6c85a4-0ede-11d3-80a9-006008143e6f")
+BezierInterpolator = AUID("df394eda-6ac6-4566-8dbe-f28b0bdd781a")
+CubicInterpolator  = AUID("a04a5439-8a0e-4cb7-975f-a5b255866883")
 
 class TaggedValueHelper(object):
     def __init__(self, poperty_vector):
@@ -55,7 +57,7 @@ class TaggedValueHelper(object):
 
 @register_class
 class TaggedValue(core.AAFObject):
-    class_id = UUID("0d010101-0101-3f00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3f00-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self, name=None, value=None, value_typedef=None):
@@ -104,7 +106,7 @@ class TaggedValue(core.AAFObject):
         return '<%s at 0x%x>' % (s, id(self))
 
 class Parameter(core.AAFObject):
-    class_id = UUID("0d010101-0101-3c00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3c00-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -146,7 +148,7 @@ class Parameter(core.AAFObject):
 
 @register_class
 class ConstantValue(Parameter):
-    class_id = UUID("0d010101-0101-3d00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3d00-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, parameterdef=None, value=None):
         super(ConstantValue, self).__init__()
@@ -358,7 +360,7 @@ def generate_offset_map(speed_map, start=0, end=None):
 
 @register_class
 class VaryingValue(Parameter):
-    class_id = UUID("0d010101-0101-3e00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3e00-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -467,7 +469,7 @@ class VaryingValue(Parameter):
 
 @register_class
 class ControlPoint(core.AAFObject):
-    class_id = UUID("0d010101-0101-1900-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1900-060e-2b3402060101")
     __slots__ = ()
 
     @property

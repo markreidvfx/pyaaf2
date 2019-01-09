@@ -11,9 +11,10 @@ from . import core
 from . utils import register_class
 from . mobid import MobID
 from . dictionary import DataDef
+from .auid import AUID
 
 class Component(core.AAFObject):
-    class_id = UUID("0d010101-0101-0200-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0200-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, media_kind=None, length=None):
         self.media_kind = media_kind or 'picture'
@@ -46,17 +47,17 @@ class Component(core.AAFObject):
         self.datadef = self.root.dictionary.lookup_datadef(value)
 
 class Segment(Component):
-    class_id = UUID("0d010101-0101-0300-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0300-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Transition(Component):
-    class_id = UUID("0d010101-0101-1700-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1700-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Sequence(Segment):
-    class_id = UUID("0d010101-0101-0f00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0f00-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -65,7 +66,7 @@ class Sequence(Segment):
 
 @register_class
 class NestedScope(Segment):
-    class_id = UUID("0d010101-0101-0b00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0b00-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -73,7 +74,7 @@ class NestedScope(Segment):
         return self['Slots']
 
 class SourceReference(Segment):
-    class_id = UUID("0d010101-0101-1000-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1000-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -117,7 +118,7 @@ class SourceReference(Segment):
 
 @register_class
 class SourceClip(SourceReference):
-    class_id = UUID("0d010101-0101-1100-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1100-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self, start=None, length=None, mob_id=None, slot_id=None, media_kind=None):
@@ -171,37 +172,37 @@ class SourceClip(SourceReference):
 
 @register_class
 class Filler(Segment):
-    class_id = UUID("0d010101-0101-0900-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0900-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class EssenceGroup(Segment):
-    class_id = UUID("0d010101-0101-0500-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0500-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class EdgeCode(Segment):
-    class_id = UUID("0d010101-0101-0400-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0400-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Pulldown(Segment):
-    class_id = UUID("0d010101-0101-0c00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0c00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class ScopeReference(Segment):
-    class_id = UUID("0d010101-0101-0d00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0d00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Selector(Segment):
-    class_id = UUID("0d010101-0101-0e00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0e00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Timecode(Segment):
-    class_id = UUID("0d010101-0101-1400-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1400-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self, fps=25, drop=False):
@@ -237,7 +238,7 @@ class Timecode(Segment):
 
 @register_class
 class OperationGroup(Segment):
-    class_id = UUID("0d010101-0101-0a00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0a00-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self, operationdef, length=None):
@@ -262,7 +263,7 @@ class OperationGroup(Segment):
         return self['InputSegments']
 
 class Event(Segment):
-    class_id = UUID("0d010101-0101-0600-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0600-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self):
@@ -270,10 +271,10 @@ class Event(Segment):
 
 @register_class
 class CommentMarker(Event):
-    class_id = UUID("0d010101-0101-0800-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-0800-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class DescriptiveMarker(CommentMarker):
-    class_id = UUID("0d010101-0101-4100-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-4100-060e-2b3402060101")
     __slots__ = ()

@@ -251,7 +251,7 @@ def conform_media(path,
 
 def create_matte_key_definition(f):
 
-    opdef = f.create.OperationDef(uuid.UUID("0c864774-e428-3b2d-8115-1c736806191a"), 'MatteKey_2')
+    opdef = f.create.OperationDef(uuid.AUID("0c864774-e428-3b2d-8115-1c736806191a"), 'MatteKey_2')
     opdef['IsTimeWarp'].value = False
     opdef['OperationCategory'].value = 'OperationCategory_Effect'
     opdef['NumberInputs'].value = 3

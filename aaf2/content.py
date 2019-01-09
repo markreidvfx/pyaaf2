@@ -13,10 +13,11 @@ from . import mobs
 from . import mxf
 from . import ama
 from . import audio
+from .auid import AUID
 
 @register_class
 class Header(core.AAFObject):
-    class_id = UUID("0d010101-0101-2f00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-2f00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
@@ -25,7 +26,7 @@ class ContentStorage(core.AAFObject):
     This object has all ``Mob`` and ``EssenceData`` objects in the file
     """
 
-    class_id = UUID("0d010101-0101-1800-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1800-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -79,7 +80,7 @@ class ContentStorage(core.AAFObject):
         """
         Create a link source MOB to a wav file, along with a corresponding master MOB and tape MOB.
 
-        Returns a 3-tuple: a master mob, the source MOB whose essence is a WAVEDescriptor link, 
+        Returns a 3-tuple: a master mob, the source MOB whose essence is a WAVEDescriptor link,
         and a source MOB whose essence is a TapeDescriptor.
         """
         return ama.create_wav_link(self.root, metadata)

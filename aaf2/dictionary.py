@@ -6,6 +6,7 @@ from __future__ import (
     )
 
 from uuid import UUID
+from .auid import AUID
 
 from .model import datadefs
 from . import core
@@ -17,7 +18,7 @@ def short_name(name):
     return name
 
 def lookup_def(dictionary, name, instance_type, key):
-    if isinstance(name, UUID):
+    if isinstance(name, AUID):
         return dictionary[key].get(name, None)
 
     if isinstance(name, instance_type):
@@ -34,14 +35,14 @@ def lookup_def(dictionary, name, instance_type, key):
 
 @register_class
 class DefinitionObject(core.AAFObject):
-    class_id = UUID("0d010101-0101-1a00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1a00-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, uuid=None, name=None, description=None):
         super(DefinitionObject, self).__init__()
         self.name = name
         self.description = description
         if uuid:
-            self.uuid = UUID(str(uuid))
+            self.uuid = AUID(str(uuid))
 
     @property
     def name(self):
@@ -88,12 +89,12 @@ class DefinitionObject(core.AAFObject):
 
 @register_class
 class DataDef(DefinitionObject):
-    class_id = UUID("0d010101-0101-1b00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1b00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class OperationDef(DefinitionObject):
-    class_id = UUID("0d010101-0101-1c00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1c00-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -120,7 +121,7 @@ class OperationDef(DefinitionObject):
 
 @register_class
 class ParameterDef(DefinitionObject):
-    class_id = UUID("0d010101-0101-1d00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1d00-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self, uuid=None, name=None, description=None, typedef=None):
@@ -137,12 +138,12 @@ class ParameterDef(DefinitionObject):
 
 @register_class
 class PluginDef(DefinitionObject):
-    class_id = UUID("0d010101-0101-1e00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1e00-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class CodecDef(DefinitionObject):
-    class_id = UUID("0d010101-0101-1f00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-1f00-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, dictionary, uuid=None, name=None, description=None, classdef=None, datadef_names=None):
         super(CodecDef, self).__init__(uuid, name, description)
@@ -154,17 +155,17 @@ class CodecDef(DefinitionObject):
 
 @register_class
 class ContainerDef(DefinitionObject):
-    class_id = UUID("0d010101-0101-2000-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-2000-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class InterpolationDef(DefinitionObject):
-    class_id = UUID("0d010101-0101-2100-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-2100-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class Dictionary(core.AAFObject):
-    class_id = UUID("0d010101-0101-2200-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-2200-060e-2b3402060101")
     __slots__ = ()
     def __init__(self):
         super(Dictionary, self).__init__()

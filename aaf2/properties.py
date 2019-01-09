@@ -28,6 +28,7 @@ from .utils import (
     encode_s64le,
     mangle_name,
     )
+from .auid import AUID
 from .mobid import MobID
 from .exceptions import AAFPropertyError, AAFAttachError
 
@@ -59,11 +60,11 @@ def writeonly(func):
 
     return func_wrapper
 
-CLASSDEF_UUID = UUID("0d010101-0101-0100-060e-2b3402060101")
-TYPEDEF_UUID = UUID("0d010101-0203-0000-060e-2b3402060101")
+CLASSDEF_UUID = AUID("0d010101-0101-0100-060e-2b3402060101")
+TYPEDEF_UUID = AUID("0d010101-0203-0000-060e-2b3402060101")
 
-MOB_MOBID_UUID = UUID("01011510-0000-0000-060e-2b3401010101")
-ESSENCEDATA_MOBID_UUID = UUID("06010106-0100-0000-060e-2b3401010102")
+MOB_MOBID_UUID = AUID("01011510-0000-0000-060e-2b3401010101")
+ESSENCEDATA_MOBID_UUID = AUID("06010106-0100-0000-060e-2b3401010102")
 
 class Property(object):
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
@@ -752,7 +753,7 @@ class StrongRefSetProperty(Property):
             assert ref_count == 1
 
             if self.key_size == 16:
-                key = UUID(bytes_le=key)
+                key = AUID(bytes_le=key)
             else:
                 key = MobID(bytes_le=key)
 
@@ -994,7 +995,7 @@ class WeakRefProperty(Property):
         self.key_size = read_u8(f)
         assert self.key_size in (16, 32)
         if self.key_size == 16:
-            self.ref = UUID(bytes_le=f.read(self.key_size))
+            self.ref = AUID(bytes_le=f.read(self.key_size))
         else:
             self.ref = key = MobID(bytes_le=f.read(self.key_size))
 
@@ -1088,7 +1089,7 @@ class WeakRefArrayProperty(Property):
 
         for i in range(count):
             if self.key_size == 16:
-                key = UUID(bytes_le=f.read(self.key_size))
+                key = AUID(bytes_le=f.read(self.key_size))
             else:
                 key = key = MobID(bytes_le=f.read(self.key_size))
             self.references.append(key)
@@ -1250,9 +1251,9 @@ def add_uuid_property(parent, pid, value):
     p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
 
     if value is None:
-        value = UUID(int=0)
-    elif not isinstance(value, UUID):
-        value = UUID(value)
+        value = AUID(int=0)
+    elif not isinstance(value, AUID):
+        value = AUID(value)
 
     p.data = value.bytes_le
     parent.property_entries[pid] = p
@@ -1283,9 +1284,8 @@ def add_weakref_property(parent, pid, pid_path, key_pid, value):
     p.weakref_index = parent.root.weakref_index(pid_path)
     p.key_pid = key_pid
     p.key_size = 16
-    if not isinstance(value, UUID):
-        value = UUID(value)
-
+    if not isinstance(value, AUID):
+        value = AUID(value)
     p.ref = value
     p.data = p.encode()
 
@@ -1352,7 +1352,7 @@ def add_typedef_weakref_vector_property(parent, pid, property_name, values):
     p.index_name = mangle_name(property_name, pid, 32)
     p.data = p.encode(p.index_name)
 
-    p.references = [UUID(v) for v in values]
+    p.references = [AUID(v) for v in values]
 
     parent.property_entries[pid] = p
     return p

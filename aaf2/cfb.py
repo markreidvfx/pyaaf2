@@ -9,7 +9,6 @@ import logging
 
 import sys
 import os
-import uuid
 import io
 import math
 import weakref
@@ -31,6 +30,7 @@ from .utils import (
 )
 from .exceptions import CompoundFileBinaryError
 from .cache import LRUCacheDict
+from .import auid
 
 from io import BytesIO
 
@@ -389,7 +389,7 @@ class DirEntry(object):
 
     @property
     def class_id(self):
-        value = uuid.UUID(bytes_le=bytes(self.data[80:96]))
+        value = auid.AUID(bytes_le=bytes(self.data[80:96]))
         if value.int == 0:
             return None
         return value
@@ -778,9 +778,9 @@ class CompoundFileBinary(object):
     def setup_empty(self, sector_size):
 
         if sector_size == 4096:
-            self.class_id = uuid.UUID("0d010201-0200-0000-060e-2b3403020101")
+            self.class_id = auid.AUID("0d010201-0200-0000-060e-2b3403020101")
         elif sector_size == 512:
-            self.class_id = uuid.UUID("42464141-000d-4d4f-060e-2b34010101ff")
+            self.class_id = auid.AUID("42464141-000d-4d4f-060e-2b34010101ff")
         else:
             raise ValueError("sector size must be 4096 or 512")
 
@@ -823,7 +823,7 @@ class CompoundFileBinary(object):
         self.root.name = 'Root Entry'
         self.root.sector_id = None
         self.root.type = 'root storage'
-        self.root.class_id = uuid.UUID("b3b398a5-1c90-11d4-8053-080036210804")
+        self.root.class_id = auid.AUID("b3b398a5-1c90-11d4-8053-080036210804")
 
         self.dir_cache[0] = self.root
 

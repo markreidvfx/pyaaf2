@@ -8,10 +8,11 @@ from __future__ import (
 from uuid import UUID
 from . import core
 from .utils import register_class
+from .auid import AUID
 
 @register_class
 class MobSlot(core.AAFObject):
-    class_id = UUID("0d010101-0101-3800-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3800-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self, slot_id=None, name=None, segment=None):
@@ -73,12 +74,12 @@ class MobSlot(core.AAFObject):
 
 @register_class
 class EventMobSlot(MobSlot):
-    class_id = UUID( "0d010101-0101-3900-060e-2b3402060101")
+    class_id = AUID( "0d010101-0101-3900-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class TimelineMobSlot(MobSlot):
-    class_id = UUID("0d010101-0101-3b00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3b00-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, slot_id=None, name=None, segment=None, origin=None, edit_rate=None):
         super(TimelineMobSlot, self).__init__(slot_id, name, segment)
@@ -102,5 +103,5 @@ class TimelineMobSlot(MobSlot):
 
 @register_class
 class StaticMobSlot(MobSlot):
-    class_id = UUID("0d010101-0101-3a00-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3a00-060e-2b3402060101")
     __slots__ = ()

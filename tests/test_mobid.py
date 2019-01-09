@@ -7,13 +7,14 @@ from __future__ import (
 
 from aaf2.mobid import MobID
 from uuid import UUID
+from aaf2.auid import AUID
 import uuid
 import unittest
 
 class MobIDTests(unittest.TestCase):
     def test_mob_id(self):
         m = MobID.new()
-        material_uuid = UUID("52c02cd8-6801-4806-986a-b68c0a0cf9d3")
+        material_uuid = AUID("52c02cd8-6801-4806-986a-b68c0a0cf9d3")
         m.material = material_uuid
         m_str = "urn:smpte:umid:060a2b34.01010105.01010f20.13000000.52c02cd8.68014806.986ab68c.0a0cf9d3"
 
@@ -39,7 +40,7 @@ class MobIDTests(unittest.TestCase):
 
     def test_material_id(self):
         for i in range(10000):
-            material = UUID(int=i)
+            material = AUID(int=i)
             m = MobID(int=i)
             assert m.material == material
 

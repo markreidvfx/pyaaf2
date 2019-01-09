@@ -7,6 +7,7 @@ from __future__ import (
 
 from struct import unpack, pack
 import uuid
+from . import auid
 
 def read_u8(f):
     return unpack(b"B", f.read(1))[0]
@@ -68,7 +69,7 @@ def write_sid(f, value):
 def read_uuid(f):
     data = f.read(16)
     if data:
-        return uuid.UUID(bytes_le=data)
+        return auid.AUID(bytes_le=data)
 
 def write_uuid(f, value):
     if value is None:
@@ -103,16 +104,16 @@ def encode_utf16_array(data):
 def encode_uuid_array(values):
     result = b""
     for item in values:
-        if not isinstance(item, uuid.UUID):
-            item = uuid.UUID(item)
+        if not isinstance(item, auid.AUID):
+            item = auid.AUID(item)
         result += item.bytes_le
     return result
 
 def str2uuid(value):
-    if isinstance(value, uuid.UUID):
+    if isinstance(value, auid.AUID):
         return value
     try:
-        return uuid.UUID(value)
+        return auid.AUID(value)
     except:
         return value
 

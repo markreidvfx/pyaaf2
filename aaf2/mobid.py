@@ -136,6 +136,7 @@ from __future__ import (
 import uuid
 import struct
 from .utils import (int_from_bytes, bytes_from_int, unpack_u16le_from, unpack_u32le_from)
+from . import auid
 
 MOBID_STRUCT = struct.Struct(str(''.join(( '<',
    '12B',  # UInt8Array12   SMPTELabel      0
@@ -198,7 +199,7 @@ class MobID(object):
         """
         MobID material representation as a UUID
         """
-        return uuid.UUID(bytes_le=bytes(self.bytes_le[16:]))
+        return auid.AUID(bytes_le=bytes(self.bytes_le[16:]))
 
     @material.setter
     def material(self, value):
@@ -330,7 +331,7 @@ class MobID(object):
     def __eq__(self, other):
         if isinstance(other, MobID):
             return self.bytes_le == other.bytes_le
-        return NotImplemented()
+        return NotImplemented
 
     def __hash__(self):
         return hash(bytes(self.bytes_le))

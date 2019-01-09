@@ -13,6 +13,7 @@ from . import properties
 from .mobid import MobID
 from .rational import AAFRational
 from .exceptions import AAFPropertyError
+from .auid import AUID
 
 import datetime
 
@@ -27,7 +28,7 @@ PID_UUID      = 0x0005
 
 @register_class
 class TypeDef(core.AAFObject):
-    class_id = UUID("0d010101-0203-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0203-0000-060e-2b3402060101")
     __slots__ = ('_uuid')
 
     def __new__(cls, root=None, name=None, type_uuid=None, *args, **kwargs):
@@ -48,7 +49,7 @@ class TypeDef(core.AAFObject):
         if self._uuid:
             return self._uuid
         p = self.property_entries.get(PID_UUID)
-        self._uuid = UUID(bytes_le=p.data)
+        self._uuid = AUID(bytes_le=p.data)
         return self._uuid
 
     @property
@@ -69,7 +70,7 @@ PID_INT_SIGNED = 0x0010
 
 @register_class
 class TypeDefInt(TypeDef):
-    class_id = UUID("0d010101-0204-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0204-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, size=None, signed=None):
@@ -124,7 +125,7 @@ PID_STRONGREF_REF_TYPE = 0x0011
 
 @register_class
 class TypeDefStrongRef(TypeDef):
-    class_id = UUID("0d010101-0205-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0205-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, classdef=None):
@@ -147,7 +148,7 @@ PID_WEAKREF_TARGET_SET = 0x0013
 
 @register_class
 class TypeDefWeakRef(TypeDef):
-    class_id = UUID("0d010101-0206-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0206-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, classdef=None, path=None):
@@ -202,7 +203,7 @@ PID_ENUM_VALUES  = 0x0016
 
 @register_class
 class TypeDefEnum(TypeDef):
-    class_id = UUID("0d010101-0207-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0207-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, typedef=None, elements=None):
@@ -260,7 +261,7 @@ class TypeDefEnum(TypeDef):
     def decode(self, data):
 
         # Boolean
-        if self.uuid == UUID("01040100-0000-0000-060e-2b3401040101"):
+        if self.uuid == AUID("01040100-0000-0000-060e-2b3401040101"):
             return data == b'\x01'
 
         typedef = self.element_typedef
@@ -269,7 +270,7 @@ class TypeDefEnum(TypeDef):
 
     def encode(self, data):
         # Boolean
-        if self.uuid == UUID("01040100-0000-0000-060e-2b3401040101"):
+        if self.uuid == AUID("01040100-0000-0000-060e-2b3401040101"):
             return b'\x01' if data else b'\x00'
 
         typedef = self.element_typedef
@@ -294,7 +295,7 @@ PID_FIXED_COUNT = 0x0018
 
 @register_class
 class TypeDefFixedArray(TypeDef):
-    class_id = UUID("0d010101-0208-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0208-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, typedef=None, size=None):
@@ -361,7 +362,7 @@ PID_VAR_TYPE = 0x0019
 
 @register_class
 class TypeDefVarArray(TypeDef):
-    class_id = UUID("0d010101-0209-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0209-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
@@ -394,7 +395,7 @@ class TypeDefVarArray(TypeDef):
         element_typedef = self.element_typedef
 
         #aafCharacter
-        if element_typedef.uuid == UUID("01100100-0000-0000-060e-2b3401040101"):
+        if element_typedef.uuid == AUID("01100100-0000-0000-060e-2b3401040101"):
             return list(iter_utf16_array(data))
 
 
@@ -438,7 +439,7 @@ PID_SET_TYPE = 0x001A
 
 @register_class
 class TypeDefSet(TypeDef):
-    class_id = UUID("0d010101-020a-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-020a-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
@@ -497,7 +498,7 @@ PID_STR_TYPE = 0x001B
 
 @register_class
 class TypeDefString(TypeDef):
-    class_id = UUID("0d010101-020b-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-020b-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
@@ -519,7 +520,7 @@ class TypeDefString(TypeDef):
 
 @register_class
 class TypeDefStream(TypeDef):
-    class_id = UUID("0d010101-020c-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-020c-0000-060e-2b3402060101")
 
     @property
     def store_format(self):
@@ -528,16 +529,16 @@ class TypeDefStream(TypeDef):
 PID_RECORD_TYPES = 0x001C
 PID_RECORD_NAMES = 0x001D
 
-MOBID_UUID      = UUID("01030200-0000-0000-060e-2b3401040101")
-AUID_UUID       = UUID("01030100-0000-0000-060e-2b3401040101")
-TIMESTRUCT_UUID = UUID("03010600-0000-0000-060e-2b3401040101")
-DATESTRUCT_UUID = UUID("03010500-0000-0000-060e-2b3401040101")
-TIMESTAMP_UUID  = UUID("03010700-0000-0000-060e-2b3401040101")
-RATIONAL_UUID   = UUID("03010100-0000-0000-060e-2b3401040101")
+MOBID_UUID      = AUID("01030200-0000-0000-060e-2b3401040101")
+AUID_UUID       = AUID("01030100-0000-0000-060e-2b3401040101")
+TIMESTRUCT_UUID = AUID("03010600-0000-0000-060e-2b3401040101")
+DATESTRUCT_UUID = AUID("03010500-0000-0000-060e-2b3401040101")
+TIMESTAMP_UUID  = AUID("03010700-0000-0000-060e-2b3401040101")
+RATIONAL_UUID   = AUID("03010100-0000-0000-060e-2b3401040101")
 
 @register_class
 class TypeDefRecord(TypeDef):
-    class_id = UUID("0d010101-020d-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-020d-0000-060e-2b3402060101")
     __slots__ = ('_fields')
 
     def __new__(cls, root=None, name=None, type_uuid=None, fields=None):
@@ -586,7 +587,7 @@ class TypeDefRecord(TypeDef):
 
         # AUID
         if self.uuid == AUID_UUID:
-            return UUID(bytes_le=data)
+            return AUID(bytes_le=data)
 
         start = 0
         result = {}
@@ -681,7 +682,7 @@ PID_RENAME_TYPE = 0x001E
 
 @register_class
 class TypeDefRename(TypeDef):
-    class_id = UUID("0d010101-020e-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-020e-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls,  root=None, name=None, type_uuid=None, typedef=None):
@@ -710,7 +711,7 @@ def iter_uuid_array(data):
             break
 
         if len(d) == 16:
-            yield UUID(bytes_le=d)
+            yield AUID(bytes_le=d)
         else:
             raise Exception("uuid length wrong: %d" % len(d))
 
@@ -719,7 +720,7 @@ PID_EXTENUM_VALUES = 0x0020
 
 @register_class
 class TypeDefExtEnum(TypeDef):
-    class_id = UUID("0d010101-0220-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0220-0000-060e-2b3402060101")
     __slots__ = ()
 
     def __new__(cls, root=None, name=None, type_uuid=None, elements=None):
@@ -765,7 +766,7 @@ class TypeDefExtEnum(TypeDef):
     def decode(self, data):
         if data is None:
             return None
-        v = UUID(bytes_le=data)
+        v = AUID(bytes_le=data)
         result = self.elements.get(v, None)
         if result is None:
             return v
@@ -786,13 +787,13 @@ class TypeDefExtEnum(TypeDef):
 
 @register_class
 class TypeDefIndirect(TypeDef):
-    class_id = UUID("0d010101-0221-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0221-0000-060e-2b3402060101")
     __slots__ = ()
 
     def decode_typedef(self, data):
         byte_order = data[0:1]
         assert byte_order == b'\x4c' # little endian
-        type_uuid = UUID(bytes_le=data[1:17])
+        type_uuid = AUID(bytes_le=data[1:17])
         return self.root.metadict.lookup_typedef(type_uuid)
 
     def decode(self, data):
@@ -811,11 +812,11 @@ class TypeDefIndirect(TypeDef):
 
         elif isinstance(data, (str, unicode)):
             # aafString
-            type_uuid = UUID("01100200-0000-0000-060e-2b3401040101")
+            type_uuid = AUID("01100200-0000-0000-060e-2b3401040101")
 
         elif isinstance(data, int):
             # aafInt32
-            type_uuid = UUID("01010700-0000-0000-060e-2b3401040101")
+            type_uuid = AUID("01010700-0000-0000-060e-2b3401040101")
         else:
             raise NotImplementedError("Indirect type for: %s", str(type(data)))
 
@@ -830,12 +831,12 @@ class TypeDefIndirect(TypeDef):
 
 @register_class
 class TypeDefOpaque(TypeDefIndirect):
-    class_id = UUID("0d010101-0222-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0222-0000-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class TypeDefCharacter(TypeDef):
-    class_id = UUID("0d010101-0223-0000-060e-2b3402060101")
+    class_id = AUID("0d010101-0223-0000-060e-2b3402060101")
     __slots__ = ()
 
 

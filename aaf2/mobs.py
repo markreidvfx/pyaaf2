@@ -17,6 +17,7 @@ from . import essence
 from . import video
 from . import audio
 from .rational import AAFRational
+from .auid import AUID
 
 @register_class
 class Mob(core.AAFObject):
@@ -24,7 +25,7 @@ class Mob(core.AAFObject):
     Base Class for All Mob Objects
     """
 
-    class_id = UUID("0d010101-0101-3400-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3400-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self, name=None):
@@ -133,12 +134,12 @@ class Mob(core.AAFObject):
 
 @register_class
 class CompositionMob(Mob):
-    class_id = UUID("0d010101-0101-3500-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3500-060e-2b3402060101")
     __slots__ = ()
 
 @register_class
 class MasterMob(Mob):
-    class_id = UUID("0d010101-0101-3600-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3600-060e-2b3402060101")
     __slots__ = ()
 
     def import_dnxhd_essence(self, path, edit_rate, tape=None):
@@ -183,7 +184,7 @@ class MasterMob(Mob):
 
 @register_class
 class SourceMob(Mob):
-    class_id = UUID("0d010101-0101-3700-060e-2b3402060101")
+    class_id = AUID("0d010101-0101-3700-060e-2b3402060101")
     __slots__ = ()
 
     @property
@@ -296,7 +297,7 @@ class SourceMob(Mob):
         descriptor['SampleRate'].value = edit_rate
         descriptor['VideoLineMap'].value = [42, 0] # Not exactly sure what linemap is
         descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
-        dnxhd_codec_uuid = UUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
+        dnxhd_codec_uuid = AUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
         descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_uuid)
 
         # open essence stream

@@ -11,6 +11,7 @@ import uuid
 import unittest
 import common
 import shutil
+from aaf2.auid import AUID
 
 def has_duplicate_pid(f):
     pids = []
@@ -30,7 +31,7 @@ class ModelTests(unittest.TestCase):
         result_file = common.get_test_file('root_tess.aaf')
         with aaf2.open(result_file, 'w') as f:
             pass
-        root_uuid = UUID('b3b398a5-1c90-11d4-8053-080036210804')
+        root_uuid = AUID('b3b398a5-1c90-11d4-8053-080036210804')
         with aaf2.open(result_file, 'r') as f:
             for classdef in f.metadict['ClassDefinitions'].value:
                 self.assertFalse(classdef.class_name == "Root")
@@ -40,8 +41,8 @@ class ModelTests(unittest.TestCase):
 
         result_file = common.get_test_file('register_class.aaf')
 
-        test_classdef_uuid = UUID(int=1)
-        test_prop_uuid = UUID(int=42)
+        test_classdef_uuid = AUID(int=1)
+        test_prop_uuid = AUID(int=42)
         test_prop_pid = 0xBEEF
         parent_class_name = 'EssenceDescriptor'
         with aaf2.open(result_file, 'w') as f:

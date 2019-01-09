@@ -24,10 +24,11 @@ from uuid import UUID
 from .exceptions import AAFPropertyError, AAFAttachError
 from . import properties
 from .properties import property_formats
+from .auid import AUID
 
 P_HEADER_STRUCT = struct.Struct(str('<BBH'))
 
-OPERATIONGROUP_PARAMETERS_UUID = UUID("06010104-060a-0000-060e-2b3401010102")
+OPERATIONGROUP_PARAMETERS_UUID = AUID("06010104-060a-0000-060e-2b3401010102")
 
 class AAFObject(object):
     __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
