@@ -135,7 +135,7 @@ from __future__ import (
 
 import uuid
 import struct
-from .utils import (int_from_bytes, bytes_from_int)
+from .utils import (int_from_bytes, bytes_from_int, unpack_u16le_from, unpack_u32le_from)
 
 MOBID_STRUCT = struct.Struct(str(''.join(( '<',
    '12B',  # UInt8Array12   SMPTELabel      0
@@ -246,7 +246,7 @@ class MobID(object):
 
     @property
     def Data1(self):
-        return struct.unpack_from(str('<I'), bytes(self.bytes_le), 16)[0]
+        return unpack_u32le_from(self.bytes_le, 16)
 
     @Data1.setter
     def Data1(self, value):
@@ -254,7 +254,7 @@ class MobID(object):
 
     @property
     def Data2(self):
-        return struct.unpack_from(str('<H'), bytes(self.bytes_le), 20)[0]
+        return unpack_u16le_from(self.bytes_le, 20)
 
     @Data2.setter
     def Data2(self, value):
@@ -262,7 +262,7 @@ class MobID(object):
 
     @property
     def Data3(self):
-        return struct.unpack_from(str('<H'), bytes(self.bytes_le), 22)[0]
+        return unpack_u16le_from(self.bytes_le, 22)
 
     @Data3.setter
     def Data3(self, value):

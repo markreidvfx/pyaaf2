@@ -26,6 +26,7 @@ from .utils import (
     write_filetime, write_sid, write_uuid,
     decode_utf16le,
     decode_sid, encode_sid,
+    unpack_u16le_from, unpack_u32le_from, unpack_u64le_from
 )
 from .exceptions import CompoundFileBinaryError
 from .cache import LRUCacheDict
@@ -301,7 +302,7 @@ class DirEntry(object):
 
     @property
     def name(self):
-        name_size = struct.unpack_from(str('<H'), bytes(self.data), 64)[0]
+        name_size = unpack_u16le_from(self.data, 64)
         assert name_size <= 64
         name =  decode_utf16le(self.data[:name_size])
         return name
@@ -356,7 +357,7 @@ class DirEntry(object):
 
     @property
     def left_id(self):
-        sid = struct.unpack_from(str('<I'), bytes(self.data), 68)[0]
+        sid = unpack_u32le_from(self.data, 68)
         return decode_sid(sid)
 
     @left_id.setter
@@ -366,7 +367,8 @@ class DirEntry(object):
 
     @property
     def right_id(self):
-        sid = struct.unpack_from(str('<I'), bytes(self.data), 72)[0]
+        sid = unpack_u32le_from(self.data, 72)
+        # sid = struct.unpack_from(str('<I'), bytes(self.data), 72)[0]
         return decode_sid(sid)
 
     @right_id.setter
@@ -376,7 +378,7 @@ class DirEntry(object):
 
     @property
     def child_id(self):
-        sid = struct.unpack_from(str('<I'), bytes(self.data), 76)[0]
+        sid = unpack_u32le_from(self.data, 76)
         return decode_sid(sid)
 
     @child_id.setter
@@ -401,7 +403,7 @@ class DirEntry(object):
 
     @property
     def flags(self):
-        flags = struct.unpack_from(str('<I'), bytes(self.data), 96)[0]
+        flags = unpack_u32le_from(self.data, 96)
         return flags
 
     @flags.setter
@@ -411,7 +413,7 @@ class DirEntry(object):
 
     @property
     def create_time(self):
-        value = struct.unpack_from(str('<Q'), bytes(self.data), 100)[0]
+        value = unpack_u64le_from(self.data, 100)
         return value
 
     @create_time.setter
@@ -421,7 +423,7 @@ class DirEntry(object):
 
     @property
     def modify_time(self):
-        value = struct.unpack_from(str('<Q'), bytes(self.data), 108)[0]
+        value = unpack_u64le_from(self.data, 108)
         return value
 
     @modify_time.setter
@@ -431,7 +433,7 @@ class DirEntry(object):
 
     @property
     def sector_id(self):
-        sid = struct.unpack_from(str('<I'), bytes(self.data), 116)[0]
+        sid = unpack_u32le_from(self.data, 116)
         return decode_sid(sid)
 
     @sector_id.setter
@@ -441,7 +443,7 @@ class DirEntry(object):
 
     @property
     def byte_size(self):
-        value = struct.unpack_from(str('<Q'), bytes(self.data), 120)[0]
+        value = unpack_u64le_from(self.data, 120)
         return value
 
     @byte_size.setter

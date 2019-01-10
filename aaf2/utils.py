@@ -122,6 +122,29 @@ def encode_s64le(value):
 def write_filetime(f, value):
     write_u64le(f, value)
 
+def unpack_u16le_from(buffer, offset):
+    value  = buffer[offset]
+    value += buffer[offset+1] << 8
+    return value
+
+def unpack_u32le_from(buffer, offset):
+    value  = buffer[offset]
+    value += buffer[offset+1] << 8
+    value += buffer[offset+2] << 16
+    value += buffer[offset+3] << 24
+    return value
+
+def unpack_u64le_from(buffer, offset):
+    value  = buffer[offset]
+    value += buffer[offset+1] << 8
+    value += buffer[offset+2] << 16
+    value += buffer[offset+3] << 24
+    value += buffer[offset+4] << 32
+    value += buffer[offset+5] << 40
+    value += buffer[offset+6] << 48
+    value += buffer[offset+7] << 56
+    return value
+
 def int_from_bytes(data, byte_order='big'):
     num = 0
     if byte_order == 'little':
