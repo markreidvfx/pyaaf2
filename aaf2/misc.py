@@ -99,7 +99,7 @@ class TaggedValue(core.AAFObject):
         if name:
             s += ' %s' % name
 
-        s += " = " + str(self.value)
+        s += " = " + repr(self.value)
 
         return '<%s at 0x%x>' % (s, id(self))
 
