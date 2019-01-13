@@ -6,10 +6,8 @@ from __future__ import (
     )
 import sys
 import struct
-import uuid
 import datetime
 
-from uuid import UUID
 from io import BytesIO
 import io
 
@@ -19,6 +17,7 @@ from .utils import (read_u8, read_u16be,
                    int_from_bytes)
 from .mobid import MobID
 from .model import datadefs
+from .auid import AUID
 
 MXF_CLASSES = {}
 
@@ -27,7 +26,7 @@ def register_mxf_class(classobj):
     return classobj
 
 
-class MXFRef(UUID):
+class MXFRef(AUID):
     pass
 
 class MXFRefArray(list):
@@ -36,12 +35,12 @@ class MXFRefArray(list):
 def read_uuid_be(f):
     data = f.read(16)
     if data:
-        return uuid.UUID(bytes=data)
+        return AUID(bytes_be=data)
 
 def read_strongref(f):
     data = f.read(16)
     if data:
-        return MXFRef(bytes=data)
+        return MXFRef(bytes_be=data)
 
 
 def decode_strong_ref_array(data):
@@ -69,20 +68,20 @@ def decode_utf16be(data):
     return data[:size].decode('utf-16-be')
 
 def decode_uuid(data):
-    return uuid.UUID(bytes=data)
+    return AUID(bytes_be=data)
 
 def reverse_uuid(data):
     new = data.hex[16:] + data.hex[:16]
-    return UUID(new)
+    return AUID(new)
 
 def decode_datadef(data):
-    orig = uuid.UUID(bytes=data)
+    orig = AUID(bytes_be=data)
     datadef = reverse_uuid(orig)
     name = datadefs.DataDefs.get(str(datadef), (None, None))[0]
     return name
 
 def decode_strongref(data):
-    return MXFRef(bytes=data)
+    return MXFRef(bytes_be=data)
 
 def decode_rational(data):
     f = BytesIO(data)
@@ -135,8 +134,8 @@ def decode_timestamp(data):
 
 
 def decode_mob_id(data):
-    uid1 = UUID(bytes=data[:16])
-    uid2 =  UUID(bytes=data[16:])
+    uid1 = AUID(bytes_be=data[:16])
+    uid2 =  AUID(bytes_be=data[16:])
     m = MobID(str(uid1) + str(uid2))
     return m
 
@@ -162,13 +161,13 @@ class MXFObject(object):
             self.read_tag(tag, data)
             uid = local_tags.get(tag, None)
 
-            if uid == UUID("a0240060-94eb-75cb-ce2a-ca5051ab11d3"):
+            if uid == AUID("a0240060-94eb-75cb-ce2a-ca5051ab11d3"):
                 self.data['FrameSampleSize'] = read_s32be(BytesIO(data))
-            elif uid == UUID("a0240060-94eb-75cb-ce2a-ca4d51ab11d3"):
+            elif uid == AUID("a0240060-94eb-75cb-ce2a-ca4d51ab11d3"):
                 self.data['ResolutionID'] = read_s32be(BytesIO(data))
-            elif uid == UUID("a0220060-94eb-75cb-96c4-69924f6211d3"):
+            elif uid == AUID("a0220060-94eb-75cb-96c4-69924f6211d3"):
                 self.data['AppCode'] = read_s32be(BytesIO(data))
-            elif uid == UUID("060e2b34-0101-0109-0601-010406100000"):
+            elif uid == AUID("060e2b34-0101-0109-0601-010406100000"):
                 self.data['SubDescriptors'] = decode_strong_ref_array(data)
 
     def resolve_ref(self, key):
@@ -190,7 +189,7 @@ class MXFObject(object):
 
 @register_mxf_class
 class MXFPreface(MXFObject):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101012f00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101012f00")
     def read_tag(self, tag, data):
         super(MXFPreface, self).read_tag(tag, data)
 
@@ -201,7 +200,7 @@ class MXFPreface(MXFObject):
 
 @register_mxf_class
 class MXFContentStorage(MXFObject):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101011800")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101011800")
     def read_tag(self, tag, data):
         super(MXFContentStorage, self).read_tag(tag, data)
 
@@ -266,19 +265,19 @@ class MXFPackage(MXFObject):
 
 @register_mxf_class
 class MXFMaterialPackage(MXFPackage):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101013600")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101013600")
     def create_aaf_instance(self):
         return self.root.aaf.create.MasterMob()
 
 @register_mxf_class
 class MXFSourcePackage(MXFPackage):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101013700")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101013700")
     def create_aaf_instance(self):
         return self.root.aaf.create.SourceMob()
 
 @register_mxf_class
 class MXFTrack(MXFObject):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101013b00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101013b00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.TimelineMobSlot()
@@ -312,14 +311,14 @@ class MXFTrack(MXFObject):
 
 @register_mxf_class
 class MXFStaticTrack(MXFTrack):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101013a00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101013a00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.StaticMobSlot()
 
 @register_mxf_class
 class MXFEventTrack(MXFTrack):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101013900")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101013900")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.EventMobSlot()
@@ -365,7 +364,7 @@ class MXFComponent(MXFObject):
 
 @register_mxf_class
 class MXFSequence(MXFComponent):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101010f00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101010f00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.Sequence()
@@ -383,7 +382,7 @@ class MXFSequence(MXFComponent):
 
 @register_mxf_class
 class MXFSourceClip(MXFComponent):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101011100")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101011100")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.SourceClip()
@@ -397,7 +396,7 @@ class MXFSourceClip(MXFComponent):
 
 @register_mxf_class
 class MXFTimecode(MXFComponent):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101011400")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101011400")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.Timecode()
@@ -415,7 +414,7 @@ class MXFTimecode(MXFComponent):
 
 @register_mxf_class
 class MXFPulldown(MXFComponent):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101010c00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101010c00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.Pulldown()
@@ -434,7 +433,7 @@ class MXFPulldown(MXFComponent):
 
 @register_mxf_class
 class MXFFiller(MXFComponent):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101010900")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101010900")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.Filler()
@@ -447,7 +446,7 @@ class MXFFiller(MXFComponent):
 
 @register_mxf_class
 class MXFScopeReference(MXFComponent):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101010d00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101010d00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.ScopeReference()
@@ -463,7 +462,7 @@ class MXFScopeReference(MXFComponent):
 
 @register_mxf_class
 class MXFEssenceGroup(MXFComponent):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101010500")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101010500")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.EssenceGroup()
@@ -538,7 +537,7 @@ class MXFDescriptor(MXFObject):
 
 @register_mxf_class
 class MXFMultipleDescriptor(MXFDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101014400")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101014400")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.MultipleDescriptor()
@@ -556,13 +555,13 @@ class MXFMultipleDescriptor(MXFDescriptor):
             n = self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
             d['Locator'].append(n)
-            d['MediaContainerGUID'].value = UUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
+            d['MediaContainerGUID'].value = AUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
 
         return d
 
 @register_mxf_class
 class MXFCDCIDescriptor(MXFDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101012800")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101012800")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.CDCIDescriptor()
@@ -592,13 +591,13 @@ class MXFCDCIDescriptor(MXFDescriptor):
             n = self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
             d['Locator'].append(n)
-            d['MediaContainerGUID'].value = UUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
+            d['MediaContainerGUID'].value = AUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
 
         return d
 
 @register_mxf_class
 class MXFRGBADescriptor(MXFDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101012900")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101012900")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.RGBADescriptors()
@@ -619,14 +618,14 @@ class MXFRGBADescriptor(MXFDescriptor):
             n = self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
             d['Locator'].append(n)
-            d['MediaContainerGUID'].value = UUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
+            d['MediaContainerGUID'].value = AUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
 
 
         return d
 
 @register_mxf_class
 class MXFANCDataDescriptor(MXFDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101015c00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101015c00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.ANCDataDescriptor()
@@ -639,7 +638,7 @@ class MXFANCDataDescriptor(MXFDescriptor):
 
 @register_mxf_class
 class MXFMPEG2VideoDescriptor(MXFCDCIDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101015100")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101015100")
 
     def link(self):
         # 060e2b34.04010103.04010202.01040300
@@ -649,7 +648,7 @@ class MXFMPEG2VideoDescriptor(MXFCDCIDescriptor):
 
 @register_mxf_class
 class MXFPCMDescriptor(MXFDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101014800")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101014800")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.PCMDescriptor()
@@ -664,21 +663,21 @@ class MXFPCMDescriptor(MXFDescriptor):
             n =  self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
             d['Locator'].append(n)
-            d['MediaContainerGUID'].value = UUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
+            d['MediaContainerGUID'].value = AUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
 
         return d
 
 @register_mxf_class
 class MXFAES3AudioDescriptor(MXFPCMDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101014700")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101014700")
 
 @register_mxf_class
 class MXFSoundDescriptor(MXFPCMDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101014200")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101014200")
 
 @register_mxf_class
 class MXFImportDescriptor(MXFDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101014a00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101014a00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.ImportDescriptor()
@@ -694,7 +693,7 @@ class MXFImportDescriptor(MXFDescriptor):
 
 @register_mxf_class
 class MXFTapeDescriptor(MXFDescriptor):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101012e00")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101012e00")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.TapeDescriptor()
@@ -712,7 +711,7 @@ class MXFLocator(MXFObject):
 
 @register_mxf_class
 class MXFNetworkLocator(MXFLocator):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101013200")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101013200")
 
     def create_aaf_instance(self):
         return self.root.aaf.create.NetworkLocator()
@@ -724,7 +723,7 @@ class MXFNetworkLocator(MXFLocator):
 
 @register_mxf_class
 class MXFEssenceData(MXFObject):
-    class_id = UUID("060e2b34-0253-0101-0d01-010101012300")
+    class_id = AUID("060e2b34-0253-0101-0d01-010101012300")
     def read_tag(self, tag, data):
         super(MXFEssenceData, self).read_tag(tag, data)
 
@@ -765,7 +764,7 @@ def iter_tags(f, length):
         length -= 4 + size
 
 def uuid_to_str_list(v, sep=',', prefix=""):
-    return sep.join('%s%02x' % (prefix, i)  for i in bytearray(v.bytes))
+    return sep.join('%s%02x' % (prefix, i)  for i in bytearray(v.bytes_be))
 
 class MXFFile(object):
 
@@ -786,9 +785,9 @@ class MXFFile(object):
                 if not self.header_partition_size is None and f.tell() > self.header_partition_size:
                     break
 
-                if key == UUID("060e2b34-0205-0101-0d01-020101050100"):
+                if key == AUID("060e2b34-0205-0101-0d01-020101050100"):
                     self.local_tags = self.read_primer(f, length)
-                elif key == UUID("060e2b34-0205-0101-0d01-020101020400"):
+                elif key == AUID("060e2b34-0205-0101-0d01-020101020400"):
                     self.read_header(f, length)
                 else:
                     # print('{')
@@ -877,7 +876,7 @@ class MXFFile(object):
 
     def read_object(self, f, key, length):
 
-        b = bytearray(key.bytes)
+        b = bytearray(key.bytes_be)
         if not b[5] == 0x53:
             return
 
@@ -935,7 +934,7 @@ class MXFFile(object):
         if not op:
             return
 
-        op = bytearray(op.bytes)
+        op = bytearray(op.bytes_be)
 
         prefix1 = bytearray([0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x01, 0x0d, 0x01, 0x02, 0x01])
         prefix2 = bytearray([0x06, 0x0e, 0x2b, 0x34, 0x04, 0x01, 0x01, 0x02, 0x0d, 0x01, 0x02, 0x01])
