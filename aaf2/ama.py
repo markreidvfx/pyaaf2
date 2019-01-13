@@ -5,33 +5,33 @@ from __future__ import (
     division,
     )
 
-from uuid import UUID
 import os
 import sys
 from .rational import AAFRational
 from . import video
 from . import audio
 from . import mxf
+from .auid import AUID
 
 import struct
 
 MediaContainerGUID = {
-"Generic"        : (UUID("b22697a2-3442-44e8-bb8f-7a1cd290ebf1"),
+"Generic"        : (AUID("b22697a2-3442-44e8-bb8f-7a1cd290ebf1"),
     ('.3g2',   '.3gp',  '.aac', '.au',  '.avi', '.bmp', '.dv', '.gif',
      '.jfif',  '.jpeg', '.jpg', '.m4a', '.mid', '.moov', '.mov',
      '.movie', '.mp2',  '.mp3', '.mp4', '.mpa', '.mpe', '.mpeg',
      '.mpg',   '.png',  '.psd', '.qt',  '.tif', '.tiff',)),
-"AVCHD"          : (UUID("f37d624b307d4ef59bebc539046cad54"),
+"AVCHD"          : (AUID("f37d624b307d4ef59bebc539046cad54"),
     ('.mts', '.m2ts',)),
-"ImageSequencer" : (UUID("4964178d-b3d5-485f-8e98-beb89d92a5f4"),
+"ImageSequencer" : (AUID("4964178d-b3d5-485f-8e98-beb89d92a5f4"),
     ('.dpx',)),
-"CanonRaw"       : (UUID("0f299461-ee19-459f-8ae6-93e65c76a892"),
+"CanonRaw"       : (AUID("0f299461-ee19-459f-8ae6-93e65c76a892"),
     ('.rmf',)),
-"WaveAiff"       : (UUID("3711d3cc-62d0-49d7-b0ae-c118101d1a16"),
+"WaveAiff"       : (AUID("3711d3cc-62d0-49d7-b0ae-c118101d1a16"),
     ('.wav', '.wave', '.bwf', '.aif', '.aiff', '.aifc', '.cdda',)),
-"MXF"            : (UUID("60eb8921-2a02-4406-891c-d9b6a6ae0645"),
+"MXF"            : (AUID("60eb8921-2a02-4406-891c-d9b6a6ae0645"),
     ('.mxf',)),
-"QuickTime"      : (UUID("781f84b7-b989-4534-8a07-c595cb9a6fb8"),
+"QuickTime"      : (AUID("781f84b7-b989-4534-8a07-c595cb9a6fb8"),
     ('.mov',  '.mp4',  '.m4v',   '.mpg',  '.mpe', '.mpeg', '.3gp', '.3g2',
      '.qt',   '.moov', '.movie', '.avi',  '.mp2', '.mp3',  '.m4a', '.wav',
      '.aiff', '.aif',  '.au',    '.aac',  '.mid', '.mpa',  '.gif', '.jpg',
@@ -135,7 +135,7 @@ def create_video_descriptor(f, meta):
     d['Compression'].value = compression
 
     # d['ResolutionID'].value =  2900
-    # d['Compression'].value = UUID('04010202-0000-0000-060e-2b3404010101')
+    # d['Compression'].value = AUID('04010202-0000-0000-060e-2b3404010101')
     d['Length'].value = int(meta['nb_frames'])
 
     return d
@@ -158,7 +158,7 @@ def create_audio_descriptor(f, meta):
     duration = float(meta['duration'])
     d['Length'].value = int(duration * float(rate))
 
-    d['Compression'].value = UUID('04020202-0000-0000-060e-2b3404010101')
+    d['Compression'].value = AUID('04020202-0000-0000-060e-2b3404010101')
     return d
 
 
@@ -386,7 +386,7 @@ def create_wav_link(f, metadata):
     master_mob.name = os.path.basename(path)
     source_mob.name = os.path.basename(path) + " Source MOB"
     tape_mob.name   = os.path.basename(path) + " Tape MOB"
-    container_guid  = UUID("3711d3cc-62d0-49d7-b0ae-c118101d1a16") # WAVE/AIFF
+    container_guid  = AUID("3711d3cc-62d0-49d7-b0ae-c118101d1a16") # WAVE/AIFF
 
     f.content.mobs.append(master_mob)
     f.content.mobs.append(source_mob)
