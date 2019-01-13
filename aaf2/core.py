@@ -20,7 +20,6 @@ from .utils import (
     write_u16le,
     write_u32le,
     )
-from uuid import UUID
 from .exceptions import AAFPropertyError, AAFAttachError
 from . import properties
 from .properties import property_formats

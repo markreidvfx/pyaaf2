@@ -10,7 +10,6 @@ import unittest
 import hashlib
 import common
 import aaf2
-from uuid import UUID
 from aaf2 import video, audio, mobid, mobs, essence
 
 avc_profiles = [('yuv420p', 'baseline'),

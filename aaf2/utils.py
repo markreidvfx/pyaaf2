@@ -6,7 +6,6 @@ from __future__ import (
     )
 
 from struct import unpack, pack
-import uuid
 from . import auid
 
 def read_u8(f):

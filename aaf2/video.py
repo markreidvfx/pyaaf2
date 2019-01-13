@@ -4,7 +4,6 @@ from __future__ import (
     print_function,
     division,
     )
-from uuid import UUID
 from struct import unpack
 from . utils import int_from_bytes
 from io import BytesIO
