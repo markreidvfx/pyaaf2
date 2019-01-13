@@ -18,9 +18,6 @@ from .utils import (register_class, read_u16le, decode_utf16le,
                     encode_utf16le, encode_u16le, str2uuid,
                     AAFClaseID_dict, AAFClassName_dict)
 
-import uuid
-from uuid import UUID
-
 PID_NAME      = 0x0006
 PID_UUID      = 0x0005
 PID_TYPE      = 0x000B
