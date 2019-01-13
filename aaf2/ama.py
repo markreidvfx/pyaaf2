@@ -168,9 +168,9 @@ def create_network_locator(f, absolute_path):
         import urllib
         n['URLString'].value = 'file://' + urllib.pathname2url(absolute_path)
     else:
-        import pathlib   
+        import pathlib
         n['URLString'].value = pathlib.Path(absolute_path).as_uri()
-    
+
     return n
 
 def guess_edit_rate(metadata):
@@ -328,14 +328,14 @@ def create_ama_link(f, path, metadata):
 
 def wave_infochunk(path):
     """
-    Returns a bytearray of the WAVE RIFF header and fmt 
+    Returns a bytearray of the WAVE RIFF header and fmt
     chunk for a `WAVEDescriptor` `Summary`
     """
     with open(path,'rb') as file:
         if file.read(4) != b"RIFF":
             return None
         data_size = file.read(4) # container size
-        if file.read(4) != b"WAVE": 
+        if file.read(4) != b"WAVE":
             return None
         while True:
             chunkid = file.read(4)
@@ -364,70 +364,70 @@ def create_wav_descriptor(f, source_mob, path, stream_meta):
 
 def create_wav_link(f, metadata):
     """
-    This will return three MOBs for the given `metadata`: master_mob, source_mob, 
+    This will return three MOBs for the given `metadata`: master_mob, source_mob,
     tape_mob
 
     The parameter `metadata` is presumed to be a dictionary from a run of ffprobe.
 
-    It's not clear for the purposes of Pro Tools that a tape_mob needs to be made, 
+    It's not clear for the purposes of Pro Tools that a tape_mob needs to be made,
     it'll open the AAF perfectly well without out one.
 
-    A lot of this recaps the AMA link code but it's subtly different enough, but it 
+    A lot of this recaps the AMA link code but it's subtly different enough, but it
     could all bear to be refactored.
     """
     path       = metadata['format']['filename']
     master_mob = f.create.MasterMob()
     source_mob = f.create.SourceMob()
     tape_mob   = f.create.SourceMob()
-    
+
     edit_rate  = metadata['streams'][0]['sample_rate']
     length     = metadata['streams'][0]['duration_ts']
-    
+
     master_mob.name = os.path.basename(path)
     source_mob.name = os.path.basename(path) + " Source MOB"
     tape_mob.name   = os.path.basename(path) + " Tape MOB"
     container_guid  = UUID("3711d3cc-62d0-49d7-b0ae-c118101d1a16") # WAVE/AIFF
-    
+
     f.content.mobs.append(master_mob)
     f.content.mobs.append(source_mob)
     f.content.mobs.append(tape_mob)
-    
+
     tape_mob.descriptor = f.create.TapeDescriptor()
     tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
-    
+
     # Tape timecode
-    
+
     t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
     tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
     tc.length = int(length)
     if 'tags' not in metadata['format'].keys() or \
-            'time_reference' not in metadata['format']['tags']: 
+            'time_reference' not in metadata['format']['tags']:
         tc.start = 0
     else:
         tc.start = metadata['format']['tags']['time_reference'] or 0
-        
+
     t.segment.length = int(length)
     t.segment.components.append(tc)
-    
-    descriptor = create_wav_descriptor(f, source_mob, path, metadata['streams'][0]) 
+
+    descriptor = create_wav_descriptor(f, source_mob, path, metadata['streams'][0])
     source_mob.descriptor = descriptor
-        
+
     for channel_index in range(metadata['streams'][0]['channels']):
         tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
         tape_slot.segment.length = length
         nul_ref = f.create.SourceClip(media_kind='sound')
         nul_ref.length = length
         tape_slot.segment.components.append(nul_ref)
-        
+
         tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
         tape_clip.length = length
         tape_clip.media_kind = 'sound'
-        
+
         src_slot = source_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
         src_slot.segment.length = length
         src_slot.segment.components.append(tape_clip)
         src_slot['PhysicalTrackNumber'].value = channel_index + 1
-        
+
         clip = source_mob.create_source_clip(src_slot.slot_id)
         clip.length = length
         clip.media_kind = 'sound'
@@ -437,7 +437,5 @@ def create_wav_link(f, metadata):
         master_slot.segment.length = length
 
         master_slot['PhysicalTrackNumber'].value = channel_index + 1
-        
+
     return master_mob, source_mob, tape_mob
-
-
