@@ -9,7 +9,7 @@ from io import BytesIO
 import io
 import traceback
 import os
-from uuid import UUID, uuid4
+from uuid import uuid4
 import sys
 import datetime
 import weakref

@@ -5,7 +5,6 @@ from __future__ import (
     division,
     )
 
-from uuid import UUID
 from datetime import datetime
 import io
 

@@ -5,7 +5,6 @@ from __future__ import (
     division,
     )
 
-from uuid import UUID
 from .auid import AUID
 
 from .model import datadefs
