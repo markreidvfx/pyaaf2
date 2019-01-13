@@ -39,9 +39,30 @@ class AUID(object):
 
     @property
     def int(self):
-        num = 0
-        for i, byte in enumerate(self.bytes_be[::-1]):
-            num += byte << (i * 8)
+        # done in big endian to match uuid.py
+        num  = self.bytes_le[15]
+        num += self.bytes_le[14] << 8
+        num += self.bytes_le[13] << 16
+        num += self.bytes_le[12] << 24
+        num += self.bytes_le[11] << 32
+        num += self.bytes_le[10] << 40
+        num += self.bytes_le[ 9] << 48
+        num += self.bytes_le[ 8] << 56
+
+        # num += self.data3 << 64
+        num += self.bytes_le[ 6] << 64
+        num += self.bytes_le[ 7] << 72
+
+        # num += self.data2 << 80
+        num += self.bytes_le[ 4] << 80
+        num += self.bytes_le[ 5] << 88
+
+        # num += self.data1 << 96
+        num += self.bytes_le[ 0] << 96
+        num += self.bytes_le[ 1] << 104
+        num += self.bytes_le[ 2] << 112
+        num += self.bytes_le[ 3] << 120
+
         return num
 
     @property
@@ -85,8 +106,6 @@ class AUID(object):
         return NotImplemented
 
     def __repr__(self):
-        data4 = self.data4
-        f = "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x"
-        return f % (self.data1, self.data2, self.data3,
-                    data4[0], data4[1], data4[2], data4[3],
-                    data4[4], data4[5], data4[6], data4[7])
+        hex = '%032x' % self.int
+        return '%s-%s-%s-%s-%s' % (
+            hex[:8], hex[8:12], hex[12:16], hex[16:20], hex[20:])

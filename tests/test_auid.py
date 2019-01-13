@@ -7,6 +7,7 @@ from __future__ import (
 
 from aaf2.auid import AUID
 from uuid import UUID
+import uuid
 import unittest
 
 class MobIDTests(unittest.TestCase):
@@ -30,6 +31,15 @@ class MobIDTests(unittest.TestCase):
         v = AUID(s)
         u = UUID(s)
         assert v.int == u.int
+
+        v = AUID(int=100)
+        u = UUID(int=100)
+        assert v.int == u.int
+        for i in range(10):
+            u = uuid.uuid4()
+            a = AUID(int= u.int)
+            assert u.int == a.int
+
         # print(v.int)
 
 if __name__ == "__main__":
