@@ -112,6 +112,13 @@ def encode_uuid_array(values):
 def str2uuid(value):
     if isinstance(value, auid.AUID):
         return value
+
+    if value is None:
+        return value
+
+    if len(value) < 32:
+        return value
+
     try:
         return auid.AUID(value)
     except:
