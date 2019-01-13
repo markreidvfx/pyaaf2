@@ -65,17 +65,6 @@ def write_sid(f, value):
     value = encode_sid(value)
     write_u32le(f, value)
 
-def read_uuid(f):
-    data = f.read(16)
-    if data:
-        return auid.AUID(bytes_le=data)
-
-def write_uuid(f, value):
-    if value is None:
-        f.write(b'\0' * 16)
-    else:
-        f.write(value.bytes_le)
-
 def read_filetime(f):
     return read_u64le(f)
 

@@ -20,10 +20,10 @@ from collections import deque
 from .utils import (
     read_u8, read_u16le,
     read_u32le, read_u64le,
-    read_filetime, read_sid, read_uuid,
+    read_filetime, read_sid,
     write_u8, write_u16le,
     write_u32le, write_u64le,
-    write_filetime, write_sid, write_uuid,
+    write_filetime, write_sid,
     decode_utf16le,
     decode_sid, encode_sid,
     unpack_u16le_from, unpack_u32le_from, unpack_u64le_from
@@ -836,7 +836,7 @@ class CompoundFileBinary(object):
         f = self.f
         f.seek(0)
         f.write(b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1') # Magic
-        write_uuid(f, self.class_id)
+        f.write(self.class_id.bytes_le)
         write_u16le(f, self.minor_version)
         write_u16le(f, self.major_version)
         write_u16le(f, 0xFFFE) #byte order le
@@ -874,7 +874,7 @@ class CompoundFileBinary(object):
 
         # clsid = f.read(16)
         # logging.debug("clsid: %s" % clsid.encode("hex"))
-        self.class_id = read_uuid(f)
+        self.class_id = auid.AUID(bytes_le=f.read(16))
         logging.debug("clsid: %s" % str(self.class_id))
 
         self.minor_version = read_u16le(f)
