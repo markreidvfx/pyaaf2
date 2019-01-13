@@ -4,8 +4,6 @@ from __future__ import (
     print_function,
     division,
     )
-
-from uuid import UUID
 from datetime import datetime
 import io
 

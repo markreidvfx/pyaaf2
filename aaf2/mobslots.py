@@ -5,7 +5,6 @@ from __future__ import (
     division,
     )
 
-from uuid import UUID
 from . import core
 from .utils import register_class
 from .auid import AUID

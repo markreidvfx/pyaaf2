@@ -8,7 +8,6 @@ import traceback
 
 from . import core
 from . mobid import MobID
-from uuid import UUID
 from .utils import register_class
 from .auid import AUID
 

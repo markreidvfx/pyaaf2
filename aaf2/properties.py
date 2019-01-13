@@ -6,7 +6,6 @@ from __future__ import (
     division,
     )
 
-import uuid
 from uuid import UUID
 from io import BytesIO
 import weakref
