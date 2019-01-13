@@ -529,12 +529,12 @@ class TypeDefStream(TypeDef):
 PID_RECORD_TYPES = 0x001C
 PID_RECORD_NAMES = 0x001D
 
-MOBID_UUID      = AUID("01030200-0000-0000-060e-2b3401040101")
-AUID_UUID       = AUID("01030100-0000-0000-060e-2b3401040101")
-TIMESTRUCT_UUID = AUID("03010600-0000-0000-060e-2b3401040101")
-DATESTRUCT_UUID = AUID("03010500-0000-0000-060e-2b3401040101")
-TIMESTAMP_UUID  = AUID("03010700-0000-0000-060e-2b3401040101")
-RATIONAL_UUID   = AUID("03010100-0000-0000-060e-2b3401040101")
+MOBID_AUID      = AUID("01030200-0000-0000-060e-2b3401040101")
+AUID_AUID       = AUID("01030100-0000-0000-060e-2b3401040101")
+TIMESTRUCT_AUID = AUID("03010600-0000-0000-060e-2b3401040101")
+DATESTRUCT_AUID = AUID("03010500-0000-0000-060e-2b3401040101")
+TIMESTAMP_AUID  = AUID("03010700-0000-0000-060e-2b3401040101")
+RATIONAL_AUID   = AUID("03010100-0000-0000-060e-2b3401040101")
 
 @register_class
 class TypeDefRecord(TypeDef):
@@ -581,12 +581,12 @@ class TypeDefRecord(TypeDef):
     def decode(self, data):
 
         # MobID
-        if self.uuid == MOBID_UUID:
+        if self.uuid == MOBID_AUID:
             mobid = MobID(bytes_le=data)
             return mobid
 
         # AUID
-        if self.uuid == AUID_UUID:
+        if self.uuid == AUID_AUID:
             return AUID(bytes_le=data)
 
         start = 0
@@ -601,7 +601,7 @@ class TypeDefRecord(TypeDef):
 
 
         # TimeStruct
-        if self.uuid == TIMESTRUCT_UUID:
+        if self.uuid == TIMESTRUCT_AUID:
             t = datetime.time(result['hour'],
                               result['minute'],
                               result['second'],
@@ -609,17 +609,17 @@ class TypeDefRecord(TypeDef):
             return t
 
         # DateStruct
-        if self.uuid == DATESTRUCT_UUID:
+        if self.uuid == DATESTRUCT_AUID:
             d = datetime.date(**result)
             return d
 
         # TimeStamp
-        if self.uuid == TIMESTAMP_UUID:
+        if self.uuid == TIMESTAMP_AUID:
             d = datetime.datetime.combine(result['date'], result['time'])
             return d
 
         # Rational
-        if self.uuid == RATIONAL_UUID:
+        if self.uuid == RATIONAL_AUID:
             r = AAFRational(result['Numerator'], result['Denominator'])
             return r
 
@@ -627,16 +627,16 @@ class TypeDefRecord(TypeDef):
 
     def encode(self, data):
         # MobID
-        if self.uuid == MOBID_UUID:
+        if self.uuid == MOBID_AUID:
             return data.bytes_le
 
         # AUID
-        if self.uuid == AUID_UUID:
+        if self.uuid == AUID_AUID:
             return data.bytes_le
 
         result = b""
         # TimeStamp
-        if self.uuid == TIMESTAMP_UUID:
+        if self.uuid == TIMESTAMP_AUID:
             assert isinstance(data, datetime.datetime)
             f = [self.root.metadict.lookup_typedef(t) for k, t in self.fields]
             #date
@@ -648,7 +648,7 @@ class TypeDefRecord(TypeDef):
 
 
         # DateStruct
-        if self.uuid == DATESTRUCT_UUID:
+        if self.uuid == DATESTRUCT_AUID:
             assert isinstance(data, datetime.date)
             d = {'year' : data.year,
                  'month' : data.month,
@@ -657,7 +657,7 @@ class TypeDefRecord(TypeDef):
             data = d
 
         # TimeStruct
-        if self.uuid == TIMESTRUCT_UUID:
+        if self.uuid == TIMESTRUCT_AUID:
             assert isinstance(data, datetime.time)
             t = {'hour' : data.hour,
                  'minute' : data.minute,
@@ -667,7 +667,7 @@ class TypeDefRecord(TypeDef):
             data = t
 
         # Rational
-        if self.uuid == RATIONAL_UUID:
+        if self.uuid == RATIONAL_AUID:
             r = AAFRational(data)
             data = {'Numerator': r.numerator, 'Denominator':r.denominator }
 
