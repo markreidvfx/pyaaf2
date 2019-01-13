@@ -389,7 +389,7 @@ class DirEntry(object):
 
     @property
     def class_id(self):
-        value = auid.AUID(bytes_le=bytes(self.data[80:96]))
+        value = auid.AUID(bytes_le=self.data[80:96])
         if value.int == 0:
             return None
         return value
