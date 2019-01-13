@@ -19,7 +19,7 @@ from .utils import (register_class, read_u16le, decode_utf16le,
                     AAFClaseID_dict, AAFClassName_dict)
 
 PID_NAME      = 0x0006
-PID_UUID      = 0x0005
+PID_AUID      = 0x0005
 PID_TYPE      = 0x000B
 PID_OPTIONAL  = 0x000C
 PID_PID       = 0x000D
@@ -47,7 +47,7 @@ class PropertyDef(core.AAFObject):
             properties.add_bool_property(self, PID_OPTIONAL, optional)
             properties.add_bool_property(self, PID_UNIQUE, unique)
             properties.add_u16le_property(self, PID_PID, pid)
-            properties.add_uuid_property(self, PID_UUID, uuid)
+            properties.add_uuid_property(self, PID_AUID, uuid)
             properties.add_uuid_property(self, PID_TYPE, typedef)
 
         return self
@@ -88,7 +88,7 @@ class PropertyDef(core.AAFObject):
     def uuid(self):
         if self._uuid:
             return self._uuid
-        p = self.property_entries.get(PID_UUID)
+        p = self.property_entries.get(PID_AUID)
         self._uuid = AUID(bytes_le=p.data)
         return self._uuid
 
@@ -129,12 +129,12 @@ class ClassDef(core.AAFObject):
         self.propertydef_by_pid = {}
         if root:
             properties.add_string_property(self, PID_NAME, name)
-            properties.add_uuid_property(self, PID_UUID, class_uuid)
+            properties.add_uuid_property(self, PID_AUID, class_uuid)
             properties.add_bool_property(self, PID_CONCRETE, concrete)
 
             # reference self uuid if no parent
             properties.add_classdef_weakref_property(self, PID_PARENT, parent_uuid or class_uuid)
-            properties.add_strongref_set_property(self, PID_PROPERTIES, "Properties", PID_UUID)
+            properties.add_strongref_set_property(self, PID_PROPERTIES, "Properties", PID_AUID)
 
         return self
 
@@ -143,9 +143,9 @@ class ClassDef(core.AAFObject):
 
     @property
     def uuid(self):
-        data = self.property_entries[PID_UUID].data
+        data = self.property_entries[PID_AUID].data
         if data is not None:
-            return AUID(bytes_le=self.property_entries[PID_UUID].data)
+            return AUID(bytes_le=self.property_entries[PID_AUID].data)
 
     @property
     def concrete(self):
@@ -298,8 +298,8 @@ class MetaDictionary(core.AAFObject):
         super(MetaDictionary, self).__init__(root)
 
         self.root = root
-        properties.add_strongref_set_property(self, PID_CLASSDEFS, "ClassDefinitions", PID_UUID)
-        properties.add_strongref_set_property(self, PID_TYPEDEFS, "TypeDefinitions", PID_UUID)
+        properties.add_strongref_set_property(self, PID_CLASSDEFS, "ClassDefinitions", PID_AUID)
+        properties.add_strongref_set_property(self, PID_TYPEDEFS, "TypeDefinitions", PID_AUID)
 
         self.classdefs_by_name = {}
         self.classdefs_by_uuid = {}

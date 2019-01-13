@@ -24,7 +24,7 @@ if sys.version_info.major >= 3:
     unicode = str
 
 PID_NAME      = 0x0006
-PID_UUID      = 0x0005
+PID_AUID      = 0x0005
 
 @register_class
 class TypeDef(core.AAFObject):
@@ -37,7 +37,7 @@ class TypeDef(core.AAFObject):
         self._uuid = None
         if root:
             properties.add_string_property(self, PID_NAME, name)
-            properties.add_uuid_property(self, PID_UUID, type_uuid)
+            properties.add_uuid_property(self, PID_AUID, type_uuid)
         return self
 
     @property
@@ -48,7 +48,7 @@ class TypeDef(core.AAFObject):
     def uuid(self):
         if self._uuid:
             return self._uuid
-        p = self.property_entries.get(PID_UUID)
+        p = self.property_entries.get(PID_AUID)
         self._uuid = AUID(bytes_le=p.data)
         return self._uuid
 
