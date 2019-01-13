@@ -40,6 +40,11 @@ class MobIDTests(unittest.TestCase):
             a = AUID(int= u.int)
             assert u.int == a.int
 
+    def test_noargs(self):
+        # expected behavour matches uuid.py
+        with self.assertRaises(TypeError):
+            AUID()
+
         # print(v.int)
 
 if __name__ == "__main__":
