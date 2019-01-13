@@ -296,8 +296,8 @@ class SourceMob(Mob):
         descriptor['SampleRate'].value = edit_rate
         descriptor['VideoLineMap'].value = [42, 0] # Not exactly sure what linemap is
         descriptor['ContainerFormat'].value = self.root.dictionary.lookup_containerdef("AAF")
-        dnxhd_codec_uuid = AUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
-        descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_uuid)
+        dnxhd_codec_auid = AUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
+        descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_auid)
 
         # open essence stream
         stream = essencedata.open('w')
@@ -315,7 +315,7 @@ class SourceMob(Mob):
                     descriptor['FrameLayout'].value = 'SeparateFields' if interlaced else 'FullFrame'
                     descriptor['ImageAspectRatio'].value = "%d/%d" % (width, height)
                     descriptor['FrameSampleSize'].value = len(packet)
-                    descriptor['Compression'].value = video.dnx_compression_uuids[cid]
+                    descriptor['Compression'].value = video.dnx_compression_auids[cid]
                     descriptor['HorizontalSubsampling'].value = 2
 
                 stream.write(packet)

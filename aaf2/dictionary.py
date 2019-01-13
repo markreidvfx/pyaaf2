@@ -36,12 +36,12 @@ def lookup_def(dictionary, name, instance_type, key):
 class DefinitionObject(core.AAFObject):
     class_id = AUID("0d010101-0101-1a00-060e-2b3402060101")
     __slots__ = ()
-    def __init__(self, uuid=None, name=None, description=None):
+    def __init__(self, auid=None, name=None, description=None):
         super(DefinitionObject, self).__init__()
         self.name = name
         self.description = description
-        if uuid:
-            self.uuid = AUID(str(uuid))
+        if auid:
+            self.auid = AUID(str(auid))
 
     @property
     def name(self):
@@ -66,11 +66,11 @@ class DefinitionObject(core.AAFObject):
         self['Description'].value =  value
 
     @property
-    def uuid(self):
+    def auid(self):
         return self['Identification'].value
 
-    @uuid.setter
-    def uuid(self, value):
+    @auid.setter
+    def auid(self, value):
         self['Identification'].value = value
 
     def __repr__(self):
@@ -80,11 +80,11 @@ class DefinitionObject(core.AAFObject):
         if name:
             s += " %s" % name
 
-        return '<%s %s at 0x%x>' % (s, str(self.uuid), id(self))
+        return '<%s %s at 0x%x>' % (s, str(self.auid), id(self))
 
     @property
     def unique_key(self):
-        return self.uuid
+        return self.auid
 
 @register_class
 class DataDef(DefinitionObject):
@@ -123,8 +123,8 @@ class ParameterDef(DefinitionObject):
     class_id = AUID("0d010101-0101-1d00-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, uuid=None, name=None, description=None, typedef=None):
-        super(ParameterDef, self).__init__(uuid, name, description)
+    def __init__(self, auid=None, name=None, description=None, typedef=None):
+        super(ParameterDef, self).__init__(auid, name, description)
         self.typedef = typedef
 
     @property
@@ -144,8 +144,8 @@ class PluginDef(DefinitionObject):
 class CodecDef(DefinitionObject):
     class_id = AUID("0d010101-0101-1f00-060e-2b3402060101")
     __slots__ = ()
-    def __init__(self, dictionary, uuid=None, name=None, description=None, classdef=None, datadef_names=None):
-        super(CodecDef, self).__init__(uuid, name, description)
+    def __init__(self, dictionary, auid=None, name=None, description=None, classdef=None, datadef_names=None):
+        super(CodecDef, self).__init__(auid, name, description)
         if classdef:
             self['FileDescriptorClass'].value = self.root.metadict.lookup_classdef(classdef)
 

@@ -56,7 +56,7 @@ class AAFFactory(object):
 
         # if a helper class is not found set class_id
         if type(obj) is AAFObject:
-            obj.class_id = classdef.uuid
+            obj.class_id = classdef.auid
 
         return obj
 

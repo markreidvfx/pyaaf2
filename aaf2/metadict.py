@@ -15,7 +15,7 @@ from .auid import AUID
 
 from . import core
 from .utils import (register_class, read_u16le, decode_utf16le,
-                    encode_utf16le, encode_u16le, str2uuid,
+                    encode_utf16le, encode_u16le, str2auid,
                     AAFClaseID_dict, AAFClassName_dict)
 
 PID_NAME      = 0x0006
@@ -34,21 +34,21 @@ sentinel = object()
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = AUID("0d010101-0202-0000-060e-2b3402060101")
-    __slots__ = ('_typedef_id', '_uuid', '_property_name')
+    __slots__ = ('_typedef_id', '_auid', '_property_name')
 
-    def __new__(cls, root=None, name=None, uuid=None, pid=None, typedef=None, optional=None, unique=None):
+    def __new__(cls, root=None, name=None, auid=None, pid=None, typedef=None, optional=None, unique=None):
         self = super(PropertyDef, cls).__new__(cls)
         self.root = root
         self._typedef_id = None
-        self._uuid = None
+        self._auid = None
         self._property_name = name
         if root:
             properties.add_string_property(self, PID_NAME, name)
             properties.add_bool_property(self, PID_OPTIONAL, optional)
             properties.add_bool_property(self, PID_UNIQUE, unique)
             properties.add_u16le_property(self, PID_PID, pid)
-            properties.add_uuid_property(self, PID_AUID, uuid)
-            properties.add_uuid_property(self, PID_TYPE, typedef)
+            properties.add_auid_property(self, PID_AUID, auid)
+            properties.add_auid_property(self, PID_TYPE, typedef)
 
         return self
 
@@ -68,7 +68,7 @@ class PropertyDef(core.AAFObject):
 
     @property
     def unique_key(self):
-        return self.uuid
+        return self.auid
 
     @property
     def unique(self):
@@ -85,12 +85,12 @@ class PropertyDef(core.AAFObject):
         self.property_entries[PID_PID].data = encode_u16le(value)
 
     @property
-    def uuid(self):
-        if self._uuid:
-            return self._uuid
+    def auid(self):
+        if self._auid:
+            return self._auid
         p = self.property_entries.get(PID_AUID)
-        self._uuid = AUID(bytes_le=p.data)
-        return self._uuid
+        self._auid = AUID(bytes_le=p.data)
+        return self._auid
 
     @property
     def optional(self):
@@ -123,26 +123,26 @@ class ClassDef(core.AAFObject):
     class_id = AUID("0d010101-0201-0000-060e-2b3402060101")
     __slots__ = ('propertydef_by_pid')
 
-    def __new__(cls, root=None, name=None, class_uuid=None, parent_uuid=None, concrete=None):
+    def __new__(cls, root=None, name=None, class_auid=None, parent_auid=None, concrete=None):
         self = super(ClassDef, cls).__new__(cls)
         self.root = root
         self.propertydef_by_pid = {}
         if root:
             properties.add_string_property(self, PID_NAME, name)
-            properties.add_uuid_property(self, PID_AUID, class_uuid)
+            properties.add_auid_property(self, PID_AUID, class_auid)
             properties.add_bool_property(self, PID_CONCRETE, concrete)
 
-            # reference self uuid if no parent
-            properties.add_classdef_weakref_property(self, PID_PARENT, parent_uuid or class_uuid)
+            # reference self auid if no parent
+            properties.add_classdef_weakref_property(self, PID_PARENT, parent_auid or class_auid)
             properties.add_strongref_set_property(self, PID_PROPERTIES, "Properties", PID_AUID)
 
         return self
 
     def __eq__(self, other):
-        self.uuid == other.uuid
+        self.auid == other.auid
 
     @property
-    def uuid(self):
+    def auid(self):
         data = self.property_entries[PID_AUID].data
         if data is not None:
             return AUID(bytes_le=self.property_entries[PID_AUID].data)
@@ -159,7 +159,7 @@ class ClassDef(core.AAFObject):
 
     @property
     def unique_key(self):
-        return self.uuid
+        return self.auid
 
     @property
     def unique_key_pid(self):
@@ -182,11 +182,11 @@ class ClassDef(core.AAFObject):
 
     def isinstance(self, other):
 
-        if self.uuid == other.uuid:
+        if self.auid == other.auid:
             return True
 
         for classdef in other.relatives():
-            if classdef.uuid == self.uuid:
+            if classdef.auid == self.auid:
                 return True
         return False
 
@@ -207,10 +207,10 @@ class ClassDef(core.AAFObject):
     def parent(self):
         parent_id = self.parent_id
 
-        if parent_id == self.uuid:
+        if parent_id == self.auid:
             return None
 
-        return self.root.metadict.classdefs_by_uuid.get(parent_id, None)
+        return self.root.metadict.classdefs_by_auid.get(parent_id, None)
 
     @property
     def propertydefs(self):
@@ -218,19 +218,19 @@ class ClassDef(core.AAFObject):
             return self.property_entries[PID_PROPERTIES].values()
         return []
 
-    def register_propertydef(self, name, property_uuid, pid, typedef, optional, unique=False):
+    def register_propertydef(self, name, property_auid, pid, typedef, optional, unique=False):
 
-        typedef = str2uuid(typedef)
-        property_uuid = str2uuid(property_uuid)
+        typedef = str2auid(typedef)
+        property_auid = str2auid(property_auid)
         if isinstance(typedef, AUID):
-            typedef_uuid = typedef
+            typedef_auid = typedef
         else:
             typedef = self.root.metadict.lookup_typedef(typedef)
-            typedef_uuid = typedef.uuid
+            typedef_auid = typedef.auid
 
         # check its not already defined
-        if property_uuid in self.property_entries[PID_PROPERTIES].references:
-            return self.property_entries[PID_PROPERTIES].get(property_uuid)
+        if property_auid in self.property_entries[PID_PROPERTIES].references:
+            return self.property_entries[PID_PROPERTIES].get(property_auid)
 
         # None signifies Dynamically allocated Local Tags
         # I think this is similar to MXF where pids > 0x8000 < 0xFFFF
@@ -238,9 +238,9 @@ class ClassDef(core.AAFObject):
         if pid is None:
             pid = self.root.metadict.next_free_pid()
 
-        p = PropertyDef(self.root, name, property_uuid, pid, typedef_uuid, optional, unique)
+        p = PropertyDef(self.root, name, property_auid, pid, typedef_auid, optional, unique)
         # # this is done low level to avoid recursion errors
-        properties.add2set(self, PID_PROPERTIES, p.uuid, p)
+        properties.add2set(self, PID_PROPERTIES, p.auid, p)
         self.propertydef_by_pid[pid] = p
         return p
 
@@ -302,9 +302,9 @@ class MetaDictionary(core.AAFObject):
         properties.add_strongref_set_property(self, PID_TYPEDEFS, "TypeDefinitions", PID_AUID)
 
         self.classdefs_by_name = {}
-        self.classdefs_by_uuid = {}
+        self.classdefs_by_auid = {}
         self.typedefs_by_name = {}
-        self.typedefs_by_uuid = {}
+        self.typedefs_by_auid = {}
 
         self.typedefs_classes = {}
 
@@ -339,7 +339,7 @@ class MetaDictionary(core.AAFObject):
                             t.register_element(element_name, AUID(element_value))
                     else:
                         t = types.TypeDefExtEnum(self.root, name, *args)
-                        properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                        properties.add2set(self, PID_TYPEDEFS, t.auid, t)
                 elif cat == "enums":
                     if name in self.typedefs_by_name:
                         t = self.typedefs_by_name[name]
@@ -347,15 +347,15 @@ class MetaDictionary(core.AAFObject):
                             t.register_element(element_name, element_value)
                     else:
                         t = types.TypeDefEnum(self.root, name, *args)
-                        properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                        properties.add2set(self, PID_TYPEDEFS, t.auid, t)
                 else:
 
                     t = classobj(self.root, name, *args)
-                    properties.add2set(self, PID_TYPEDEFS, t.uuid, t)
+                    properties.add2set(self, PID_TYPEDEFS, t.auid, t)
 
                 self.typedefs_by_name[name] = t
-                self.typedefs_by_uuid[t.uuid] = t
-                self.typedefs_classes[t.uuid] = t.__class__
+                self.typedefs_by_auid[t.auid] = t
+                self.typedefs_classes[t.auid] = t.__class__
 
     def register_extensions(self):
         from .model.ext import classdefs as ext_classdefs
@@ -369,26 +369,26 @@ class MetaDictionary(core.AAFObject):
 
         self.register_typedef_model(ext_typedefs.__dict__)
 
-    def register_classdef(self, name, class_uuid, parent, concrete, propertydefs=None):
-        if not isinstance(class_uuid, AUID):
-            class_uuid = AUID(class_uuid)
+    def register_classdef(self, name, class_auid, parent, concrete, propertydefs=None):
+        if not isinstance(class_auid, AUID):
+            class_auid = AUID(class_auid)
 
-        parent = str2uuid(parent)
+        parent = str2auid(parent)
 
         if parent is None:
-            parent_uuid = None
+            parent_auid = None
         elif isinstance(parent, AUID):
-            parent_uuid = parent
+            parent_auid = parent
         else:
             parent_classdef = self.lookup_classdef(parent)
-            parent_uuid = parent_classdef.uuid
+            parent_auid = parent_classdef.auid
 
         if name in self.classdefs_by_name:
             c = self.classdefs_by_name[name]
-        elif class_uuid in self.classdefs_by_uuid:
-            c = self.classdefs_by_name[class_uuid]
+        elif class_auid in self.classdefs_by_auid:
+            c = self.classdefs_by_name[class_auid]
         else:
-            c = ClassDef(self.root, name, class_uuid, parent_uuid, concrete)
+            c = ClassDef(self.root, name, class_auid, parent_auid, concrete)
 
         if propertydefs:
             for prop_name, prop_args in propertydefs.items():
@@ -399,11 +399,11 @@ class MetaDictionary(core.AAFObject):
                 c.register_propertydef(prop_name, *prop_args)
 
         self.classdefs_by_name[name]   = c
-        self.classdefs_by_uuid[c.uuid] = c
+        self.classdefs_by_auid[c.auid] = c
 
         # Root is not include in the data model for some reason
         if c.class_name != "Root":
-            properties.add2set(self, PID_CLASSDEFS, c.uuid, c)
+            properties.add2set(self, PID_CLASSDEFS, c.auid, c)
         return c
 
     def lookup_class(self, class_id):
@@ -425,17 +425,17 @@ class MetaDictionary(core.AAFObject):
         if isinstance(t, types.TypeDef):
             return t
 
-        t = str2uuid(t)
+        t = str2auid(t)
         if isinstance(t, AUID):
-            return self.typedefs_by_uuid.get(t, None)
+            return self.typedefs_by_auid.get(t, None)
         return self.typedefs_by_name.get(t, None)
 
     def lookup_classdef(self, t):
         if isinstance(t, ClassDef):
             return t
-        t = str2uuid(t)
+        t = str2auid(t)
         if isinstance(t, AUID):
-            return self.classdefs_by_uuid.get(t, None)
+            return self.classdefs_by_auid.get(t, None)
         return self.classdefs_by_name.get(t, None)
 
     @property
@@ -460,13 +460,13 @@ class MetaDictionary(core.AAFObject):
         super(MetaDictionary, self).read_properties()
         for key, typedef in self['TypeDefinitions'].items():
             self.typedefs_by_name[typedef.type_name] = typedef
-            self.typedefs_by_uuid[typedef.uuid] = typedef
+            self.typedefs_by_auid[typedef.auid] = typedef
 
         # reset local pids
         self.local_pids = set()
         for key, classdef in self['ClassDefinitions'].items():
             self.classdefs_by_name[classdef.class_name] = classdef
-            self.classdefs_by_uuid[classdef.uuid] = classdef
+            self.classdefs_by_auid[classdef.auid] = classdef
             propertydef_by_pid = {}
             for pdef in classdef['Properties'].values():
                 if pdef.pid >= 0x8000:
@@ -479,7 +479,7 @@ class MetaDictionary(core.AAFObject):
 
         # add typedefs not defined by file data model
         if self.root.writeable:
-            for key, typedef in self.typedefs_by_uuid.items():
+            for key, typedef in self.typedefs_by_auid.items():
                 # skip root typedefs
                 if key in (AUID('05022800-0000-0000-060E-2B3401040101'),
                            AUID('05022700-0000-0000-060E-2B3401040101')):
@@ -491,7 +491,7 @@ class MetaDictionary(core.AAFObject):
 
         # add classdefs not defined by file data model
         if self.root.writeable:
-            for key, classdef in self.classdefs_by_uuid.items():
+            for key, classdef in self.classdefs_by_auid.items():
                 # skip root classdefs
                 if key in (AUID('b3b398a5-1c90-11d4-8053-080036210804'), ):
                     # print("skipping root")

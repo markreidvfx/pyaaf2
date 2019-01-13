@@ -108,10 +108,10 @@ class Parameter(core.AAFObject):
     __slots__ = ()
 
     @property
-    def uuid(self):
+    def auid(self):
         return self['Definition'].value
-    @uuid.setter
-    def uuid(self, value):
+    @auid.setter
+    def auid(self, value):
         self['Definition'].value = value
 
     @property
@@ -120,7 +120,7 @@ class Parameter(core.AAFObject):
 
     @parameterdef.setter
     def parameterdef(self, value):
-        self['Definition'].value = value.uuid
+        self['Definition'].value = value.auid
 
     @property
     def name(self):
@@ -377,12 +377,12 @@ class VaryingValue(Parameter):
         if t < p1.time or index + 1 >= len(pointlist):
             return float(p1.value)
 
-        if self.interpolation.uuid == ConstantInterp:
+        if self.interpolation.auid == ConstantInterp:
             return float(p1.value)
 
         p2 = pointlist[index+1]
 
-        if self.interpolation.uuid == LinearInterp:
+        if self.interpolation.auid == LinearInterp:
             t_len = float(p2.time) - float(p1.time)
             t_diff = t - float(p1.time)
             t_mix = t_diff/t_len
@@ -391,7 +391,7 @@ class VaryingValue(Parameter):
             v1 = float(p2.value)
             return lerp(v0, v1, t_mix)
 
-        elif self.interpolation.uuid  == BezierInterpolator:
+        elif self.interpolation.auid  == BezierInterpolator:
             t0 = float(p1.time)
             v0 = float(p1.value)
 
@@ -411,7 +411,7 @@ class VaryingValue(Parameter):
                                             (t2, v2),
                                             (t3, v3), t)
 
-        elif self.interpolation.uuid  == CubicInterpolator:
+        elif self.interpolation.auid  == CubicInterpolator:
 
             t1 = float(p1.time)
             v1 = float(p1.value)
@@ -443,7 +443,7 @@ class VaryingValue(Parameter):
         else:
 
             raise NotImplementedError("Interpolation not implemented for %s %s" %
-                           (self.interpolation.name, str(self.interpolation.uuid)))
+                           (self.interpolation.name, str(self.interpolation.auid)))
 
     def nearest_index(self, t):
         """

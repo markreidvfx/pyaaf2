@@ -6,7 +6,6 @@ from __future__ import (
     division,
     )
 
-from uuid import UUID
 from io import BytesIO
 import weakref
 import struct
@@ -20,7 +19,7 @@ from .utils import (
     decode_utf16le,
     encode_utf16le,
     encode_utf16_array,
-    encode_uuid_array,
+    encode_auid_array,
     encode_u16le,
     encode_u32le,
     encode_u8,
@@ -156,9 +155,9 @@ class Property(object):
     @writeonly
     def value(self, value):
         if self._data is not None and self.parent.dir and self.unique:
-            if self.propertydef.uuid == MOB_MOBID_AUID:
+            if self.propertydef.auid == MOB_MOBID_AUID:
                 self.parent.root.content.mobs.swap_unique_key(self.value, value)
-            elif self.propertydef.uuid == ESSENCEDATA_MOBID_AUID:
+            elif self.propertydef.auid == ESSENCEDATA_MOBID_AUID:
                 self.parent.root.content.essencedata.swap_unique_key(self.value, value)
             else:
                 raise AAFPropertyError("cannot change unique property value of attached object")
@@ -963,7 +962,7 @@ class StrongRefSetProperty(Property):
         return "<%s to %s %d items>" % (self.__class__.__name__, str(self.index_name), len(self.references))
 
 def resolve_weakref(p, ref):
-    ref_class_id = p.ref_classdef.uuid
+    ref_class_id = p.ref_classdef.auid
     if ref_class_id   == CLASSDEF_AUID:
         return p.parent.root.metadict.lookup_classdef(ref)
     elif ref_class_id == TYPEDEF_AUID:
@@ -1246,7 +1245,7 @@ def add_u8_property(parent, pid, value):
     parent.property_entries[pid] = p
     return p
 
-def add_uuid_property(parent, pid, value):
+def add_auid_property(parent, pid, value):
     p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
 
     if value is None:
@@ -1258,9 +1257,9 @@ def add_uuid_property(parent, pid, value):
     parent.property_entries[pid] = p
     return p
 
-def add_uuid_array_propertry(parent, pid, values):
+def add_auid_array_propertry(parent, pid, values):
     p = Property(parent, pid, SF_DATA, PROPERTY_VERSION)
-    p.data = encode_uuid_array(values)
+    p.data = encode_auid_array(values)
     parent.property_entries[pid] = p
     return p
 

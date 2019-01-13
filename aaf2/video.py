@@ -81,7 +81,7 @@ dnxhr_compression_ratio = {
 1274 : (5888,  255),  # dnxhr_lb
 }
 
-dnx_compression_uuids = {
+dnx_compression_auids = {
 1235 : AUID("04010202-7101-0000-060e-2b340401010a"),
 1236 : AUID("04010202-7102-0000-060e-2b340401010a"),
 1237 : AUID("04010202-7103-0000-060e-2b340401010a"),

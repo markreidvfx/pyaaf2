@@ -89,7 +89,7 @@ def encode_utf16_array(data):
         result += encode_utf16le(item)
     return result
 
-def encode_uuid_array(values):
+def encode_auid_array(values):
     result = b""
     for item in values:
         if not isinstance(item, auid.AUID):
@@ -97,7 +97,7 @@ def encode_uuid_array(values):
         result += item.bytes_le
     return result
 
-def str2uuid(value):
+def str2auid(value):
     if isinstance(value, auid.AUID):
         return value
 

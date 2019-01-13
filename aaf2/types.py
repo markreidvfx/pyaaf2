@@ -18,7 +18,7 @@ from .auid import AUID
 import datetime
 
 from struct import (unpack, pack)
-from .utils import register_class, decode_utf16le, encode_utf16le, encode_utf16_array, encode_uuid_array
+from .utils import register_class, decode_utf16le, encode_utf16le, encode_utf16_array, encode_auid_array
 
 if sys.version_info.major >= 3:
     unicode = str
@@ -29,28 +29,28 @@ PID_AUID      = 0x0005
 @register_class
 class TypeDef(core.AAFObject):
     class_id = AUID("0d010101-0203-0000-060e-2b3402060101")
-    __slots__ = ('_uuid')
+    __slots__ = ('_auid')
 
-    def __new__(cls, root=None, name=None, type_uuid=None, *args, **kwargs):
+    def __new__(cls, root=None, name=None, type_auid=None, *args, **kwargs):
         self = super(TypeDef, cls).__new__(cls)
         self.root = root
-        self._uuid = None
+        self._auid = None
         if root:
             properties.add_string_property(self, PID_NAME, name)
-            properties.add_uuid_property(self, PID_AUID, type_uuid)
+            properties.add_auid_property(self, PID_AUID, type_auid)
         return self
 
     @property
     def unique_key(self):
-        return self.uuid
+        return self.auid
 
     @property
-    def uuid(self):
-        if self._uuid:
-            return self._uuid
+    def auid(self):
+        if self._auid:
+            return self._auid
         p = self.property_entries.get(PID_AUID)
-        self._uuid = AUID(bytes_le=p.data)
-        return self._uuid
+        self._auid = AUID(bytes_le=p.data)
+        return self._auid
 
     @property
     def type_name(self):
@@ -73,8 +73,8 @@ class TypeDefInt(TypeDef):
     class_id = AUID("0d010101-0204-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, size=None, signed=None):
-        self = super(TypeDefInt, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, size=None, signed=None):
+        self = super(TypeDefInt, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_u8_property(self, PID_INT_SIZE, size)
             properties.add_bool_property(self, PID_INT_SIGNED, signed)
@@ -128,8 +128,8 @@ class TypeDefStrongRef(TypeDef):
     class_id = AUID("0d010101-0205-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, classdef=None):
-        self = super(TypeDefStrongRef, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, classdef=None):
+        self = super(TypeDefStrongRef, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_classdef_weakref_property(self, PID_STRONGREF_REF_TYPE, classdef)
         return self
@@ -151,11 +151,11 @@ class TypeDefWeakRef(TypeDef):
     class_id = AUID("0d010101-0206-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, classdef=None, path=None):
-        self = super(TypeDefWeakRef, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, classdef=None, path=None):
+        self = super(TypeDefWeakRef, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_classdef_weakref_property(self, PID_WEAKREF_REF_TYPE, classdef)
-            properties.add_uuid_array_propertry(self, PID_WEAKREF_TARGET_SET, path)
+            properties.add_auid_array_propertry(self, PID_WEAKREF_TARGET_SET, path)
 
         return self
 
@@ -184,10 +184,10 @@ class TypeDefWeakRef(TypeDef):
     def propertydef_path(self):
         path = []
         classdef = self.root.metadict.lookup_classdef("Root")
-        for p_uuid in self.target_set_path:
+        for p_auid in self.target_set_path:
             found = False
             for p in classdef.propertydefs:
-                if p.uuid == p_uuid:
+                if p.auid == p_auid:
                     path.append((classdef, p))
                     classdef = p.typedef.ref_classdef
                     found = True
@@ -206,8 +206,8 @@ class TypeDefEnum(TypeDef):
     class_id = AUID("0d010101-0207-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None, elements=None):
-        self = super(TypeDefEnum, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, typedef=None, elements=None):
+        self = super(TypeDefEnum, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_typedef_weakref_property(self, PID_ENUM_TYPE, typedef)
             names = []
@@ -261,7 +261,7 @@ class TypeDefEnum(TypeDef):
     def decode(self, data):
 
         # Boolean
-        if self.uuid == AUID("01040100-0000-0000-060e-2b3401040101"):
+        if self.auid == AUID("01040100-0000-0000-060e-2b3401040101"):
             return data == b'\x01'
 
         typedef = self.element_typedef
@@ -270,7 +270,7 @@ class TypeDefEnum(TypeDef):
 
     def encode(self, data):
         # Boolean
-        if self.uuid == AUID("01040100-0000-0000-060e-2b3401040101"):
+        if self.auid == AUID("01040100-0000-0000-060e-2b3401040101"):
             return b'\x01' if data else b'\x00'
 
         typedef = self.element_typedef
@@ -298,8 +298,8 @@ class TypeDefFixedArray(TypeDef):
     class_id = AUID("0d010101-0208-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None, size=None):
-        self = super(TypeDefFixedArray, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, typedef=None, size=None):
+        self = super(TypeDefFixedArray, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_typedef_weakref_property(self, PID_FIXED_TYPE, typedef)
             properties.add_u32le_property(self, PID_FIXED_COUNT, size)
@@ -365,8 +365,8 @@ class TypeDefVarArray(TypeDef):
     class_id = AUID("0d010101-0209-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
-        self = super(TypeDefVarArray, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, typedef=None):
+        self = super(TypeDefVarArray, cls).__new__(cls, root, name, type_auid)
 
         if root:
             properties.add_typedef_weakref_property(self, PID_VAR_TYPE, typedef)
@@ -395,7 +395,7 @@ class TypeDefVarArray(TypeDef):
         element_typedef = self.element_typedef
 
         #aafCharacter
-        if element_typedef.uuid == AUID("01100100-0000-0000-060e-2b3401040101"):
+        if element_typedef.auid == AUID("01100100-0000-0000-060e-2b3401040101"):
             return list(iter_utf16_array(data))
 
 
@@ -442,8 +442,8 @@ class TypeDefSet(TypeDef):
     class_id = AUID("0d010101-020a-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
-        self = super(TypeDefSet, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, typedef=None):
+        self = super(TypeDefSet, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_typedef_weakref_property(self, PID_SET_TYPE, typedef)
         return self
@@ -501,8 +501,8 @@ class TypeDefString(TypeDef):
     class_id = AUID("0d010101-020b-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, typedef=None):
-        self = super(TypeDefString, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, typedef=None):
+        self = super(TypeDefString, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_typedef_weakref_property(self, PID_STR_TYPE, typedef)
         return self
@@ -541,8 +541,8 @@ class TypeDefRecord(TypeDef):
     class_id = AUID("0d010101-020d-0000-060e-2b3402060101")
     __slots__ = ('_fields')
 
-    def __new__(cls, root=None, name=None, type_uuid=None, fields=None):
-        self = super(TypeDefRecord, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, fields=None):
+        self = super(TypeDefRecord, cls).__new__(cls, root, name, type_auid)
         if root:
             names = []
             types = []
@@ -581,12 +581,12 @@ class TypeDefRecord(TypeDef):
     def decode(self, data):
 
         # MobID
-        if self.uuid == MOBID_AUID:
+        if self.auid == MOBID_AUID:
             mobid = MobID(bytes_le=data)
             return mobid
 
         # AUID
-        if self.uuid == AUID_AUID:
+        if self.auid == AUID_AUID:
             return AUID(bytes_le=data)
 
         start = 0
@@ -601,7 +601,7 @@ class TypeDefRecord(TypeDef):
 
 
         # TimeStruct
-        if self.uuid == TIMESTRUCT_AUID:
+        if self.auid == TIMESTRUCT_AUID:
             t = datetime.time(result['hour'],
                               result['minute'],
                               result['second'],
@@ -609,17 +609,17 @@ class TypeDefRecord(TypeDef):
             return t
 
         # DateStruct
-        if self.uuid == DATESTRUCT_AUID:
+        if self.auid == DATESTRUCT_AUID:
             d = datetime.date(**result)
             return d
 
         # TimeStamp
-        if self.uuid == TIMESTAMP_AUID:
+        if self.auid == TIMESTAMP_AUID:
             d = datetime.datetime.combine(result['date'], result['time'])
             return d
 
         # Rational
-        if self.uuid == RATIONAL_AUID:
+        if self.auid == RATIONAL_AUID:
             r = AAFRational(result['Numerator'], result['Denominator'])
             return r
 
@@ -627,16 +627,16 @@ class TypeDefRecord(TypeDef):
 
     def encode(self, data):
         # MobID
-        if self.uuid == MOBID_AUID:
+        if self.auid == MOBID_AUID:
             return data.bytes_le
 
         # AUID
-        if self.uuid == AUID_AUID:
+        if self.auid == AUID_AUID:
             return data.bytes_le
 
         result = b""
         # TimeStamp
-        if self.uuid == TIMESTAMP_AUID:
+        if self.auid == TIMESTAMP_AUID:
             assert isinstance(data, datetime.datetime)
             f = [self.root.metadict.lookup_typedef(t) for k, t in self.fields]
             #date
@@ -648,7 +648,7 @@ class TypeDefRecord(TypeDef):
 
 
         # DateStruct
-        if self.uuid == DATESTRUCT_AUID:
+        if self.auid == DATESTRUCT_AUID:
             assert isinstance(data, datetime.date)
             d = {'year' : data.year,
                  'month' : data.month,
@@ -657,7 +657,7 @@ class TypeDefRecord(TypeDef):
             data = d
 
         # TimeStruct
-        if self.uuid == TIMESTRUCT_AUID:
+        if self.auid == TIMESTRUCT_AUID:
             assert isinstance(data, datetime.time)
             t = {'hour' : data.hour,
                  'minute' : data.minute,
@@ -667,7 +667,7 @@ class TypeDefRecord(TypeDef):
             data = t
 
         # Rational
-        if self.uuid == RATIONAL_AUID:
+        if self.auid == RATIONAL_AUID:
             r = AAFRational(data)
             data = {'Numerator': r.numerator, 'Denominator':r.denominator }
 
@@ -685,8 +685,8 @@ class TypeDefRename(TypeDef):
     class_id = AUID("0d010101-020e-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls,  root=None, name=None, type_uuid=None, typedef=None):
-        self = super(TypeDefRename, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls,  root=None, name=None, type_auid=None, typedef=None):
+        self = super(TypeDefRename, cls).__new__(cls, root, name, type_auid)
         if root:
             properties.add_typedef_weakref_property(self, PID_RENAME_TYPE, typedef)
         return self
@@ -702,7 +702,7 @@ class TypeDefRename(TypeDef):
     def encode(self, data):
         return self.renamed_typedef.encode(data)
 
-def iter_uuid_array(data):
+def iter_auid_array(data):
     f = BytesIO(data)
     result = []
     while True:
@@ -713,7 +713,7 @@ def iter_uuid_array(data):
         if len(d) == 16:
             yield AUID(bytes_le=d)
         else:
-            raise Exception("uuid length wrong: %d" % len(d))
+            raise Exception("auid length wrong: %d" % len(d))
 
 PID_EXTENUM_NAMES  = 0x001f
 PID_EXTENUM_VALUES = 0x0020
@@ -723,8 +723,8 @@ class TypeDefExtEnum(TypeDef):
     class_id = AUID("0d010101-0220-0000-060e-2b3402060101")
     __slots__ = ()
 
-    def __new__(cls, root=None, name=None, type_uuid=None, elements=None):
-        self = super(TypeDefExtEnum, cls).__new__(cls, root, name, type_uuid)
+    def __new__(cls, root=None, name=None, type_auid=None, elements=None):
+        self = super(TypeDefExtEnum, cls).__new__(cls, root, name, type_auid)
 
         if root:
             names = []
@@ -734,16 +734,16 @@ class TypeDefExtEnum(TypeDef):
                 names.append(name)
 
             properties.add_utf16_array_property(self, PID_EXTENUM_NAMES, names)
-            properties.add_uuid_array_propertry(self, PID_EXTENUM_VALUES, values)
+            properties.add_auid_array_propertry(self, PID_EXTENUM_VALUES, values)
 
         return self
 
-    def register_element(self, element_name, element_uuid):
+    def register_element(self, element_name, element_auid):
 
         element_names = []
         element_values = []
         for val, name in self.elements.items():
-            if val == element_uuid:
+            if val == element_auid:
                 return
             if name == element_name:
                 return
@@ -752,15 +752,15 @@ class TypeDefExtEnum(TypeDef):
             element_names.append(name)
 
         element_names.append(element_name)
-        element_values.append(element_uuid)
+        element_values.append(element_auid)
 
         self.property_entries[PID_EXTENUM_NAMES].data = encode_utf16_array(element_names)
-        self.property_entries[PID_EXTENUM_VALUES].data = encode_uuid_array(element_values)
+        self.property_entries[PID_EXTENUM_VALUES].data = encode_auid_array(element_values)
 
     @property
     def elements(self):
         element_names = list(iter_utf16_array(self.property_entries[PID_EXTENUM_NAMES].data))
-        element_values = list(iter_uuid_array(self.property_entries[PID_EXTENUM_VALUES].data))
+        element_values = list(iter_auid_array(self.property_entries[PID_EXTENUM_VALUES].data))
         return dict(zip(element_values, element_names))
 
     def decode(self, data):
@@ -793,8 +793,8 @@ class TypeDefIndirect(TypeDef):
     def decode_typedef(self, data):
         byte_order = data[0:1]
         assert byte_order == b'\x4c' # little endian
-        type_uuid = AUID(bytes_le=data[1:17])
-        return self.root.metadict.lookup_typedef(type_uuid)
+        type_auid = AUID(bytes_le=data[1:17])
+        return self.root.metadict.lookup_typedef(type_auid)
 
     def decode(self, data):
         typedef = self.decode_typedef(data)
@@ -808,22 +808,22 @@ class TypeDefIndirect(TypeDef):
             typedef = self.root.metadict.lookup_typedef(data_typedef)
             if typedef is None:
                 raise AAFPropertyError("unable to find typedef: %s" % (str(data_typedef)))
-            type_uuid = typedef.uuid
+            type_auid = typedef.auid
 
         elif isinstance(data, (str, unicode)):
             # aafString
-            type_uuid = AUID("01100200-0000-0000-060e-2b3401040101")
+            type_auid = AUID("01100200-0000-0000-060e-2b3401040101")
 
         elif isinstance(data, int):
             # aafInt32
-            type_uuid = AUID("01010700-0000-0000-060e-2b3401040101")
+            type_auid = AUID("01010700-0000-0000-060e-2b3401040101")
         else:
             raise NotImplementedError("Indirect type for: %s", str(type(data)))
 
         if typedef is None:
-            typedef = self.root.metadict.lookup_typedef(type_uuid)
+            typedef = self.root.metadict.lookup_typedef(type_auid)
         result = byte_order
-        result += type_uuid.bytes_le
+        result += type_auid.bytes_le
         result += typedef.encode(data)
         return result
 

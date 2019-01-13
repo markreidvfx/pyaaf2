@@ -44,10 +44,10 @@ class DictionaryTests(unittest.TestCase):
 
         with aaf2.open(result_file, 'r') as f:
             param = f.dictionary.lookup_parameterdef('AvidEffectID')
-            assert param.uuid == parm_id
+            assert param.auid == parm_id
 
             op_def = f.dictionary.lookup_operationdef("MatteKey_2")
-            assert op_def.uuid == effect_id
+            assert op_def.auid == effect_id
             assert op_def.media_kind == 'Picture'
             assert op_def['IsTimeWarp'].value == False
             assert op_def['Bypass'].value == 2

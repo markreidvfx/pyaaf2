@@ -44,7 +44,7 @@ class AAFObject(object):
 
     @property
     def classdef(self):
-        return self.root.metadict.classdefs_by_uuid.get(self.class_id, None)
+        return self.root.metadict.classdefs_by_auid.get(self.class_id, None)
 
     @property
     def name(self):
@@ -307,7 +307,7 @@ class AAFObject(object):
                 # Workaround, for OperationDef Parameters
                 # AAF SDK uses a StrongRefSetProperty
                 # Spec says its suppose to be a StrongRefVectorProperty
-                if propertydef.uuid == OPERATIONGROUP_PARAMETERS_AUID:
+                if propertydef.auid == OPERATIONGROUP_PARAMETERS_AUID:
                     fmt = properties.SF_STRONG_OBJECT_REFERENCE_SET
 
                 p = property_formats[fmt](self, propertydef.pid, fmt)
