@@ -775,7 +775,7 @@ class TypeDefExtEnum(TypeDef):
 
     def encode(self, data):
         for key, value in self.elements.items():
-            if isinstance(data, UUID):
+            if isinstance(data, (AUID, UUID)):
                 if data == key:
                     return key.bytes_le
             else:
