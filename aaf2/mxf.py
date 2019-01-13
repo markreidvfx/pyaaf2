@@ -32,7 +32,7 @@ class MXFRef(AUID):
 class MXFRefArray(list):
     pass
 
-def read_uuid_be(f):
+def read_auid_be(f):
     data = f.read(16)
     if data:
         return AUID(bytes_be=data)
@@ -67,16 +67,16 @@ def decode_utf16be(data):
 
     return data[:size].decode('utf-16-be')
 
-def decode_uuid(data):
+def decode_auid(data):
     return AUID(bytes_be=data)
 
-def reverse_uuid(data):
+def reverse_auid(data):
     new = data.hex[16:] + data.hex[:16]
     return AUID(new)
 
 def decode_datadef(data):
     orig = AUID(bytes_be=data)
-    datadef = reverse_uuid(orig)
+    datadef = reverse_auid(orig)
     name = datadefs.DataDefs.get(str(datadef), (None, None))[0]
     return name
 
@@ -154,7 +154,7 @@ class MXFObject(object):
 
     def read_tag(self, tag, data):
         if tag == 0x3c0a:
-            self.instance_id = decode_uuid(data)
+            self.instance_id = decode_auid(data)
 
     def read_properties(self, f, length, local_tags):
         for tag, data in iter_tags(f, length):
@@ -176,11 +176,11 @@ class MXFObject(object):
             obj = self.root.resolve(ref)
             if obj:
                 return obj
-        raise Exception("unable to resolve: %s %s %s" % (key,uuid_to_str_list(ref, sep=' '), str(ref)) )
+        raise Exception("unable to resolve: %s %s %s" % (key,auid_to_str_list(ref, sep=' '), str(ref)) )
 
     def iter_strong_refs(self, key):
         for ref in self.data.get(key, []):
-            # print(ref, uuid_to_str_list(ref, sep=' '))
+            # print(ref, auid_to_str_list(ref, sep=' '))
             yield self.root.resolve(ref)
 
 
@@ -194,7 +194,7 @@ class MXFPreface(MXFObject):
         super(MXFPreface, self).read_tag(tag, data)
 
         if tag == 0x3b09:
-            self.data['OperationalPattern'] = decode_uuid(data)
+            self.data['OperationalPattern'] = decode_auid(data)
         elif tag == 0x3b03:
             self.data['ContentStorage'] = decode_strongref(data)
 
@@ -228,7 +228,7 @@ class MXFPackage(MXFObject):
         elif tag == 0x4405:
             self.data['CreationTime'] = decode_timestamp(data)
         elif tag == 0x4408:
-            self.data['UsageCode'] = decode_uuid(data) # doesn't appear reversed...
+            self.data['UsageCode'] = decode_auid(data) # doesn't appear reversed...
 
     @property
     def mob_id(self):
@@ -375,7 +375,7 @@ class MXFSequence(MXFComponent):
         s.media_kind = self.data['DataDef'] #or 'DataDef_Unknown'
         s.length = self.data.get('Length', 0)
         # for item in self.data['Components']:
-        #     print(uuid_to_str_list(item, sep=' '), item)
+        #     print(auid_to_str_list(item, sep=' '), item)
         for item in self.iter_strong_refs('Components'):
             s['Components'].append(item.link())
         return s
@@ -483,9 +483,9 @@ class MXFDescriptor(MXFObject):
         if tag == 0x3f01:
             self.data['FileDescriptors'] = decode_strong_ref_array(data)
         elif tag == 0x3004:
-            self.data['ContainerFormat'] = reverse_uuid(decode_uuid(data))
+            self.data['ContainerFormat'] = reverse_auid(decode_auid(data))
         elif tag == 0x3005:
-            self.data['CodecDefinition'] = reverse_uuid(decode_uuid(data))
+            self.data['CodecDefinition'] = reverse_auid(decode_auid(data))
         elif tag == 0x3006:
             self.data['LinkedTrackID'] = read_u32be(BytesIO(data))
         elif tag == 0x3203:
@@ -523,9 +523,9 @@ class MXFDescriptor(MXFObject):
         elif tag == 0x320e:
             self.data['ImageAspectRatio'] = decode_rational(data)
         elif tag == 0x3d06:
-            self.data['SoundCompression'] =  reverse_uuid(decode_uuid(data))
+            self.data['SoundCompression'] =  reverse_auid(decode_auid(data))
         elif tag == 0x3201:
-            self.data['Compression'] = reverse_uuid(decode_uuid(data))
+            self.data['Compression'] = reverse_auid(decode_auid(data))
         elif tag == 0x3302:
             self.data['HorizontalSubsampling'] = read_u32be(BytesIO(data))
         elif tag == 0x3308:
@@ -745,7 +745,7 @@ def iter_kl(f):
     while True:
         # read the key
         f.seek(pos)
-        key = read_uuid_be(f)
+        key = read_auid_be(f)
         if not key:
             break
         # read the ber_length
@@ -763,7 +763,7 @@ def iter_tags(f, length):
             yield tag, f.read(size)
         length -= 4 + size
 
-def uuid_to_str_list(v, sep=',', prefix=""):
+def auid_to_str_list(v, sep=',', prefix=""):
     return sep.join('%s%02x' % (prefix, i)  for i in bytearray(v.bytes_be))
 
 class MXFFile(object):
@@ -791,7 +791,7 @@ class MXFFile(object):
                     self.read_header(f, length)
                 else:
                     # print('{')
-                    # print(key,  uuid_to_str_list(key, sep='.'))
+                    # print(key,  auid_to_str_list(key, sep='.'))
                     obj = self.read_object(f, key, length)
                     if obj:
                         # print(obj.__class__.__name__, obj.instance_id)
@@ -850,7 +850,7 @@ class MXFFile(object):
         index_sid = read_u32be(f)
         body_offset = read_u64be(f)
         body_sid = read_u32be(f)
-        self.header_operation_pattern = read_uuid_be(f)
+        self.header_operation_pattern = read_auid_be(f)
 
         self.header_partition_size = (self.round_to_kag(length, kag_size) +
                                       self.round_to_kag(header_byte_count, kag_size) +
@@ -868,7 +868,7 @@ class MXFFile(object):
         tags = {}
         for i in range(item_num):
             tag = read_u16be(f)
-            uid = read_uuid_be(f)
+            uid = read_auid_be(f)
             # print("%04x" % tag, ':', uid)
             tags[tag] = uid
 
