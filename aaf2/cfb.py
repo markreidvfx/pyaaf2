@@ -16,6 +16,7 @@ import weakref
 from array import array
 from struct import Struct
 import struct
+from collections import deque
 
 from .utils import (
     read_u8, read_u16le,
@@ -1581,25 +1582,23 @@ class CompoundFileBinary(object):
         dir_per_sector = self.sector_size // 128
         max_dirs_entries = self.dir_sector_count * dir_per_sector
 
-        current = child
-        stack = []
+        stack =  deque([child])
+        count = 0
 
-        while True:
-
-            # go to left most node
-            while current is not None:
-                stack.append(current)
-                current = current.left()
-                if len(stack) > max_dirs_entries:
-                    raise CompoundFileBinaryError("corrupt folder structure")
-
-            # done if stack is empy
-            if not stack:
-                break
-
+        while stack:
             current = stack.pop()
             result[current.name] = current
-            current = current.right()
+            count += 1
+
+            if count > max_dirs_entries:
+                raise CompoundFileBinaryError("corrupt folder structure")
+
+            left = current.left()
+            if left:
+                stack.append(left)
+            right =  current.right()
+            if right:
+                stack.append(right)
 
         self.children_cache[root.dir_id] = result
         return result
