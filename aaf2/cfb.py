@@ -77,7 +77,7 @@ def pretty_sectors(fat):
     return [fat_sector_types.get(item, item) for item in fat]
 
 class Stream(object):
-
+    __slots__ = ('storage', 'dir', 'mode', 'pos', 'fat_chain')
     def __init__(self, storage, entry, mode='r'):
         self.storage = storage
         self.dir = entry
