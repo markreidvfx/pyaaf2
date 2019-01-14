@@ -915,7 +915,7 @@ class StrongRefSetProperty(Property):
 
     @property
     def value(self):
-        return list(self.values())
+        return [item for item in self]
 
     @value.setter
     @writeonly
@@ -1159,10 +1159,7 @@ class WeakRefArrayProperty(Property):
 
     @property
     def value(self):
-        items = []
-        for item in self:
-            items.append(item)
-        return items
+        return [item for item in self]
 
     @value.setter
     @writeonly
