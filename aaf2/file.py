@@ -196,7 +196,7 @@ class AAFFile(object):
             self.metadict = MetaDictionary(self)
             self.metadict.dir = self.cfb.find('/MetaDictionary-1')
             self.manager['/MetaDictionary-1'] = self.metadict
-            self.root = self.read_object("/")
+            self.root = self.manager.read_object("/")
             self.metadict.read_properties()
 
         elif self.mode in ("wb+",):
@@ -261,9 +261,6 @@ class AAFFile(object):
     @property
     def writeable(self):
         return self.mode in ("wb+", "rb+")
-
-    def read_object(self, path):
-        return self.manager.read_object(path)
 
     def resovle_weakref(self, index, ref_pid, ref):
         parent, p = self.weakref_prop(index)

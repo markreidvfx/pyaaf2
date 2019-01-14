@@ -336,7 +336,7 @@ class StrongRefProperty(Property):
         dir_entry = self.parent.dir.get(self.ref)
         obj = None
         if dir_entry:
-            obj = self.parent.root.read_object(dir_entry)
+            obj = self.parent.root.manager.read_object(dir_entry)
             self.object = obj
         return obj
 
@@ -502,7 +502,7 @@ class StrongRefVectorProperty(Property):
             return item
         ref = self.index_ref_name(index)
         dir_entry = self.parent.dir.get(ref)
-        item = self.parent.root.read_object(dir_entry)
+        item = self.parent.root.manager.read_object(dir_entry)
 
         self.objects[index] = item
         return item
@@ -783,7 +783,7 @@ class StrongRefSetProperty(Property):
 
         ref = self.index_ref_name(key)
         dir_entry = self.parent.dir.get(ref)
-        obj = self.parent.root.read_object(dir_entry)
+        obj = self.parent.root.manager.read_object(dir_entry)
         self.objects[key] = obj
         return obj
 
