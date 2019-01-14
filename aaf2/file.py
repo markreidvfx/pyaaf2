@@ -168,7 +168,7 @@ class AAFFile(object):
         with aaf.open() as f:
     """
 
-    def __init__(self, path=None, mode='r', sector_size=4096, extensions=True):
+    def __init__(self, path=None, mode='r', sector_size=4096, extensions=True, buffering=io.DEFAULT_BUFFER_SIZE):
 
         if mode in ('r', 'rb'):
             mode = 'rb'
@@ -183,7 +183,7 @@ class AAFFile(object):
             self.mode = 'wb+'
             self.f = BytesIO()
         else:
-            self.f = io.open(path, mode)
+            self.f = io.open(path, mode, buffering=buffering)
 
         self.cfb = CompoundFileBinary(self.f, self.mode, sector_size=sector_size)
         self.weakref_table = []
