@@ -53,6 +53,10 @@ class TypeDef(core.AAFObject):
         return self._auid
 
     @property
+    def uuid(self):
+        return self.auid.uuid
+
+    @property
     def type_name(self):
         data = self.property_entries[PID_NAME].data
         if data is not None:

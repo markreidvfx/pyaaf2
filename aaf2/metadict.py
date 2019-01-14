@@ -93,6 +93,10 @@ class PropertyDef(core.AAFObject):
         return self._auid
 
     @property
+    def uuid(self):
+        return self.auid.uuid
+
+    @property
     def optional(self):
         return self.property_entries[PID_OPTIONAL].data == b"\x01"
 
@@ -146,6 +150,10 @@ class ClassDef(core.AAFObject):
         data = self.property_entries[PID_AUID].data
         if data is not None:
             return AUID(bytes_le=self.property_entries[PID_AUID].data)
+
+    @property
+    def uuid(self):
+        return self.auid.uuid
 
     @property
     def concrete(self):

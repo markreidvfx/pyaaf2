@@ -73,6 +73,16 @@ class DefinitionObject(core.AAFObject):
     def auid(self, value):
         self['Identification'].value = value
 
+    @property
+    def uuid(self):
+        auid = self.auid
+        if auid is not None:
+            return auid.uuid
+
+    @uuid.setter
+    def uuid(self, value):
+        self.auid = AUID(value)
+
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,
                        self.__class__.__name__)

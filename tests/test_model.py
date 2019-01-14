@@ -36,6 +36,7 @@ class ModelTests(unittest.TestCase):
             for classdef in f.metadict['ClassDefinitions'].value:
                 self.assertFalse(classdef.class_name == "Root")
                 self.assertFalse(classdef.auid == root_auid)
+                self.assertFalse(classdef.uuid == UUID(bytes_le=bytes(root_auid.bytes_le)))
 
     def test_register(self):
 
@@ -56,6 +57,7 @@ class ModelTests(unittest.TestCase):
             test_classdef = f.metadict.lookup_classdef('TestClass')
 
             self.assertTrue(test_classdef.auid == test_classdef_auid)
+            self.assertTrue(test_classdef.uuid == UUID(bytes_le=bytes(test_classdef_auid.bytes_le)))
             self.assertTrue(test_classdef.class_name == "TestClass")
             self.assertTrue(test_classdef.parent is parent_classdef)
 
