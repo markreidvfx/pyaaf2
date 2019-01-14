@@ -109,7 +109,7 @@ class AAFObjectManager(object):
         else:
             obj = self.path_cache.get(path, None)
             if obj is not None:
-                return self.path_cache[path]
+                return obj
 
             dir_entry = self.root.cfb.find(path)
 
