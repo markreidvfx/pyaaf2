@@ -719,7 +719,7 @@ class CompoundFileBinary(object):
 
         self.modified = {}
 
-        self.sector_cache = LRUCacheDict(size=1024)
+        self.sector_cache = LRUCacheDict()
         self.dir_cache = weakref.WeakValueDictionary()
         self.children_cache = LRUCacheDict()
         self.dir_freelist = array(str('I'))
