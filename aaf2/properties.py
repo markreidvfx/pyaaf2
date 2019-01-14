@@ -69,7 +69,7 @@ class Property(object):
         self.pid = pid
         self.format = format
         self.version = version
-        self._data = None
+        self.data = None
         self._propertydef = None
         self.parent = parent
 
@@ -87,14 +87,6 @@ class Property(object):
         if self.parent.root.mode in ('rb', ):
             return False
         return True
-
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._data = data
 
     def decode(self):
         pass
@@ -154,7 +146,7 @@ class Property(object):
     @value.setter
     @writeonly
     def value(self, value):
-        if self._data is not None and self.parent.dir and self.unique:
+        if self.data is not None and self.parent.dir and self.unique:
             if self.propertydef.auid == MOB_MOBID_AUID:
                 self.parent.root.content.mobs.swap_unique_key(self.value, value)
             elif self.propertydef.auid == ESSENCEDATA_MOBID_AUID:
