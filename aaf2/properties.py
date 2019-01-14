@@ -65,6 +65,7 @@ MOB_MOBID_AUID = AUID("01011510-0000-0000-060e-2b3401010101")
 ESSENCEDATA_MOBID_AUID = AUID("06010106-0100-0000-060e-2b3401010102")
 
 class Property(object):
+    __slots__ = ('pid', 'format', 'version', 'data', 'parent', '_propertydef')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         self.pid = pid
         self.format = format
@@ -178,6 +179,7 @@ class Property(object):
             return "<%s %d bytes>" % (self.__class__.__name__, len(self.data))
 
 class StreamProperty(Property):
+    __slots__ = ('stream_name', 'dir')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StreamProperty, self).__init__(parent, pid, format, version)
         self.stream_name = None
@@ -283,6 +285,7 @@ class StreamProperty(Property):
         return self.parent.dir.get(self.stream_name)
 
 class StrongRefProperty(Property):
+    __slots__ = ('ref', 'objectref')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefProperty, self).__init__(parent, pid, format, version)
         self.ref = None
@@ -392,7 +395,7 @@ class StrongRefProperty(Property):
 
 
 class StrongRefVectorProperty(Property):
-
+    __slots__ = ('references', 'next_free_key', 'last_free_key','objects', '_index_name')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefVectorProperty, self).__init__(parent, pid, format, version)
         self.references = []
@@ -662,6 +665,7 @@ class StrongRefVectorProperty(Property):
 
 
 class StrongRefSetProperty(Property):
+    __slots__ = ('references', 'index_name', 'next_free_key', 'last_free_key', 'key_pid', 'key_size', 'objects')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefSetProperty, self).__init__(parent, pid, format, version)
 
@@ -963,6 +967,7 @@ def resolve_weakref(p, ref):
         return p.parent.root.resovle_weakref(p.weakref_index, p.key_pid, ref)
 
 class WeakRefProperty(Property):
+    __slots__ = ('weakref_index', 'key_pid', 'key_size', 'ref')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(WeakRefProperty, self).__init__(parent, pid, format, version)
         self.weakref_index = None
@@ -1038,6 +1043,7 @@ class WeakRefProperty(Property):
         self.add_pid_entry()
 
 class WeakRefArrayProperty(Property):
+    __slots__ = ('references', 'index_name', 'weakref_index', 'key_pid', 'key_size')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(WeakRefArrayProperty, self).__init__(parent, pid, format, version)
         self.references = []
