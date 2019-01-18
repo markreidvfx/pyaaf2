@@ -248,8 +248,9 @@ class Stream(object):
             minifat = False
             self.fat_chain = array(str('I'))
 
+        sector_size = self.sector_size()
         self.dir.byte_size = byte_size
-        sector_count = int(math.ceil(byte_size / float(self.sector_size())))
+        sector_count = (byte_size + sector_size - 1) // sector_size
 
         current_sects= len(self.fat_chain)
         # logging.debug("%d bytes requires %d sectors at %d has %d" % (byte_size, sector_count, self.sector_size(), current_sects))
