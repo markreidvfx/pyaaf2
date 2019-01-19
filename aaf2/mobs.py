@@ -262,7 +262,7 @@ class SourceMob(Mob):
         length = 0
         alignment_padding = bytearray(frame_size - raw_frame_size)
 
-        with io.open(path, 'rb') as f:
+        with io.open(path, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
             while True:
                 data = f.read(raw_frame_size)
                 if not data:
@@ -303,7 +303,7 @@ class SourceMob(Mob):
         stream = essencedata.open('w')
 
         # open input file
-        with io.open(path, 'rb') as f:
+        with io.open(path, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
 
             cid = None
             for i, packet in enumerate(video.iter_dnx_stream(f), 1):

@@ -18,7 +18,7 @@ class ImportTests(unittest.TestCase):
     def test_dnx_iter(self):
         profile_name = 'dnx_1080p_36_23.97'
         sample = common.generate_dnxhd(profile_name, "dnx_iter01.dnxhd", 10)
-        with io.open(sample, 'rb') as f:
+        with io.open(sample, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
             for i, packet in enumerate(video.iter_dnx_stream(f)):
                 cid, width, height, bitdepth, interlaced = video.read_dnx_frame_header(packet)
                 assert not interlaced
@@ -30,7 +30,7 @@ class ImportTests(unittest.TestCase):
 
         profile_name = 'dnx_1080i_120_25'
         sample = common.generate_dnxhd(profile_name, "dnx_iter02.dnxhd", 10)
-        with io.open(sample, 'rb') as f:
+        with io.open(sample, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
             for i, packet in enumerate(video.iter_dnx_stream(f)):
                 cid, width, height, bitdepth, interlaced = video.read_dnx_frame_header(packet)
                 assert interlaced
@@ -43,7 +43,7 @@ class ImportTests(unittest.TestCase):
         profile_name = 'dnxhr_lb'
         uhd2160 = (3840, 2160)
         sample = common.generate_dnxhd(profile_name, "dnx_iter03.dnxhd", 10, size=uhd2160, frame_rate=frame_rate)
-        with io.open(sample, 'rb') as f:
+        with io.open(sample, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
             for i, packet in enumerate(video.iter_dnx_stream(f)):
                 cid, width, height, bitdepth, interlaced = video.read_dnx_frame_header(packet)
                 assert not interlaced
@@ -69,7 +69,7 @@ class ImportTests(unittest.TestCase):
                 mob = next(f.content.sourcemobs())
                 stream = mob.essence.open('r')
                 dump_path = os.path.join(common.sample_dir(),'%s-import-dump.dnxhd' % profile_name)
-                with io.open(dump_path, 'wb') as out:
+                with io.open(dump_path, 'wb', buffering=io.DEFAULT_BUFFER_SIZE) as out:
                     out.write(stream.read())
 
                 assert common.compare_files(dump_path, sample)
@@ -117,7 +117,7 @@ class ImportTests(unittest.TestCase):
                 mob = source_mobs[0]
                 stream = mob.essence.open('r')
                 dump_path = os.path.join(common.sample_dir(),'%s-import-dump.dnxhd' % profile_name)
-                with io.open(dump_path, 'wb') as out:
+                with io.open(dump_path, 'wb', buffering=io.DEFAULT_BUFFER_SIZE) as out:
                     out.write(stream.read())
 
                 assert common.compare_files(dump_path, sample)
@@ -242,7 +242,7 @@ class ImportTests(unittest.TestCase):
 
                 if isinstance(mob.descriptor, aaf2.essence.CDCIDescriptor):
                     stream = mob.essence.open('r')
-                    with io.open(dump_path, 'wb') as out:
+                    with io.open(dump_path, 'wb', buffering=io.DEFAULT_BUFFER_SIZE) as out:
                         out.write(stream.read())
                     assert common.compare_files(dump_path, original_path)
                     assert mob.slots[0].segment.length == frames

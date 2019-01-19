@@ -34,7 +34,7 @@ class StreamTests(unittest.TestCase):
     def write_and_test(self, filename, data_list, chunksize=61):
         path = os.path.join(test_dir, filename)
 
-        with io.open(path, 'wb+') as f:
+        with io.open(path, 'wb+', buffering=io.DEFAULT_BUFFER_SIZE) as f:
             ss = CompoundFileBinary(f, 'wb+')
 
             for i, data in enumerate(data_list):
@@ -62,7 +62,7 @@ class StreamTests(unittest.TestCase):
             ss.close()
 
 
-        with io.open(path, 'rb') as f:
+        with io.open(path, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
 
             ss = CompoundFileBinary(f)
 
@@ -79,7 +79,7 @@ class StreamTests(unittest.TestCase):
 
         path = os.path.join(test_dir, filename)
 
-        with io.open(path, 'wb+') as f:
+        with io.open(path, 'wb+', buffering=io.DEFAULT_BUFFER_SIZE) as f:
 
             ss = CompoundFileBinary(f, 'wb+')
 
@@ -99,7 +99,7 @@ class StreamTests(unittest.TestCase):
 
             ss.close()
 
-        with io.open(path, 'rb') as f:
+        with io.open(path, 'rb',  buffering=io.DEFAULT_BUFFER_SIZE) as f:
 
             ss = CompoundFileBinary(f)
 
