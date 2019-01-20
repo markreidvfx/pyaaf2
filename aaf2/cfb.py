@@ -130,11 +130,10 @@ class Stream(object):
         return self.pos // self.sector_size()
 
     def abs_pos(self):
-        minifat = self.is_mini_stream()
         sector_size = self.storage.sector_size
         mini_sector_size = self.storage.mini_stream_sector_size
 
-        if minifat:
+        if self.dir.byte_size < self.storage.min_stream_max_size:
             minifat_chain = self.fat_chain
             mini_fat_index, sector_offset = divmod(self.pos, mini_sector_size)
             mini_stream_sid = minifat_chain[mini_fat_index]
@@ -213,18 +212,44 @@ class Stream(object):
         return result
 
     def write1(self, data):
-        sector_size = self.sector_size()
-        sector_offset = self.sector_offset()
+
+        full_sector_size = self.storage.sector_size
+        mini_sector_size = self.storage.mini_stream_sector_size
+
+        # inlined on purpose this method gets called alot
+        if self.dir.byte_size < self.storage.min_stream_max_size:
+            mini_fat_index = self.pos // mini_sector_size
+            mini_sector_offset  = self.pos % mini_sector_size
+
+            mini_stream_sid = self.fat_chain[mini_fat_index]
+            mini_steam_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
+
+            index      = mini_steam_pos // full_sector_size
+            sid_offset = mini_steam_pos  % full_sector_size
+
+            sid = self.storage.mini_stream_chain[index]
+
+            sector_size = mini_sector_size
+            sector_offset = mini_sector_offset
+            seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
+
+        else:
+            index       = self.pos // full_sector_size
+            sid_offset  = self.pos  % full_sector_size
+
+            sid = self.fat_chain[index]
+            sector_offset = sid_offset
+
+            sector_size = full_sector_size
+            seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
+
 
         byte_writeable = min(len(data), sector_size - sector_offset)
-        f = self.storage.f
-        pos = self.abs_pos()
-        sid, sid_offset = self.storage.get_sid_offset(pos)
-
         if sid in self.storage.sector_cache:
             del self.storage.sector_cache[sid]
 
-        f.seek(pos)
+        f = self.storage.f
+        f.seek(seek_pos)
         # logging.debug("write stream %d bytes at %d" % (byte_writeable, pos))
         f.write(data[:byte_writeable])
         self.pos += byte_writeable
