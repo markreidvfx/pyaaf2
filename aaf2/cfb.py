@@ -235,6 +235,9 @@ class Stream(object):
         is_mini_stream = self.dir.byte_size < self.storage.min_stream_max_size
         full_sector_size = self.storage.sector_size
         mini_sector_size = self.storage.mini_stream_sector_size
+        mini_stream_chain = self.storage.mini_stream_chain
+        sector_cache = self.storage.sector_cache
+        f = self.storage.f
 
         if is_mini_stream:
             mini_fat_index     = self.pos // mini_sector_size
@@ -255,7 +258,7 @@ class Stream(object):
                 index      = mini_stream_pos // full_sector_size
                 sid_offset = mini_stream_pos  % full_sector_size
 
-                sid = self.storage.mini_stream_chain[index]
+                sid = mini_stream_chain[index]
 
                 sector_offset = mini_sector_offset
                 seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
@@ -274,10 +277,10 @@ class Stream(object):
 
             byte_writeable = min(len(mv), sector_size - sector_offset)
             assert byte_writeable > 0
-            if sid in self.storage.sector_cache:
-                del self.storage.sector_cache[sid]
 
-            f = self.storage.f
+            if sid in sector_cache:
+                del sector_cache[sid]
+
             f.seek(seek_pos)
             f.write(mv[:byte_writeable])
             self.pos += byte_writeable
