@@ -189,53 +189,6 @@ class Stream(object):
 
         return result
 
-    def write1(self, data):
-
-        full_sector_size = self.storage.sector_size
-        mini_sector_size = self.storage.mini_stream_sector_size
-
-        # inlined on purpose this method gets called alot
-        if self.dir.byte_size < self.storage.min_stream_max_size:
-            mini_fat_index     = self.pos // mini_sector_size
-            mini_sector_offset = self.pos  % mini_sector_size
-
-            mini_stream_sid = self.fat_chain[mini_fat_index]
-            mini_stream_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
-
-            index      = mini_stream_pos // full_sector_size
-            sid_offset = mini_stream_pos  % full_sector_size
-
-            sid = self.storage.mini_stream_chain[index]
-
-            sector_size = mini_sector_size
-            sector_offset = mini_sector_offset
-            seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
-
-        else:
-            index      = self.pos // full_sector_size
-            sid_offset = self.pos  % full_sector_size
-
-            sid = self.fat_chain[index]
-            sector_offset = sid_offset
-
-            sector_size = full_sector_size
-            seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
-
-        byte_writeable = min(len(data), sector_size - sector_offset)
-        if byte_writeable == 0:
-            return 0
-
-        if sid in self.storage.sector_cache:
-            del self.storage.sector_cache[sid]
-
-        f = self.storage.f
-        f.seek(seek_pos)
-        # logging.debug("write stream %d bytes at %d" % (byte_writeable, pos))
-        f.write(data[:byte_writeable])
-        self.pos += byte_writeable
-
-        return byte_writeable
-
     def allocate(self, byte_size):
 
         minifat = self.is_mini_stream()
@@ -276,15 +229,61 @@ class Stream(object):
         new_size = max(self.tell() + size, self.dir.byte_size)
         if new_size > self.dir.byte_size:
             self.allocate(new_size)
+
         mv = memoryview(data)
+
+        is_mini_stream = self.dir.byte_size < self.storage.min_stream_max_size
+        full_sector_size = self.storage.sector_size
+        mini_sector_size = self.storage.mini_stream_sector_size
+
+        if is_mini_stream:
+            mini_fat_index     = self.pos // mini_sector_size
+            mini_sector_offset = self.pos  % mini_sector_size
+            sector_size = mini_sector_size
+        else:
+            index      = self.pos // full_sector_size
+            sid_offset = self.pos  % full_sector_size
+            sector_size = full_sector_size
+
         while size > 0:
-            bytes_written = self.write1(mv)
-            assert bytes_written > 0
 
-            mv = mv[bytes_written:]
-            size -= bytes_written
+            # inlined on purpose this method can get called alot
+            if is_mini_stream:
+                mini_stream_sid = self.fat_chain[mini_fat_index]
+                mini_stream_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
 
-        return size
+                index      = mini_stream_pos // full_sector_size
+                sid_offset = mini_stream_pos  % full_sector_size
+
+                sid = self.storage.mini_stream_chain[index]
+
+                sector_offset = mini_sector_offset
+                seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
+
+                mini_fat_index += 1
+                mini_sector_offset = 0
+
+            else:
+                sid = self.fat_chain[index]
+                sector_offset = sid_offset
+
+                seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
+
+                index += 1
+                sid_offset = 0
+
+            byte_writeable = min(len(mv), sector_size - sector_offset)
+            assert byte_writeable > 0
+            if sid in self.storage.sector_cache:
+                del self.storage.sector_cache[sid]
+
+            f = self.storage.f
+            f.seek(seek_pos)
+            f.write(mv[:byte_writeable])
+            self.pos += byte_writeable
+
+            mv = mv[byte_writeable:]
+            size -= byte_writeable
 
     def close(self):
         pass
