@@ -271,10 +271,13 @@ class Stream(object):
         new_size = max(self.tell() + size, self.dir.byte_size)
         if new_size > self.dir.byte_size:
             self.allocate(new_size)
+        mv = memoryview(data)
+        while size > 0:
+            bytes_written = self.write1(mv)
+            assert bytes_written > 0
 
-        while data:
-            bytes_written = self.write1(data)
-            data = data[bytes_written:]
+            mv = mv[bytes_written:]
+            size -= bytes_written
 
         return size
 
