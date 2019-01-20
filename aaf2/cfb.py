@@ -1176,19 +1176,12 @@ class CompoundFileBinary(object):
             return i
 
         # if we got here need to add aditional fat
-        logging.debug("fat full, growing")
+        # logging.debug("fat full, growing")
 
         difat_table = None
         difat_index = None
 
         for t, i, v in self.iter_difat():
-
-            # hack to grow difat faster
-            if self.debug_grow:
-                size = len(self.difat[t])
-                if i < size - 2:
-                    continue
-
             if v == FREESECT:
                 difat_table = t
                 difat_index = i
@@ -1196,7 +1189,6 @@ class CompoundFileBinary(object):
 
         new_difat_sect = None
         if difat_index is None:
-            logging.debug("difat full, growing")
             new_difat_sect = len(self.fat) + 1
             logging.debug("adding new difat to sid: %d" % new_difat_sect)
             if self.difat_sector_count == 0:
@@ -1221,15 +1213,18 @@ class CompoundFileBinary(object):
                     break
 
         new_fat_sect = len(self.fat)
-        logging.debug("adding new fat to sid: %d" % new_fat_sect)
+        # logging.debug("adding new fat to sid: %d" % new_fat_sect)
 
         self.difat[difat_table][difat_index] = new_fat_sect
 
         # grow fat entries
         idx_start = len(self.fat)
-        for i in range(self.sector_size // 4):
-            self.fat.append(FREESECT)
-            index = idx_start + i
+        idx_end = idx_start + (self.sector_size // 4)
+
+        self.fat.extend([FREESECT for i in range(self.sector_size // 4)])
+        freelist = []
+
+        for index in range(idx_start, idx_end):
 
             # Handle Range Lock Sector
 
@@ -1242,7 +1237,10 @@ class CompoundFileBinary(object):
 
             if index in (new_fat_sect, new_difat_sect):
                 continue
-            self.fat_freelist.append(index)
+
+            freelist.append(index)
+
+        self.fat_freelist.extend(freelist)
 
         self.fat[new_fat_sect] = FATSECT
         self.fat_sector_count += 1
@@ -1251,7 +1249,6 @@ class CompoundFileBinary(object):
             self.fat[new_difat_sect] = DIFSECT
 
         return self.next_free_sect()
-        # raise NotImplementedError("adding additional fat")
 
     def read_sector_data(self, sid):
 
