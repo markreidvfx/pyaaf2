@@ -1396,10 +1396,10 @@ class CompoundFileBinary(object):
         logging.debug("growing minifat to sid %d" % sid)
 
         idx_start = len(self.minifat)
+        idx_end = idx_start + self.sector_size // 4
 
-        for i in range(self.sector_size // 4):
-            self.minifat.append(FREESECT)
-            self.minifat_freelist.append(idx_start + i)
+        self.minifat.extend([FREESECT for i in range(idx_start, idx_end)])
+        self.minifat_freelist.extend([i for i in range(idx_start, idx_end)])
 
         if self.minifat_sector_count == 0:
             self.minifat_sector_count = 1
