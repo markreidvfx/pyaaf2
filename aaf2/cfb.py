@@ -225,9 +225,10 @@ class Stream(object):
             self.write(realloc_data)
 
     def write(self, data):
-        size = len(data)
-        new_size = max(self.tell() + size, self.dir.byte_size)
-        if new_size > self.dir.byte_size:
+        data_size = len(data)
+        current_size = self.dir.byte_size
+        new_size = max(self.tell() + data_size, current_size)
+        if new_size > current_size:
             self.allocate(new_size)
 
         mv = memoryview(data)
@@ -248,7 +249,7 @@ class Stream(object):
             sid_offset = self.pos  % full_sector_size
             sector_size = full_sector_size
 
-        while size > 0:
+        while data_size > 0:
 
             # inlined on purpose this method can get called alot
             if is_mini_stream:
@@ -286,7 +287,7 @@ class Stream(object):
             self.pos += byte_writeable
 
             mv = mv[byte_writeable:]
-            size -= byte_writeable
+            data_size -= byte_writeable
 
     def close(self):
         pass
@@ -1172,7 +1173,7 @@ class CompoundFileBinary(object):
             assert self.fat[i] == FREESECT
 
             # Handle Range Lock Sector
-            if self.sector_size == 4096 and i == RANGELOCKSECT:
+            if i == RANGELOCKSECT and self.sector_size == 4096:
                 self.fat[i] = ENDOFCHAIN
                 logging.warning("range lock sector in fat freelist, marking ENDOFCHAIN")
                 return self.next_free_sect()
