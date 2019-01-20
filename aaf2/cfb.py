@@ -135,7 +135,7 @@ class Stream(object):
         else:
             n = max(0, min(n, self.dir.byte_size - self.tell()))
 
-        sector_size = self.storage.sector_size
+        full_sector_size = self.storage.sector_size
         mini_sector_size = self.storage.mini_stream_sector_size
 
         # inlined on purpose this method gets called alot
@@ -144,22 +144,22 @@ class Stream(object):
             sector_offset  = self.pos % mini_sector_size
 
             mini_stream_sid = self.fat_chain[mini_fat_index]
-            mini_steam_pos  = (mini_stream_sid * mini_sector_size) + sector_offset
+            mini_stream_pos  = (mini_stream_sid * mini_sector_size) + sector_offset
 
-            index      = mini_steam_pos // sector_size
-            sid_offset = mini_steam_pos % sector_size
+            index      = mini_stream_pos // full_sector_size
+            sid_offset = mini_stream_pos  % full_sector_size
 
             sid = self.storage.mini_stream_chain[index]
 
             sector_size = mini_sector_size
 
         else:
-            sector_size = self.storage.sector_size
-            index       = self.pos // sector_size
-            sid_offset  = self.pos % sector_size
+            index      = self.pos // full_sector_size
+            sid_offset = self.pos  % full_sector_size
 
             sid = self.fat_chain[index]
             sector_offset = sid_offset
+            sector_size = full_sector_size
 
         n = min(n, sector_size - sector_offset, len(buf))
         if n == 0:
@@ -196,14 +196,14 @@ class Stream(object):
 
         # inlined on purpose this method gets called alot
         if self.dir.byte_size < self.storage.min_stream_max_size:
-            mini_fat_index = self.pos // mini_sector_size
-            mini_sector_offset  = self.pos % mini_sector_size
+            mini_fat_index     = self.pos // mini_sector_size
+            mini_sector_offset = self.pos  % mini_sector_size
 
             mini_stream_sid = self.fat_chain[mini_fat_index]
-            mini_steam_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
+            mini_stream_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
 
-            index      = mini_steam_pos // full_sector_size
-            sid_offset = mini_steam_pos  % full_sector_size
+            index      = mini_stream_pos // full_sector_size
+            sid_offset = mini_stream_pos  % full_sector_size
 
             sid = self.storage.mini_stream_chain[index]
 
@@ -212,8 +212,8 @@ class Stream(object):
             seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
 
         else:
-            index       = self.pos // full_sector_size
-            sid_offset  = self.pos  % full_sector_size
+            index      = self.pos // full_sector_size
+            sid_offset = self.pos  % full_sector_size
 
             sid = self.fat_chain[index]
             sector_offset = sid_offset
@@ -221,8 +221,10 @@ class Stream(object):
             sector_size = full_sector_size
             seek_pos = ((sid + 1) *  full_sector_size) + sid_offset
 
-
         byte_writeable = min(len(data), sector_size - sector_offset)
+        if byte_writeable == 0:
+            return 0
+
         if sid in self.storage.sector_cache:
             del self.storage.sector_cache[sid]
 
