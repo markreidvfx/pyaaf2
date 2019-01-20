@@ -1222,23 +1222,25 @@ class CompoundFileBinary(object):
         idx_end = idx_start + (self.sector_size // 4)
 
         self.fat.extend([FREESECT for i in range(self.sector_size // 4)])
-        freelist = []
 
-        for index in range(idx_start, idx_end):
-
+        if  RANGELOCKSECT < idx_end and RANGELOCKSECT > idx_start and self.sector_size == 4096:
+            freelist = []
             # Handle Range Lock Sector
 
             # The range lock sector is the sector
             # that covers file offsets 0x7FFFFF00-0x7FFFFFFF in the file
-            if self.sector_size == 4096 and index == RANGELOCKSECT:
-                logging.debug("adding range lock")
-                self.fat[index] = ENDOFCHAIN
-                continue
+            for index in range(idx_start, idx_end):
+                if index == RANGELOCKSECT:
+                    logging.debug("adding range lock")
+                    self.fat[index] = ENDOFCHAIN
+                    continue
 
-            if index in (new_fat_sect, new_difat_sect):
-                continue
+                if index in (new_fat_sect, new_difat_sect):
+                    continue
 
-            freelist.append(index)
+                freelist.append(index)
+        else:
+            freelist = [i for i in range(idx_start, idx_end) if i not in (new_fat_sect, new_difat_sect)]
 
         self.fat_freelist.extend(freelist)
 
