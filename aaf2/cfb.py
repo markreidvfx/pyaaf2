@@ -243,7 +243,7 @@ class Stream(object):
 
         # convert from minifat to fat
         if minifat and byte_size >= self.storage.min_stream_max_size:
-            logging.debug("converting stream for minifat to fat")
+            # logging.debug("converting stream for minifat to fat")
             self.seek(0)
             realloc_data = self.read()
             assert len(realloc_data) == self.dir.byte_size
@@ -1417,15 +1417,13 @@ class CompoundFileBinary(object):
 
         if minifat:
             sect = self.next_free_minifat_sect()
-            logging.debug("creating new mini sector: %d" % sect)
+            # logging.debug("creating new mini sector: %d" % sect)
             fat = self.minifat
             self.root.byte_size += 64
         else:
             sect = self.next_free_sect()
-            logging.debug("creating new sector: %d" % sect)
+            # logging.debug("creating new sector: %d" % sect)
             fat = self.fat
-
-        # fat[sect] = ENDOFCHAIN
 
         if start_sid is None:
             fat[sect] = ENDOFCHAIN
