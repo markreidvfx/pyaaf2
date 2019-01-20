@@ -129,28 +129,6 @@ class Stream(object):
     def sector_index(self):
         return self.pos // self.sector_size()
 
-    def abs_pos(self):
-        sector_size = self.storage.sector_size
-        mini_sector_size = self.storage.mini_stream_sector_size
-
-        if self.dir.byte_size < self.storage.min_stream_max_size:
-            minifat_chain = self.fat_chain
-            mini_fat_index, sector_offset = divmod(self.pos, mini_sector_size)
-            mini_stream_sid = minifat_chain[mini_fat_index]
-            mini_steam_pos = (mini_stream_sid * mini_sector_size) + sector_offset
-
-            index, offset  = divmod(mini_steam_pos, sector_size)
-            sid = self.storage.mini_stream_chain[index]
-            seek_pos = ((sid + 1) *  sector_size) + offset
-            return seek_pos
-        else:
-            fat_chain = self.fat_chain
-            index, offset  = divmod(self.pos, sector_size)
-
-            sid = fat_chain[index]
-            seek_pos = ((sid + 1) *  sector_size) + offset
-            return seek_pos
-
     def readinto1(self, buf, n=-1):
         if n == -1:
             n = max(0, self.dir.byte_size - self.tell())
