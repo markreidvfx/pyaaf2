@@ -129,63 +129,66 @@ class Stream(object):
     def sector_index(self):
         return self.pos // self.sector_size()
 
-    def readinto1(self, buf, n=-1):
-        if n == -1:
-            n = max(0, self.dir.byte_size - self.tell())
-        else:
-            n = max(0, min(n, self.dir.byte_size - self.tell()))
+    def read(self, n=-1):
 
+        byte_size = self.dir.byte_size
+        if n == -1:
+            bytes_to_read = max(0, byte_size - self.tell())
+        else:
+            bytes_to_read = max(0, min(n, byte_size - self.tell()))
+
+        result = bytearray(bytes_to_read)
+        mv = memoryview(result)
+
+        is_mini_stream = byte_size < self.storage.min_stream_max_size
         full_sector_size = self.storage.sector_size
         mini_sector_size = self.storage.mini_stream_sector_size
+        mini_stream_chain = self.storage.mini_stream_chain
+        read_sector_data = self.storage.read_sector_data
 
-        # inlined on purpose this method gets called alot
-        if self.dir.byte_size < self.storage.min_stream_max_size:
-            mini_fat_index = self.pos // mini_sector_size
-            sector_offset  = self.pos % mini_sector_size
-
-            mini_stream_sid = self.fat_chain[mini_fat_index]
-            mini_stream_pos  = (mini_stream_sid * mini_sector_size) + sector_offset
-
-            index      = mini_stream_pos // full_sector_size
-            sid_offset = mini_stream_pos  % full_sector_size
-
-            sid = self.storage.mini_stream_chain[index]
-
-            sector_size = mini_sector_size
-
+        if is_mini_stream:
+             mini_fat_index     = self.pos // mini_sector_size
+             mini_sector_offset = self.pos  % mini_sector_size
+             sector_size = mini_sector_size
         else:
             index      = self.pos // full_sector_size
-            sid_offset = self.pos  % full_sector_size
-
-            sid = self.fat_chain[index]
-            sector_offset = sid_offset
+            start_offset = self.pos  % full_sector_size
             sector_size = full_sector_size
 
-        n = min(n, sector_size - sector_offset, len(buf))
-        if n == 0:
-            return 0
+        while bytes_to_read > 0:
 
-        sector_data = self.storage.read_sector_data(sid)
-        buf[:n] = sector_data[sid_offset:sid_offset+n]
+            # inlined on purpose this loop runs alot
+            if is_mini_stream:
+                mini_stream_sid = self.fat_chain[mini_fat_index]
+                mini_stream_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
 
-        self.pos += n
-        return n
+                index      = mini_stream_pos // full_sector_size
+                sid_offset = mini_stream_pos  % full_sector_size
 
-    def read(self, n=-1):
-        if n == -1:
-            n = max(0, self.dir.byte_size - self.tell())
-        else:
-            n = max(0, min(n, self.dir.byte_size - self.tell()))
+                sid = mini_stream_chain[index]
+                sector_offset = mini_sector_offset
 
-        result = bytearray(n)
-        mv = memoryview(result)
-        i = 0
-        while i < n:
-            bytes_read = self.readinto1(mv[i:], n - i)
-            if bytes_read <= 0:
-                logging.warn('file appears to be truncated')
-                break
-            i += bytes_read
+                mini_sector_offset = 0
+                mini_fat_index += 1
+
+            else:
+                sid = self.fat_chain[index]
+                sector_offset = start_offset
+                sid_offset = start_offset
+
+                index += 1
+                start_offset = 0
+
+            bytes_can_read = min(bytes_to_read, sector_size - sector_offset)
+            assert bytes_can_read > 0
+
+            sector_data = read_sector_data(sid)
+            mv[:bytes_can_read] = sector_data[sid_offset:sid_offset+bytes_can_read]
+
+            self.pos += bytes_can_read
+            mv = mv[bytes_can_read:]
+
+            bytes_to_read -= bytes_can_read
 
         return result
 
