@@ -83,7 +83,7 @@ class Stream(object):
         self.dir = entry
         self.mode = mode
         self.pos = 0
-        self.fat_chain = array(str('I'))
+        self.fat_chain = []
         if not mode in ('r', 'w'):
             raise ValueError("invalid mode: %s" % mode)
         if self.dir.sector_id is not None:
@@ -214,7 +214,7 @@ class Stream(object):
             self.storage.free_fat_chain(self.dir.sector_id, True)
             self.dir.sector_id = None
             minifat = False
-            self.fat_chain = array(str('I'))
+            self.fat_chain = []
 
         sector_size = self.sector_size()
         self.dir.byte_size = byte_size
