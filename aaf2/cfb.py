@@ -1321,8 +1321,8 @@ class CompoundFileBinary(object):
     def clear_sector(self, sid):
         sector_pos = (sid + 1) * self.sector_size
         self.f.seek(sector_pos)
-        for i in range(self.sector_size):
-            self.f.write(b'\0')
+        # for i in range(self.sector_size):
+        self.f.write(bytearray(self.sector_size))
 
     def next_free_dir_id(self):
 
@@ -1332,34 +1332,15 @@ class CompoundFileBinary(object):
 
         f = self.f
 
-        # this is just too slow just add a new sector
-
-        # for i, sid in enumerate(self.dir_fat_chain):
-        #     logging.debug("reading dir sector: %d" % sid)
-        #     sector_pos = (sid + 1) *  self.sector_size
-        #
-        #     sector_first_dir_id = i * (self.sector_size // 128)
-        #     for j in range(self.sector_size // 128):
-        #         dir_type_offset = 66
-        #         offset = j * 128
-        #
-        #         seek_pos = sector_pos + offset + dir_type_offset
-        #
-        #         f.seek(seek_pos)
-        #         dir_type = read_u8(f)
-        #         if dir_types.get(dir_type , "unknown") == 'empty':
-        #             return sector_first_dir_id + j
-
-        # if here we need to add to dir sector
-
         sect = self.fat_chain_append(self.dir_fat_chain[-1])
 
         self.dir_fat_chain.append(sect)
         self.dir_sector_count += 1
         self.clear_sector(sect)
+
         first_dir_id = (len(self.dir_fat_chain) - 1) * self.sector_size // 128
-        for i in range(self.sector_size // 128):
-            self.dir_freelist.append(first_dir_id + i)
+        last_dir_id = first_dir_id + (self.sector_size // 128)
+        self.dir_freelist.extend(range(first_dir_id, last_dir_id))
 
         return self.next_free_dir_id()
 
@@ -1407,7 +1388,7 @@ class CompoundFileBinary(object):
     def minifat_grow(self):
         # grow minifat
         sid = self.next_free_sect()
-        logging.debug("growing minifat to sid %d" % sid)
+        # logging.debug("growing minifat to sid %d" % sid)
 
         idx_start = len(self.minifat)
         idx_end = idx_start + self.sector_size // 4
