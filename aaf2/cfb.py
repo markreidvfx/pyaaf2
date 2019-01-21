@@ -1296,7 +1296,9 @@ class CompoundFileBinary(object):
             pos = (sid + 1) *  self.sector_size
             self.f.seek(pos)
             sector_data = bytearray(self.sector_size)
-            self.f.readinto(sector_data)
+            #NOTE: if requested sector doesn't exsit or
+            # is truncated will padd with zeros, expected behavour
+            bytes_read = self.f.readinto(sector_data)
             self.sector_cache[sid] = sector_data
             return sector_data
 
