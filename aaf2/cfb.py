@@ -728,10 +728,10 @@ class CompoundFileBinary(object):
 
         self.difat = [[]]
         self.fat = array(str('I'))
-        self.fat_freelist = array(str('I'))
+        self.fat_freelist = []
 
         self.minifat = array(str('I'))
-        self.minifat_freelist = array(str('I'))
+        self.minifat_freelist = []
 
         self.difat_chain = []
         self.minifat_chain = []
@@ -744,7 +744,7 @@ class CompoundFileBinary(object):
         self.sector_cache = LRUCacheDict()
         self.dir_cache = weakref.WeakValueDictionary()
         self.children_cache = LRUCacheDict()
-        self.dir_freelist = array(str('I'))
+        self.dir_freelist = []
 
         self.debug_grow = False
         self.is_open = True
