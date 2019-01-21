@@ -145,6 +145,8 @@ class Stream(object):
         mini_sector_size = self.storage.mini_stream_sector_size
         mini_stream_chain = self.storage.mini_stream_chain
         read_sector_data = self.storage.read_sector_data
+        sector_data = None
+        prev_sid = -1
 
         if is_mini_stream:
              mini_fat_index     = self.pos // mini_sector_size
@@ -160,7 +162,7 @@ class Stream(object):
             # inlined on purpose this loop runs alot
             if is_mini_stream:
                 mini_stream_sid = self.fat_chain[mini_fat_index]
-                mini_stream_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
+                mini_stream_pos = (mini_stream_sid * mini_sector_size) + mini_sector_offset
 
                 index      = mini_stream_pos // full_sector_size
                 sid_offset = mini_stream_pos  % full_sector_size
@@ -182,13 +184,15 @@ class Stream(object):
             bytes_can_read = min(bytes_to_read, sector_size - sector_offset)
             assert bytes_can_read > 0
 
-            sector_data = read_sector_data(sid)
+            if sid != prev_sid:
+                sector_data = read_sector_data(sid)
             mv[:bytes_can_read] = sector_data[sid_offset:sid_offset+bytes_can_read]
 
             self.pos += bytes_can_read
             mv = mv[bytes_can_read:]
 
             bytes_to_read -= bytes_can_read
+            prev_sid = sid
 
         return result
 
