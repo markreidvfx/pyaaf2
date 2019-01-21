@@ -781,9 +781,7 @@ class CompoundFileBinary(object):
 
             logging.debug("writing root dir sector")
             self.root.write()
-            for i in range(self.sector_size - 128):
-                self.f.write(b'\0')
-
+            self.f.write(bytearray(self.sector_size - 128))
             self.write_fat()
 
     def close(self):
@@ -1086,15 +1084,15 @@ class CompoundFileBinary(object):
         # check that the difat has enough entries to hold the current fat
         assert len(fat_sectors) == len(self.fat)*4 // self.sector_size
 
+        element_count = self.sector_size // 4
+        fat_table_struct = Struct(str('<%dI' % element_count))
         for i, sid in enumerate(fat_sectors):
 
-            logging.debug("writing fat to sid: %d" % sid)
+            # logging.debug("writing fat to sid: %d" % sid)
             f.seek((sid + 1) *  self.sector_size)
-
-            offset = i * self.sector_size // 4
-
-            for j in range(self.sector_size // 4):
-                write_u32le(f, self.fat[offset + j])
+            start = i * element_count
+            end = start + element_count
+            f.write(fat_table_struct.pack(*self.fat[start:end]))
 
     def read_minifat(self):
         f = self.f
@@ -1119,16 +1117,16 @@ class CompoundFileBinary(object):
     def write_minifat(self):
         f = self.f
         sector_count = 0
+
+        element_count = self.sector_size // 4
+        fat_table_struct = Struct(str('<%dI' % element_count))
+
         for i, sid in enumerate(self.get_fat_chain(self.minifat_sector_start)):
             pos = (sid + 1) *  self.sector_size
             f.seek(pos)
-            logging.debug("writing minifat to sid: %d at: %d" % (sid,pos))
-
-            offset = i * self.sector_size // 4
-            for j in range(self.sector_size // 4):
-                write_u32le(f, self.minifat[offset + j])
-
-            assert f.tell() - pos == self.sector_size
+            start = i * element_count
+            end = start + element_count
+            f.write(fat_table_struct.pack(*self.minifat[start:end]))
 
     def write_modified_dir_entries(self):
 
