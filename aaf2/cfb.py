@@ -173,6 +173,10 @@ class Stream(object):
                 mini_sector_offset = 0
                 mini_fat_index += 1
 
+                if sid != prev_sid:
+                    sector_data = read_sector_data(sid)
+                    prev_sid = sid
+
             else:
                 sid = self.fat_chain[index]
                 sector_offset = start_offset
@@ -181,18 +185,17 @@ class Stream(object):
                 index += 1
                 start_offset = 0
 
+                sector_data = read_sector_data(sid)
+
             bytes_can_read = min(bytes_to_read, sector_size - sector_offset)
             assert bytes_can_read > 0
 
-            if sid != prev_sid:
-                sector_data = read_sector_data(sid)
             mv[:bytes_can_read] = sector_data[sid_offset:sid_offset+bytes_can_read]
 
             self.pos += bytes_can_read
             mv = mv[bytes_can_read:]
 
             bytes_to_read -= bytes_can_read
-            prev_sid = sid
 
         return result
 
