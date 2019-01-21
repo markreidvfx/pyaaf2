@@ -1131,9 +1131,19 @@ class CompoundFileBinary(object):
             assert f.tell() - pos == self.sector_size
 
     def write_modified_dir_entries(self):
-        for entry in self.modified.values():
-            sid, sid_offset = self.dir_entry_sid_offset(entry.dir_id)
-            entry.write()
+
+        f = self.f
+        for dir_id in sorted(self.modified):
+            entry = self.modified[dir_id]
+            stream_pos = entry.dir_id * 128
+            chain_index = stream_pos // self.sector_size
+            sid_offset  = stream_pos % self.sector_size
+            sid = self.dir_fat_chain[chain_index]
+
+            pos = ((sid + 1) *  self.sector_size) + sid_offset
+
+            f.seek(pos)
+            f.write(entry.data)
 
             # invalidate  sector
             if sid in self.sector_cache:
@@ -1144,13 +1154,22 @@ class CompoundFileBinary(object):
     def write_dir_entries(self):
         self.write_modified_dir_entries()
 
+        # clear empty DirEntrys
+        empty_dir = bytearray(128)
+        f = self.f
+
+        self.dir_freelist.sort()
         for dir_id in self.dir_freelist:
-            # clear DirEntry
-            f = self.f
-            f.seek(self.dir_entry_pos(dir_id))
-            logging.debug("clearing dir id: %d" % (dir_id))
-            for i in range(128):
-                f.write(b'\0')
+
+            stream_pos = dir_id * 128
+            chain_index = stream_pos // self.sector_size
+            sid_offset  = stream_pos % self.sector_size
+            sid = self.dir_fat_chain[chain_index]
+
+            pos = ((sid + 1) *  self.sector_size) + sid_offset
+
+            f.seek(pos)
+            f.write(empty_dir)
 
     def next_free_minifat_sect(self):
 
@@ -1164,15 +1183,26 @@ class CompoundFileBinary(object):
                 self.mini_stream_grow()
             return i
 
-        # for i, item in enumerate(self.minifat):
-        #     if item == FREESECT:
-        #         if i+1 > stream_sects:
-        #             self.mini_stream_grow()
-        #         return i
-
         # if we got here need to add aditional fat
-        logging.debug("minifat full, size: %d growing" % len(self.minifat_chain))
-        self.minifat_grow()
+        sid = self.next_free_sect()
+        # logging.warn("growing minifat to sid %d" % sid)
+
+        idx_start = len(self.minifat)
+        idx_end = idx_start + self.sector_size // 4
+
+        self.minifat.extend([FREESECT for i in range(idx_start, idx_end)])
+        self.minifat_freelist.extend([i for i in range(idx_start, idx_end)])
+
+        if self.minifat_sector_count == 0:
+            self.minifat_sector_count = 1
+            self.minifat_sector_start = sid
+        else:
+            self.minifat_sector_count += 1
+            self.fat[self.minifat_chain[-1]] = sid
+
+        self.minifat_chain.append(sid)
+        self.fat[sid] = ENDOFCHAIN
+
         return self.next_free_minifat_sect()
 
     def next_free_sect(self):
@@ -1336,7 +1366,6 @@ class CompoundFileBinary(object):
 
         self.dir_fat_chain.append(sect)
         self.dir_sector_count += 1
-        self.clear_sector(sect)
 
         first_dir_id = (len(self.dir_fat_chain) - 1) * self.sector_size // 128
         last_dir_id = first_dir_id + (self.sector_size // 128)
@@ -1373,7 +1402,7 @@ class CompoundFileBinary(object):
 
     def mini_stream_grow(self):
         sid = self.next_free_sect()
-        logging.debug("adding to mini stream fat sid: %d" %  sid)
+        # logging.debug("adding to mini stream fat sid: %d" %  sid)
         if not self.mini_stream_chain:
             self.mini_stream_chain = [sid]
             self.root.sector_id = sid
@@ -1381,29 +1410,6 @@ class CompoundFileBinary(object):
             self.fat[self.mini_stream_chain[-1]] = sid
             self.mini_stream_chain.append(sid)
 
-        # self.root.byte_size += self.sector_size
-        self.fat[sid] = ENDOFCHAIN
-        self.clear_sector(sid)
-
-    def minifat_grow(self):
-        # grow minifat
-        sid = self.next_free_sect()
-        # logging.debug("growing minifat to sid %d" % sid)
-
-        idx_start = len(self.minifat)
-        idx_end = idx_start + self.sector_size // 4
-
-        self.minifat.extend([FREESECT for i in range(idx_start, idx_end)])
-        self.minifat_freelist.extend([i for i in range(idx_start, idx_end)])
-
-        if self.minifat_sector_count == 0:
-            self.minifat_sector_count = 1
-            self.minifat_sector_start = sid
-        else:
-            self.minifat_sector_count += 1
-            self.fat[self.minifat_chain[-1]] = sid
-
-        self.minifat_chain.append(sid)
         self.fat[sid] = ENDOFCHAIN
 
     def fat_chain_append(self, start_sid, minifat=False):
