@@ -61,5 +61,29 @@ class DictionaryTests(unittest.TestCase):
             op = slot.segment.components.value[0]
             assert op.operation == op_def
 
+    def test_interpolationdef(self):
+        result_file = common.get_test_file('interpolation_def.aaf')
+
+        interpolation_id = uuid.uuid4()
+        name = "TestInterp"
+        with aaf2.open(result_file, 'w') as f:
+
+            interpolation_id =interpolation_id
+            interpolationdef = f.create.InterpolationDef(interpolation_id, name, "interpolation")
+            f.dictionary.register_def(interpolationdef)
+
+            varying_value = f.create.VaryingValue()
+            varying_value['Interpolation'].value = interpolationdef
+
+            assert interpolationdef is f.dictionary.lookup_interperlationdef("TestInterp")
+
+        with aaf2.open(result_file, 'r') as f:
+             interpolationdef = f.dictionary.lookup_interperlationdef("TestInterp")
+
+             assert interpolationdef.auid == interpolation_id
+             assert interpolationdef.name == name
+
+             f.dictionary.dump()
+
 if __name__ == "__main__":
     unittest.main()

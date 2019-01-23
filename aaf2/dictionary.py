@@ -206,6 +206,8 @@ class Dictionary(core.AAFObject):
             self['ParameterDefinitions'].append(defobject)
         elif isinstance(defobject, OperationDef):
             self['OperationDefinitions'].append(defobject)
+        elif isinstance(defobject, InterpolationDef):
+            self['InterpolationDefinitions'].append(defobject)
         else:
             raise ValueError("unknown definitions type: %s" % str(type(defobject)))
 
@@ -226,3 +228,6 @@ class Dictionary(core.AAFObject):
 
     def lookup_operationdef(self, name):
         return lookup_def(self, name, OperationDef, 'OperationDefinitions')
+
+    def lookup_interperlationdef(self, name):
+        return lookup_def(self, name, InterpolationDef, 'InterpolationDefinitions')
