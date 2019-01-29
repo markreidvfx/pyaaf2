@@ -9,7 +9,7 @@ import aaf2
 from aaf2.auid import AUID
 import common
 
-def register_defintiions(f):
+def register_definitions(f):
     effect_id = AUID("89d9b67e-5584-302d-9abd-8bd330c46841")
     op_def = f.create.OperationDef(effect_id, 'VideoDissolve_2', '')
     f.dictionary.register_def(op_def)
@@ -139,7 +139,7 @@ class TestTransitions(unittest.TestCase):
         result_file = common.get_test_file('create_transition.aaf')
 
         with aaf2.open(result_file, 'w') as f:
-            register_defintiions(f)
+            register_definitions(f)
 
             comp = f.create.CompositionMob("Transition Timeline")
             comp.usage = 'Usage_TopLevel'
