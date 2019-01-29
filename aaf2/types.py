@@ -818,6 +818,10 @@ class TypeDefIndirect(TypeDef):
             # aafString
             type_auid = AUID("01100200-0000-0000-060e-2b3401040101")
 
+        elif isinstance(data, AAFRational):
+            # Rational
+            type_auid = AUID("03010100-0000-0000-060e-2b3401040101")
+
         elif isinstance(data, int):
             # aafInt32
             type_auid = AUID("01010700-0000-0000-060e-2b3401040101")

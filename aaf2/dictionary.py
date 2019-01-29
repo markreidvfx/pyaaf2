@@ -5,8 +5,9 @@ from __future__ import (
     division,
     )
 
-from .auid import AUID
+import uuid
 
+from .auid import AUID
 from .model import datadefs
 from . import core
 from .utils import register_class
@@ -19,6 +20,9 @@ def short_name(name):
 def lookup_def(dictionary, name, instance_type, key):
     if isinstance(name, AUID):
         return dictionary[key].get(name, None)
+
+    if isinstance(name, uuid.UUID):
+        return dictionary[key].get(AUID(name), None)
 
     if isinstance(name, instance_type):
         return name

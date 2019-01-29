@@ -10,6 +10,7 @@ import io
 from . import core
 from . utils import register_class
 from .auid import AUID
+from .rational import AAFRational
 
 
 ConstantInterp     = AUID("5b6c85a5-0ede-11d3-80a9-006008143e6f")
@@ -474,9 +475,17 @@ class ControlPoint(core.AAFObject):
     def time(self):
         return float(self['Time'].value)
 
+    @time.setter
+    def time(self, value):
+        self['Time'].value = value
+
     @property
     def value(self):
         return float(self['Value'].value)
+
+    @value.setter
+    def value(self, value):
+        self['Value'].value =  AAFRational(value)
 
     @property
     def point_properties(self):
