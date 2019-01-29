@@ -7,6 +7,7 @@ from __future__ import (
 import unittest
 import aaf2
 from aaf2.auid import AUID
+from aaf2 import audio
 import common
 
 def register_definitions(f):
@@ -44,6 +45,17 @@ def register_definitions(f):
     linear = f.create.InterpolationDef(linear_id, 'LinearInterp', '')
     f.dictionary.register_def(linear)
 
+    effect_id = AUID("0c3bea41-fc05-11d2-8a29-0050040ef7d2")
+    op_def = f.create.OperationDef(effect_id, 'Audio Dissolve', '')
+    f.dictionary.register_def(op_def)
+
+    op_def.media_kind = 'sound'
+    op_def['IsTimeWarp'].value = False
+    op_def['Bypass'].value = 1
+    op_def['NumberInputs'].value = 2
+    op_def['OperationCategory'].value = 'OperationCategory_Effect'
+    op_def.parameters.extend([param_byteorder, param_effect_id])
+
 def create_video_clip_import(f):
     frame_rate  = 25
     profile_name = 'dnx_1080p_36_25'
@@ -54,6 +66,21 @@ def create_video_clip_import(f):
     f.content.mobs.append(master_mob)
     slot = master_mob.import_dnxhd_essence(sample, frame_rate, tape=tape)
 
+    return master_mob.create_source_clip(slot.slot_id, start=50)
+
+def create_audio_clip_import(f):
+    audio_profile_name = 'pcm_48000_s24le'
+    frame_rate = 25
+    frames = 200
+    audio_duration = frames/frame_rate
+
+    sample_format = audio.pcm_profiles[audio_profile_name]['sample_format']
+    sample_rate = audio.pcm_profiles[audio_profile_name]['sample_rate']
+    audio_sample = common.generate_pcm_audio_mono(audio_profile_name, sample_format=sample_format, sample_rate=sample_rate, duration=audio_duration)
+
+    master_mob = f.create.MasterMob("MasterMob")
+    f.content.mobs.append(master_mob)
+    slot = master_mob.import_audio_essence(audio_sample, frame_rate)
     return master_mob.create_source_clip(slot.slot_id, start=50)
 
 def create_video_clip_offline(f):
@@ -133,10 +160,26 @@ def create_video_transition(f):
     # transition.dump()
     return transition
 
+def create_audio_transition(f):
+    audio_dissolve_def = f.dictionary.lookup_operationdef('Audio Dissolve')
+
+    length = 40
+    cut_point = 20
+
+    transition = f.create.Transition('sound')
+    transition.length = length
+    transition['CutPoint'].value = cut_point
+
+    op_group = f.create.OperationGroup(audio_dissolve_def)
+    op_group.media_kind = 'sound'
+    transition['OperationGroup'].value = op_group
+
+    return transition
+
 class TestTransitions(unittest.TestCase):
 
     def test_video_transition(self):
-        result_file = common.get_test_file('create_transition.aaf')
+        result_file = common.get_test_file('video_transition.aaf')
 
         with aaf2.open(result_file, 'w') as f:
             register_definitions(f)
@@ -248,6 +291,42 @@ class TestTransitions(unittest.TestCase):
             assert isinstance(clip, aaf2.components.Filler)
             clip = seq.component_at_time(150)
             assert isinstance(clip, aaf2.components.Filler)
+
+    def test_audio_transition(self):
+        result_file = common.get_test_file('audio_transition.aaf')
+
+        with aaf2.open(result_file, 'w') as f:
+            register_definitions(f)
+
+            comp = f.create.CompositionMob("Transition Timeline")
+            comp.usage = 'Usage_TopLevel'
+
+            f.content.mobs.append(comp)
+
+            slot = comp.create_sound_slot()
+            seq = f.create.Sequence('sound')
+            slot.segment = seq
+
+            filler = f.create.Filler('sound')
+            filler.length = 50
+            seq.components.append(filler)
+
+            t = create_audio_transition(f)
+            seq.components.append(t)
+
+            clip = create_audio_clip_import(f)
+            clip.mob.name = "clip1"
+            clip.length = 100
+            seq.components.append(clip)
+
+            t = create_audio_transition(f)
+            seq.components.append(t)
+
+            filler = f.create.Filler('sound')
+            filler.length = 50
+            seq.components.append(filler)
+
+
 
 if __name__ == "__main__":
     unittest.main()
