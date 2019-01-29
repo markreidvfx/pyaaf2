@@ -75,15 +75,13 @@ class DictionaryTests(unittest.TestCase):
             varying_value = f.create.VaryingValue()
             varying_value['Interpolation'].value = interpolationdef
 
-            assert interpolationdef is f.dictionary.lookup_interperlationdef("TestInterp")
+            assert interpolationdef is f.dictionary.lookup_interperlationdef(name)
 
         with aaf2.open(result_file, 'r') as f:
-             interpolationdef = f.dictionary.lookup_interperlationdef("TestInterp")
+             interpolationdef = f.dictionary.lookup_interperlationdef(name)
 
              assert interpolationdef.auid == interpolation_id
              assert interpolationdef.name == name
-
-             f.dictionary.dump()
 
 if __name__ == "__main__":
     unittest.main()
