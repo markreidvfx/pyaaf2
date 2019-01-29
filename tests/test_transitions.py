@@ -158,6 +158,7 @@ class TestTransitions(unittest.TestCase):
             seq.components.append(transition)
 
             clip = create_video_clip_import(f)
+            clip.mob.name = "clip1"
             clip.length = 50
             seq.components.append(clip)
 
@@ -166,6 +167,7 @@ class TestTransitions(unittest.TestCase):
 
             clip = create_video_clip_offline(f)
             clip.length = 50
+            clip.mob.name = "clip2"
             seq.components.append(clip)
 
             transition = create_video_transition(f)
@@ -195,7 +197,57 @@ class TestTransitions(unittest.TestCase):
                         break
                 for point in opacity_u['PointList'].value:
                     assert isinstance(point['Value'].value, aaf2.rational.AAFRational)
+            seq = slot.segment
+            clip = seq.component_at_time(0)
+            assert isinstance(clip, aaf2.components.Filler)
+            clip = seq.component_at_time(29)
+            assert isinstance(clip, aaf2.components.Filler)
+            clip = seq.component_at_time(30)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(39)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(40)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(49)
+            assert isinstance(clip, aaf2.components.Transition)
 
+            clip = seq.component_at_time(50)
+            assert isinstance(clip, aaf2.components.SourceClip)
+            assert clip.mob.name == 'clip1'
+
+            clip = seq.component_at_time(59)
+            assert isinstance(clip, aaf2.components.SourceClip)
+            assert clip.mob.name == 'clip1'
+
+            clip = seq.component_at_time(60)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(69)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(70)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(79)
+            assert isinstance(clip, aaf2.components.Transition)
+
+            clip = seq.component_at_time(80)
+            assert isinstance(clip, aaf2.components.SourceClip)
+            assert clip.mob.name == 'clip2'
+
+            clip = seq.component_at_time(89)
+            assert isinstance(clip, aaf2.components.SourceClip)
+            assert clip.mob.name == 'clip2'
+
+            clip = seq.component_at_time(90)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(99)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(109)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(110)
+            assert isinstance(clip, aaf2.components.Filler)
+            clip = seq.component_at_time(139)
+            assert isinstance(clip, aaf2.components.Filler)
+            clip = seq.component_at_time(150)
+            assert isinstance(clip, aaf2.components.Filler)
 
 if __name__ == "__main__":
     unittest.main()

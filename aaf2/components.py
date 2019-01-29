@@ -62,6 +62,44 @@ class Sequence(Segment):
     def components(self):
         return self['Components']
 
+    def component_at_time(self, edit_unit):
+        return self.components[self.index_at_time(edit_unit)]
+
+    def index_at_time(self, edit_unit):
+
+        last_component = None
+        last_index = None
+
+        if edit_unit <= 0:
+            return 0
+
+        # this needs to go past target index to handle Transitions
+        for index, position, component in self.positions():
+
+            if isinstance(component, Transition):
+                if edit_unit >= position and edit_unit < position + component.length:
+                    return index
+
+            # gone past return prevous
+            if last_component and position >= edit_unit:
+                return last_index
+
+            last_component = component
+            last_index = index
+
+        return last_index
+
+    def positions(self):
+        length = 0
+        for index, component in enumerate(self.components):
+
+            if isinstance(component, Transition):
+                length -= component.length
+                yield (index, length, component)
+            else:
+                yield (index, length, component)
+                length += component.length
+
 @register_class
 class NestedScope(Segment):
     class_id = AUID("0d010101-0101-0b00-060e-2b3402060101")
