@@ -176,6 +176,26 @@ class TestTransitions(unittest.TestCase):
             seq.components.append(filler)
 
 
+        with aaf2.open(result_file, 'r') as f:
+            comp = next(f.content.toplevel())
+
+            slot = comp.slots[0]
+            transitions = []
+            for item in slot.segment.components:
+                if isinstance(item, aaf2.components.Transition):
+                    transitions.append(item)
+
+            assert len(transitions) == 3
+            for t in transitions:
+                op_group = t['OperationGroup'].value
+                opacity_u = None
+                for p in op_group.parameters:
+                    if p.name == 'AFX_FG_KEY_OPACITY_U':
+                        opacity_u = p
+                        break
+                for point in opacity_u['PointList'].value:
+                    assert isinstance(point['Value'].value, aaf2.rational.AAFRational)
+
 
 if __name__ == "__main__":
     unittest.main()
