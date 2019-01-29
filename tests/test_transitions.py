@@ -326,6 +326,48 @@ class TestTransitions(unittest.TestCase):
             filler.length = 50
             seq.components.append(filler)
 
+        with aaf2.open(result_file, 'r') as f:
+            comp = next(f.content.toplevel())
+
+            slot = comp.slots[0]
+            seq = slot.segment
+            clip = seq.component_at_time(0)
+            assert isinstance(clip, aaf2.components.Filler)
+            clip = seq.component_at_time(9)
+            assert isinstance(clip, aaf2.components.Filler)
+            clip = seq.component_at_time(10)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(29)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(30)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(49)
+            assert isinstance(clip, aaf2.components.Transition)
+
+            clip = seq.component_at_time(50)
+            assert isinstance(clip, aaf2.components.SourceClip)
+            assert clip.mob.name == 'clip1'
+
+            clip = seq.component_at_time(69)
+            assert isinstance(clip, aaf2.components.SourceClip)
+            assert clip.mob.name == 'clip1'
+
+            clip = seq.component_at_time(70)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(89)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(90)
+            assert isinstance(clip, aaf2.components.Transition)
+            clip = seq.component_at_time(109)
+            assert isinstance(clip, aaf2.components.Transition)
+
+            clip = seq.component_at_time(110)
+            assert isinstance(clip, aaf2.components.Filler)
+            clip = seq.component_at_time(300)
+            assert isinstance(clip, aaf2.components.Filler)
+
+
+
 
 
 if __name__ == "__main__":
