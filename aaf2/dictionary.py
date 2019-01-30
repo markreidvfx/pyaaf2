@@ -139,7 +139,8 @@ class ParameterDef(DefinitionObject):
 
     def __init__(self, auid=None, name=None, description=None, typedef=None):
         super(ParameterDef, self).__init__(auid, name, description)
-        self.typedef = typedef
+        if typedef:
+            self.typedef = self.root.dictionary.lookup_typedef(typedef)
 
     @property
     def typedef(self):
