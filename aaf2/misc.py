@@ -366,6 +366,35 @@ class VaryingValue(Parameter):
     def interpolation(self):
         return self['Interpolation'].value
 
+    @property
+    def typedef(self):
+        return self.parameterdef.typedef
+
+    def add_keyframe(self, time, value, edit_hint=None):
+        cp = self.root.create.ControlPoint()
+        cp.time = time
+
+        cp['Value'].add_pid_entry()
+        cp['Value'].data = cp['Value'].typedef.encode(value, self.typedef)
+        cp['Value'].mark_modified()
+
+        if edit_hint:
+            cp['EditHint'].value = edit_hint
+
+        pointlist = self['PointList']
+
+        if len(pointlist) > 0:
+            index = self.nearest_index(time)
+            nearest = pointlist[index]
+            if float(nearest.time) == float(time):
+                pointlist[index] = cp
+            else:
+                pointlist.insert(index+1, cp)
+        else:
+            pointlist.append(cp)
+
+        return cp
+
     def value_at(self, t):
         t = float(t)
 

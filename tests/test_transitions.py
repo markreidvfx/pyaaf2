@@ -138,18 +138,9 @@ def create_video_transition(f):
     opacity_u.parameterdef = f.dictionary.lookup_parameterdef("AFX_FG_KEY_OPACITY_U")
     opacity_u['Interpolation'].value = f.dictionary.lookup_interperlationdef("LinearInterp")
 
-    a = f.create.ControlPoint()
-    # setting edit hint makes some avid warnings go away
-    a['EditHint'].value = "Proportional"
-    a.value = 0.0
-    a.time =  0.0
-
-    b = f.create.ControlPoint()
-    b['EditHint'].value = "Proportional"
-    b.value =  100.0
-    b.time  =  1.0
-
-    opacity_u['PointList'].extend([a, b])
+    # setting edit hint Proportional makes some avid warnings go away
+    opacity_u.add_keyframe(0.0,   0.0, 'Proportional')
+    opacity_u.add_keyframe(1.0, 100.0, 'Proportional')
 
     # not sure what the AUID is suppose to represent
     opacity_u['VVal_Extrapolation'].value = AUID('0e24dd54-66cd-4f1a-b0a0-670ac3a7a0b3')
