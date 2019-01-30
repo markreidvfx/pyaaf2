@@ -279,7 +279,7 @@ class OperationGroup(Segment):
 
     def __init__(self, operationdef, length=None):
         super(OperationGroup, self).__init__(length=length)
-        self.operation = operationdef
+        self.operation = self.root.dictionary.lookup_operationdef(operationdef)
         self.media_kind = self.operation.media_kind
 
     @property

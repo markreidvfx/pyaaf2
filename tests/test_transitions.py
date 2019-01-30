@@ -120,7 +120,6 @@ def create_video_clip_offline(f):
     return master_mob.create_source_clip(master_slot.slot_id, start=50)
 
 def create_video_transition(f):
-    video_dissolve_def = f.dictionary.lookup_operationdef('VideoDissolve_2')
 
     length = 20
     cut_point = 10
@@ -129,14 +128,12 @@ def create_video_transition(f):
     transition.length = length
     transition['CutPoint'].value = cut_point
 
-    op_group = f.create.OperationGroup(video_dissolve_def)
+    op_group = f.create.OperationGroup('VideoDissolve_2')
     op_group.media_kind = 'picture'
     transition['OperationGroup'].value = op_group
 
     # now setup the dissovle curve
-    opacity_u = f.create.VaryingValue()
-    opacity_u.parameterdef = f.dictionary.lookup_parameterdef("AFX_FG_KEY_OPACITY_U")
-    opacity_u['Interpolation'].value = f.dictionary.lookup_interperlationdef("LinearInterp")
+    opacity_u = f.create.VaryingValue("AFX_FG_KEY_OPACITY_U", "LinearInterp")
 
     # setting edit hint Proportional makes some avid warnings go away
     opacity_u.add_keyframe(0.0,   0.0, 'Proportional')
@@ -152,7 +149,6 @@ def create_video_transition(f):
     return transition
 
 def create_audio_transition(f):
-    audio_dissolve_def = f.dictionary.lookup_operationdef('Audio Dissolve')
 
     length = 40
     cut_point = 20
@@ -161,7 +157,7 @@ def create_audio_transition(f):
     transition.length = length
     transition['CutPoint'].value = cut_point
 
-    op_group = f.create.OperationGroup(audio_dissolve_def)
+    op_group = f.create.OperationGroup('Audio Dissolve')
     op_group.media_kind = 'sound'
     transition['OperationGroup'].value = op_group
 

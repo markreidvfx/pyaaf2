@@ -153,7 +153,7 @@ class ConstantValue(Parameter):
         super(ConstantValue, self).__init__()
 
         if parameterdef is not None:
-            self.parameterdef = parameterdef
+            self.parameterdef = self.root.lookup_parameterdef(parameterdef)
 
         if value is not None:
             if parameterdef is None:
@@ -361,10 +361,20 @@ def generate_offset_map(speed_map, start=0, end=None):
 class VaryingValue(Parameter):
     class_id = AUID("0d010101-0101-3e00-060e-2b3402060101")
     __slots__ = ()
+    def __init__(self, parameterdef=None, interperlationdef=None):
+        super(VaryingValue, self).__init__()
+        if parameterdef:
+            self.parameterdef = self.root.dictionary.lookup_parameterdef(parameterdef)
+
+        if interperlationdef:
+            self.interpolationdef = self.root.dictionary.lookup_interperlationdef(interperlationdef)
 
     @property
-    def interpolation(self):
+    def interpolationdef(self):
         return self['Interpolation'].value
+    @interpolationdef.setter
+    def interpolationdef(self, value):
+        self['Interpolation'].value = value
 
     @property
     def typedef(self):
@@ -407,12 +417,12 @@ class VaryingValue(Parameter):
         if t < p1.time or index + 1 >= len(pointlist):
             return float(p1.value)
 
-        if self.interpolation.auid == ConstantInterp:
+        if self.interpolationdef.auid == ConstantInterp:
             return float(p1.value)
 
         p2 = pointlist[index+1]
 
-        if self.interpolation.auid == LinearInterp:
+        if self.interpolationdef.auid == LinearInterp:
             t_len = float(p2.time) - float(p1.time)
             t_diff = t - float(p1.time)
             t_mix = t_diff/t_len
@@ -421,7 +431,7 @@ class VaryingValue(Parameter):
             v1 = float(p2.value)
             return lerp(v0, v1, t_mix)
 
-        elif self.interpolation.auid  == BezierInterpolator:
+        elif self.interpolationdef.auid  == BezierInterpolator:
             t0 = float(p1.time)
             v0 = float(p1.value)
 
@@ -441,7 +451,7 @@ class VaryingValue(Parameter):
                                             (t2, v2),
                                             (t3, v3), t)
 
-        elif self.interpolation.auid  == CubicInterpolator:
+        elif self.interpolationdef.auid  == CubicInterpolator:
 
             t1 = float(p1.time)
             v1 = float(p1.value)
@@ -473,7 +483,7 @@ class VaryingValue(Parameter):
         else:
 
             raise NotImplementedError("Interpolation not implemented for %s %s" %
-                           (self.interpolation.name, str(self.interpolation.auid)))
+                           (self.interpolationdef.name, str(self.interpolationdef.auid)))
 
     def nearest_index(self, t):
         """
