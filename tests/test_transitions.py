@@ -11,8 +11,7 @@ from aaf2 import audio
 import common
 
 def register_definitions(f):
-    effect_id = AUID("89d9b67e-5584-302d-9abd-8bd330c46841")
-    op_def = f.create.OperationDef(effect_id, 'VideoDissolve_2', '')
+    op_def = f.create.OperationDef('89d9b67e-5584-302d-9abd-8bd330c46841', 'VideoDissolve_2', '')
     f.dictionary.register_def(op_def)
 
     op_def.media_kind = 'picture'
@@ -21,28 +20,22 @@ def register_definitions(f):
     op_def['NumberInputs'].value = 2
     op_def['OperationCategory'].value = 'OperationCategory_Effect'
 
-    avid_param_byteorder_id = AUID("c0038672-a8cf-11d3-a05b-006094eb75cb")
-    avid_effect_id = AUID("93994bd6-a81d-11d3-a05b-006094eb75cb")
-
-    param_byteorder = f.create.ParameterDef(avid_param_byteorder_id, "AvidParameterByteOrder", "", 'AvidBagOfBits')
+    param_byteorder = f.create.ParameterDef("c0038672-a8cf-11d3-a05b-006094eb75cb", "AvidParameterByteOrder", "", 'AvidBagOfBits')
     f.dictionary.register_def(param_byteorder)
 
-    param_effect_id = f.create.ParameterDef(avid_effect_id, "AvidEffectID", "", 'aafUInt16')
+    param_effect_id = f.create.ParameterDef("93994bd6-a81d-11d3-a05b-006094eb75cb", "AvidEffectID", "", 'aafUInt16')
     f.dictionary.register_def(param_effect_id)
 
     op_def.parameters.extend([param_byteorder, param_effect_id])
 
     # note not part of VideoDissolve_2 op_def but still used...
-    opacity_param_id = AUID('8d56813d-847e-11d5-935a-50f857c10000')
-    opacity_param = f.create.ParameterDef(opacity_param_id, 'AFX_FG_KEY_OPACITY_U', '', 'Rational')
+    opacity_param = f.create.ParameterDef('8d56813d-847e-11d5-935a-50f857c10000', 'AFX_FG_KEY_OPACITY_U', '', 'Rational')
     f.dictionary.register_def(opacity_param)
 
-    linear_id = AUID('5b6c85a4-0ede-11d3-80a9-006008143e6f')
-    linear = f.create.InterpolationDef(linear_id, 'LinearInterp', '')
+    linear = f.create.InterpolationDef('5b6c85a4-0ede-11d3-80a9-006008143e6f', 'LinearInterp', '')
     f.dictionary.register_def(linear)
 
-    effect_id = AUID("0c3bea41-fc05-11d2-8a29-0050040ef7d2")
-    op_def = f.create.OperationDef(effect_id, 'Audio Dissolve', '')
+    op_def = f.create.OperationDef('0c3bea41-fc05-11d2-8a29-0050040ef7d2', 'Audio Dissolve', '')
     f.dictionary.register_def(op_def)
 
     op_def.media_kind = 'sound'
