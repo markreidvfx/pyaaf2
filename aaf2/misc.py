@@ -153,7 +153,7 @@ class ConstantValue(Parameter):
         super(ConstantValue, self).__init__()
 
         if parameterdef is not None:
-            self.parameterdef = self.root.lookup_parameterdef(parameterdef)
+            self.parameterdef = self.root.dictionary.lookup_parameterdef(parameterdef)
 
         if value is not None:
             if parameterdef is None:
