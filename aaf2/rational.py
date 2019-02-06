@@ -33,7 +33,13 @@ class AAFRational(Fraction):
             elif isinstance(numerator, float):
                 # Exact conversion from float
                 value = Fraction.from_float(numerator)
+
+                # make sure fraction can fit in a int32
                 value = value.limit_denominator(0x7FFFFFFF)
+                if value._numerator > 0x7FFFFFFF:
+                    value._denominator = int(value._denominator * (0x7FFFFFFF / float(value._numerator)))
+                    value._numerator = 0x7FFFFFFF
+
                 self._numerator = value._numerator
                 self._denominator = value._denominator
                 return self
