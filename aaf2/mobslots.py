@@ -76,6 +76,14 @@ class EventMobSlot(MobSlot):
     class_id = AUID( "0d010101-0101-3900-060e-2b3402060101")
     __slots__ = ()
 
+    @property
+    def edit_rate(self):
+        return self['EditRate'].value
+
+    @edit_rate.setter
+    def edit_rate(self, value):
+        self['EditRate'].value = value
+
 @register_class
 class TimelineMobSlot(MobSlot):
     class_id = AUID("0d010101-0101-3b00-060e-2b3402060101")
