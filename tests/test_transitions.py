@@ -20,7 +20,7 @@ def register_definitions(f):
     op_def['NumberInputs'].value = 2
     op_def['OperationCategory'].value = 'OperationCategory_Effect'
 
-    param_byteorder = f.create.ParameterDef("c0038672-a8cf-11d3-a05b-006094eb75cb", "AvidParameterByteOrder", "", 'AvidBagOfBits')
+    param_byteorder = f.create.ParameterDef("c0038672-a8cf-11d3-a05b-006094eb75cb", "AvidParameterByteOrder", "", 'aafUInt16')
     f.dictionary.register_def(param_byteorder)
 
     param_effect_id = f.create.ParameterDef("93994bd6-a81d-11d3-a05b-006094eb75cb", "AvidEffectID", "", 'aafUInt16')
