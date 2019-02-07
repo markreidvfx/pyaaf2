@@ -23,7 +23,7 @@ def register_definitions(f):
     param_byteorder = f.create.ParameterDef("c0038672-a8cf-11d3-a05b-006094eb75cb", "AvidParameterByteOrder", "", 'aafUInt16')
     f.dictionary.register_def(param_byteorder)
 
-    param_effect_id = f.create.ParameterDef("93994bd6-a81d-11d3-a05b-006094eb75cb", "AvidEffectID", "", 'aafUInt16')
+    param_effect_id = f.create.ParameterDef("93994bd6-a81d-11d3-a05b-006094eb75cb", "AvidEffectID", "", 'AvidBagOfBits')
     f.dictionary.register_def(param_effect_id)
 
     op_def.parameters.extend([param_byteorder, param_effect_id])
