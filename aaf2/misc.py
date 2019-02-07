@@ -376,6 +376,14 @@ class VaryingValue(Parameter):
     def interpolationdef(self, value):
         self['Interpolation'].value = value
 
+    # TODO: Deprecate this
+    @property
+    def interpolation(self):
+        return self['Interpolation'].value
+    @interpolationdef.setter
+    def interpolation(self, value):
+        self['Interpolation'].value = value
+
     @property
     def typedef(self):
         return self.parameterdef.typedef
