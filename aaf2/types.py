@@ -92,7 +92,7 @@ class TypeDefInt(TypeDef):
     def size(self):
         data  = self.property_entries[PID_INT_SIZE].data
         if data is not None:
-            return unpack('B', data)[0]
+            return unpack(b'B', data)[0]
         raise ValueError("%s No Size" % str(self.type_name))
 
     @property
@@ -316,7 +316,7 @@ class TypeDefFixedArray(TypeDef):
 
     @property
     def size(self):
-        return unpack('<I', self.property_entries[PID_FIXED_COUNT].data)[0]
+        return unpack(b'<I', self.property_entries[PID_FIXED_COUNT].data)[0]
 
     @property
     def byte_size(self):

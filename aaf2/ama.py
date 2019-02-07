@@ -342,7 +342,7 @@ def wave_infochunk(path):
             sizebuf = file.read(4)
             if len(sizebuf) < 4 or len(chunkid) < 4:
                 return None
-            size    = struct.unpack('<L', sizebuf )[0]
+            size    = struct.unpack(b'<L', sizebuf )[0]
             if chunkid[0:3] != b"fmt":
                 if size % 2 == 1:
                     seek = size + 1
