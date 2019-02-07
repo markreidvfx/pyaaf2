@@ -96,6 +96,11 @@ class TaggedValue(core.AAFObject):
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,
                                 self.__class__.__name__)
+
+        value_typedef = self.value_typedef
+        if value_typedef:
+            s += ' %s' % repr(value_typedef)
+
         name = self.name
         if name:
             s += ' %s' % name
