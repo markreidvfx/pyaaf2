@@ -9,6 +9,7 @@ from aaf2.file import AAFFile
 from aaf2.cfb import CompoundFileBinary
 from aaf2.mobid import MobID
 from aaf2 import exceptions
+import aaf2
 
 import unittest
 
@@ -95,6 +96,39 @@ class CreatAAFTests(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 f.create.PhysicalDescriptor()
+
+    def test_delete_propetry(self):
+        result_file = common.get_test_file('delete.aaf')
+        with aaf2.open(result_file, 'w') as f:
+            m = f.create.MasterMob()
+            m['AppCode'].value = 14
+            m.usage = 'Usage_LowerLevel'
+            f.content.mobs.append(m)
+
+        with aaf2.open(result_file, 'rw') as f:
+            mob = list(f.content.mobs)[0]
+            assert 'AppCode' in mob
+            assert 'UsageCode' in mob
+
+            del mob['AppCode']
+            del mob['UsageCode']
+
+            assert 'AppCode' not in mob
+            assert 'UsageCode' not in mob
+
+            with self.assertRaises(KeyError):
+                del mob['AppCode']
+
+
+
+        with aaf2.open(result_file, 'r') as f:
+            mob = list(f.content.mobs)[0]
+            assert 'AppCode' not in mob
+            assert 'UsageCode' not in mob
+
+            with self.assertRaises(KeyError):
+                del mob['AppCode']
+
 
 
 if __name__ == "__main__":

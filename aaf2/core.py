@@ -330,6 +330,15 @@ class AAFObject(object):
             raise KeyError(key)
         return result
 
+    def __delitem__(self, key):
+        result = self.get(key, default=None, allkeys=False)
+        if result is None:
+            raise KeyError(key)
+
+        del self.property_entries[result.pid]
+        if self.dir:
+            self.root.manager.add_modified(self)
+
     def __contains__(self, key, all=False):
         result = self.get(key, default=None, allkeys=False)
         if result is None:
