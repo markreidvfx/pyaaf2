@@ -384,6 +384,43 @@ class StreamTests(unittest.TestCase):
             for item in property_streams:
                 assert not cfb.exists(item)
 
+    def test_trunc_zero(self):
+        src_file = common.test_file_01()
+        test_file = os.path.join(test_dir, "trunc_zero_test.aaf")
+        shutil.copy(src_file, test_file)
+        with open(test_file, 'rb+') as f:
+            cfb = CompoundFileBinary(f, 'rb+')
+            s = cfb.open("/zero_trunc", 'w')
+            s.write(b'some data')
+            s.seek(0)
+            s.truncate()
+            cfb.close()
+
+        with open(test_file, 'rb') as f:
+            cfb = CompoundFileBinary(f, 'rb')
+            s = cfb.open("/zero_trunc", 'r')
+            assert s.dir.byte_size == 0
+            assert s.dir.sector_id is None
+
+
+    def test_trunc_shrink(self):
+        test_file = os.path.join(test_dir, "trunc_zero_test.aaf")
+        with open(test_file, 'wb+') as f:
+            cfb = CompoundFileBinary(f, 'w+')
+            s = cfb.open("/grow_trunc", 'w')
+            data = b"F" * 5000
+            s.write(data)
+            assert s.is_mini_stream() == False
+            s.truncate(256)
+            assert s.is_mini_stream() == True
+            cfb.close()
+        with open(test_file, 'rb') as f:
+            cfb = CompoundFileBinary(f, 'rb')
+            s = cfb.open("/grow_trunc", 'r')
+            data = s.read()
+            assert data == b"F" * 256
+
+
 if __name__ == "__main__":
     import logging
     # logging.basicConfig(level=logging.DEBUG)

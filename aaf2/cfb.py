@@ -314,6 +314,16 @@ class Stream(object):
         full_sector_size = self.storage.sector_size
         mini_sector_size = self.storage.mini_stream_sector_size
 
+        # free the stream
+        if size == 0:
+            self.storage.free_fat_chain(self.dir.sector_id, is_mini_stream)
+            self.pos = 0
+            self.dir.sector_id = None
+            self.dir.byte_size = 0
+            self.fat_chain = []
+            return
+
+
         # grown the stream
         if size > current_byte_size:
             self.allocate(size)
