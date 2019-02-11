@@ -337,7 +337,7 @@ class StreamTests(unittest.TestCase):
 
     def test_rmtree(self):
         src_file = common.test_file_01()
-        test_file = os.path.join(test_dir, "move2_test.aaf")
+        test_file = os.path.join(test_dir, "rmtree_test.aaf")
         shutil.copy(src_file, test_file)
 
         remove_list = []
@@ -385,11 +385,9 @@ class StreamTests(unittest.TestCase):
                 assert not cfb.exists(item)
 
     def test_trunc_zero(self):
-        src_file = common.test_file_01()
         test_file = os.path.join(test_dir, "trunc_zero_test.aaf")
-        shutil.copy(src_file, test_file)
-        with open(test_file, 'rb+') as f:
-            cfb = CompoundFileBinary(f, 'rb+')
+        with open(test_file, 'wb+') as f:
+            cfb = CompoundFileBinary(f, 'wb+')
             s = cfb.open("/zero_trunc", 'w')
             s.write(b'some data')
             s.seek(0)
@@ -404,7 +402,7 @@ class StreamTests(unittest.TestCase):
 
 
     def test_trunc_shrink(self):
-        test_file = os.path.join(test_dir, "trunc_zero_test.aaf")
+        test_file = os.path.join(test_dir, "trunc_shrink_test.aaf")
         with open(test_file, 'wb+') as f:
             cfb = CompoundFileBinary(f, 'w+')
             s = cfb.open("/grow_trunc", 'w')
