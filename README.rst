@@ -3,7 +3,7 @@
 pyaaf2
 ======
 
-A python module for reading and writing Advanced Authoring Format (AAF) files.  
+A python module for reading and writing Advanced Authoring Format (AAF) files.
 pyaaf2 rewrite of `pyaaf1 <https://github.com/markreidvfx/pyaaf>`_ in pure python.
 
 Features
@@ -48,7 +48,6 @@ TODO
 - Port more pyaaf1 examples
 - MXF linking improvements
 - AMA linking improvements
-- CFB stream shrinking
 - CFB red black tree
 - XML support
 
