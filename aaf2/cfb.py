@@ -115,6 +115,8 @@ class Stream(object):
         return offset
 
     def is_mini_stream(self):
+        if self.dir.type == 'root storage':
+            return False
         return self.dir.byte_size < self.storage.min_stream_max_size
 
     def sector_size(self):
@@ -303,23 +305,22 @@ class Stream(object):
         assert self.pos <= self.dir.byte_size
 
     def truncate(self, size=None):
+        # print("trunc", self.dir.path())
         if size is None:
             size = self.pos
 
         current_byte_size = self.dir.byte_size
-
-        if size == current_byte_size:
-            return
+        is_mini_stream = self.is_mini_stream()
+        full_sector_size = self.storage.sector_size
+        mini_sector_size = self.storage.mini_stream_sector_size
 
         # grown the stream
         if size > current_byte_size:
             self.allocate(size)
             return
 
-        is_mini_stream = current_byte_size < self.storage.min_stream_max_size
-
         # shrink to mini stream
-        if size < self.storage.min_stream_max_size and not is_mini_stream:
+        if size < self.storage.min_stream_max_size and not is_mini_stream and self.dir.type != 'root storage':
             orig_pos = self.pos
             self.pos = 0
 
@@ -335,9 +336,6 @@ class Stream(object):
             self.pos = min(orig_pos, size)
             assert self.dir.byte_size == size
             return
-
-        full_sector_size = self.storage.sector_size
-        mini_sector_size = self.storage.mini_stream_sector_size
 
         if is_mini_stream:
             sector_size = mini_sector_size
@@ -865,7 +863,9 @@ class CompoundFileBinary(object):
             mini_stream_byte_size = (last_used_sector_id * self.mini_stream_sector_size)
             self.root.byte_size = mini_stream_byte_size
 
-            # TODO: Truncate ministream
+            # Truncate ministream
+            s = Stream(self, self.root, 'rw')
+            s.truncate(mini_stream_byte_size)
 
         self.write_header()
         self.write_difat()
