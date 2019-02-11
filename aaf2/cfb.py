@@ -882,6 +882,17 @@ class CompoundFileBinary(object):
         self.write_fat()
         self.write_minifat()
         self.write_dir_entries()
+
+        # Truncate file to the last free sector
+        for i,v in enumerate(reversed(self.fat)):
+            if v != FREESECT:
+                break
+
+        last_used_sector_id = len(self.fat) - i
+        pos = (last_used_sector_id + 1) *  self.sector_size
+        self.f.seek(pos)
+        self.f.truncate()
+
         self.is_open = False
 
     def setup_empty(self, sector_size):
