@@ -758,7 +758,7 @@ class CompoundFileBinary(object):
 
             self.read_header()
             self.read_fat()
-            self.read_minifat()
+            mini_stream_byte_size = self.read_minifat()
 
             # create dir_fat_chain and read root dir entry
             self.dir_fat_chain = self.get_fat_chain(self.dir_sector_start)
@@ -773,6 +773,10 @@ class CompoundFileBinary(object):
             # create mini stream fat chain
             if self.minifat_sector_count:
                 self.mini_stream_chain = self.get_fat_chain(self.root.sector_id)
+
+            if self.root.sector_id is not None and mini_stream_byte_size != self.root.byte_size:
+                message = "mini stream size missmatch: %d != %d, using size from minifat"
+                logging.warn(message % (self.root.byte_size, mini_stream_byte_size))
         else:
             self.setup_empty(sector_size)
             self.write_header()
@@ -787,6 +791,23 @@ class CompoundFileBinary(object):
     def close(self):
         if self.mode in ("r", "rb"):
             return
+
+        # caculate mini stream size
+        if self.root.sector_id is not None:
+            # I cannot find this documented anywhere but the size of the mini stream
+            # is the size up to the last mini sector is uses. Not the total Non FREESECT's.
+            # If self.root.byte_size is not set correctly the some appications will crash hard...
+
+            # find last non-free sect
+            for i,v in enumerate(reversed(self.minifat)):
+                if v != FREESECT:
+                    break
+
+            last_used_sector_id = len(self.minifat) - i
+            mini_stream_byte_size = (last_used_sector_id * self.mini_stream_sector_size)
+            self.root.byte_size = mini_stream_byte_size
+
+            # TODO: Truncate ministream
 
         self.write_header()
         self.write_difat()
@@ -1108,11 +1129,22 @@ class CompoundFileBinary(object):
         if sys.byteorder == 'big':
              self.minifat.byteswap()
 
+        # mini_stream_byte_size = 0
+        last_used_sector = 0
         for i,v in enumerate(self.minifat):
             if v == FREESECT:
                 self.minifat_freelist.append(i)
+            else:
+                last_used_sector = i
+                # mini_stream_byte_size += self.mini_stream_sector_size
+
+        mini_stream_byte_size = ((last_used_sector+1) * self.mini_stream_sector_size)
+
+        # for i, sect in enumerate(pretty_sectors(self.minifat)):
+        #     print(i, sect)
 
         logging.debug("read %d mini fat sectors", sector_count)
+        return mini_stream_byte_size
 
     def write_minifat(self):
         f = self.f
@@ -1411,7 +1443,6 @@ class CompoundFileBinary(object):
             sect = self.next_free_minifat_sect()
             # logging.debug("creating new mini sector: %d" % sect)
             fat = self.minifat
-            self.root.byte_size += 64
         else:
             sect = self.next_free_sect()
             # logging.debug("creating new sector: %d" % sect)
@@ -1438,7 +1469,6 @@ class CompoundFileBinary(object):
             logging.debug("marking %s sid: %d as FREESECT" % (fat_name, sid))
             fat[sid] = FREESECT
             if minifat:
-                self.root.byte_size -= 64
                 self.minifat_freelist.insert(0, sid)
             else:
                 self.fat_freelist.insert(0, sid)
