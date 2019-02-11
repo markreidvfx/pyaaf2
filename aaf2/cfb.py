@@ -1460,13 +1460,10 @@ class CompoundFileBinary(object):
 
     def free_fat_chain(self, start_sid, minifat=False):
         fat =self.fat
-        fat_name = "fat"
         if minifat:
             fat = self.minifat
-            fat_name = "minifat"
-        #  self.get_fat_chain(start_sid, minifat)
+
         for sid in self.get_fat_chain(start_sid, minifat):
-            logging.debug("marking %s sid: %d as FREESECT" % (fat_name, sid))
             fat[sid] = FREESECT
             if minifat:
                 self.minifat_freelist.insert(0, sid)
