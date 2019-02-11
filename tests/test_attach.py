@@ -220,7 +220,39 @@ class ImportTests(unittest.TestCase):
             comp = next(f.content.compositionmobs())
             assert comp.mob_id == new_mobid
 
+    def test_rewrite(self):
+        new_file = os.path.join(common.sandbox(), 'test_rewrite.aaf')
+        test_file = common.test_file_01()
+        shutil.copy(test_file, new_file)
 
+        prop_count = {}
+
+        with aaf2.open(new_file, 'rw') as f:
+            for obj, streams in f.root.walk_references():
+                f.manager.add_modified(obj)
+                prop_count[obj.dir.path()] = len(list(obj.properties()))
+
+        with aaf2.open(new_file, 'r') as f:
+            for obj, streams in f.root.walk_references():
+                path = obj.dir.path()
+                assert len(list(obj.properties())) == prop_count[path]
+
+    def test_rewrite512(self):
+        new_file = os.path.join(common.sandbox(), 'test_rewrite512.aaf')
+        test_file = common.test_file_512()
+        shutil.copy(test_file, new_file)
+
+        prop_count = {}
+
+        with aaf2.open(new_file, 'rw') as f:
+            for obj, streams in f.root.walk_references():
+                f.manager.add_modified(obj)
+                prop_count[obj.dir.path()] = len(list(obj.properties()))
+
+        with aaf2.open(new_file, 'r') as f:
+            for obj, streams in f.root.walk_references():
+                path = obj.dir.path()
+                assert len(list(obj.properties())) == prop_count[path]
 
 if __name__ == "__main__":
     import logging

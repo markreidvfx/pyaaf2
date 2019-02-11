@@ -139,7 +139,7 @@ class AAFObject(object):
         if validate:
             self.validate()
 
-        s = self.dir.touch("properties").open(mode='w')
+        s = self.dir.touch("properties").open(mode='rw')
 
         f = BytesIO()
         # print("writing", f.dir.path())
@@ -167,7 +167,7 @@ class AAFObject(object):
             f.write(p.data)
 
         s.write(f.getvalue())
-
+        s.truncate()
         # write index's
         for p in self.property_entries.values():
             if isinstance(p, (properties.StrongRefSetProperty,

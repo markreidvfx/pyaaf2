@@ -84,7 +84,7 @@ class Stream(object):
         self.mode = mode
         self.pos = 0
         self.fat_chain = []
-        if not mode in ('r', 'w'):
+        if not mode in ('r', 'w', 'rw'):
             raise ValueError("invalid mode: %s" % mode)
         if self.dir.sector_id is not None:
             self.fat_chain.extend(self.storage.get_fat_chain(self.dir.sector_id, self.is_mini_stream()))
@@ -203,14 +203,14 @@ class Stream(object):
 
         minifat = self.is_mini_stream()
         realloc_data = None
-
+        orig_pos = None
         # convert from minifat to fat
         if minifat and byte_size >= self.storage.min_stream_max_size:
             # logging.debug("converting stream for minifat to fat")
+            orig_pos = self.pos
             self.seek(0)
             realloc_data = self.read()
             assert len(realloc_data) == self.dir.byte_size
-            self.pos = 0
             self.storage.free_fat_chain(self.dir.sector_id, True)
             self.dir.sector_id = None
             minifat = False
@@ -230,9 +230,10 @@ class Stream(object):
             if self.dir.sector_id is None:
                 self.dir.sector_id = sid
 
-        if not realloc_data is None:
-            self.seek(0)
+        if realloc_data is not None:
+            self.pos = 0
             self.write(realloc_data)
+            self.pos = min(orig_pos, len(realloc_data))
 
     def write(self, data):
         data_size = len(data)
@@ -298,6 +299,63 @@ class Stream(object):
 
             mv = mv[byte_writeable:]
             data_size -= byte_writeable
+
+        assert self.pos <= self.dir.byte_size
+
+    def truncate(self, size=None):
+        if size is None:
+            size = self.pos
+
+        current_byte_size = self.dir.byte_size
+
+        if size == current_byte_size:
+            return
+
+        # grown the stream
+        if size > current_byte_size:
+            self.allocate(size)
+            return
+
+        is_mini_stream = current_byte_size < self.storage.min_stream_max_size
+
+        # shrink to mini stream
+        if size < self.storage.min_stream_max_size and not is_mini_stream:
+            orig_pos = self.pos
+            self.pos = 0
+
+            realloc_data = self.read(size)
+            self.storage.free_fat_chain(self.dir.sector_id, False)
+
+            self.pos = 0
+            self.dir.sector_id = None
+            self.dir.byte_size = 0
+            self.fat_chain = []
+
+            self.write(realloc_data)
+            self.pos = min(orig_pos, size)
+            assert self.dir.byte_size == size
+            return
+
+        full_sector_size = self.storage.sector_size
+        mini_sector_size = self.storage.mini_stream_sector_size
+
+        if is_mini_stream:
+            sector_size = mini_sector_size
+            fat_table = self.storage.minifat
+        else:
+            sector_size = full_sector_size
+            fat_table = self.storage.fat
+
+        sector_count = (size + sector_size - 1) // sector_size
+
+        if len(self.fat_chain) > sector_count:
+            last_sector_id = self.fat_chain[sector_count-1]
+            self.storage.free_fat_chain(self.fat_chain[sector_count], is_mini_stream)
+            fat_table[last_sector_id] = ENDOFCHAIN
+            self.fat_chain = self.fat_chain[:sector_count]
+
+        self.dir.byte_size = size
+        self.pos = min(self.pos, size)
 
     def close(self):
         pass
@@ -1801,6 +1859,8 @@ class CompoundFileBinary(object):
                 entry.sector_id = None
                 entry.byte_size = 0
                 entry.class_id = None
+            elif mode == 'rw':
+                pass
 
         s = Stream(self, entry, mode)
         return s

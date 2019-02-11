@@ -470,7 +470,7 @@ class StrongRefVectorProperty(Property):
 
     @writeonly
     def write_index(self):
-        s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
+        s = self.parent.dir.touch(self.index_name + " index").open(mode='rw')
         f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
@@ -481,6 +481,7 @@ class StrongRefVectorProperty(Property):
             write_u32le(f, local_key)
 
         s.write(f.getvalue())
+        s.truncate()
 
     @property
     def ref_classdef(self):
@@ -755,7 +756,7 @@ class StrongRefSetProperty(Property):
 
     @writeonly
     def write_index(self):
-        s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
+        s = self.parent.dir.touch(self.index_name + " index").open(mode='rw')
         f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
@@ -771,6 +772,7 @@ class StrongRefSetProperty(Property):
             f.write(key.bytes_le)
 
         s.write(f.getvalue())
+        s.truncate()
 
     def index_ref_name(self, key):
         return "%s{%x}" % (self.index_name, self.references[key])
@@ -1092,7 +1094,7 @@ class WeakRefArrayProperty(Property):
 
     @writeonly
     def write_index(self):
-        s = self.parent.dir.touch(self.index_name + " index").open(mode='w')
+        s = self.parent.dir.touch(self.index_name + " index").open(mode='rw')
         f = BytesIO()
         count = len(self.references)
         write_u32le(f, count)
@@ -1104,6 +1106,7 @@ class WeakRefArrayProperty(Property):
             f.write(item.bytes_le)
 
         s.write(f.getvalue())
+        s.truncate()
 
     def __repr__(self):
         return "<%s %s to %d items>" % (self.name, self.__class__.__name__, len(self.references) )
