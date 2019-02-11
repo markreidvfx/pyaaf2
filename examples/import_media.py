@@ -74,7 +74,7 @@ def seconds_to_timecode(seconds):
     return str(t)
 
 def has_alpha(stream):
-    if stream['pix_fmt'] in ('yuva444p10le',):
+    if stream['pix_fmt'] in ('yuva444p10le','rgba'):
         return True
     return False
 
