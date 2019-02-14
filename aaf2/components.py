@@ -202,6 +202,10 @@ class SourceClip(SourceReference):
 
         elif isinstance(segment, Filler):
             yield segment
+        
+        elif isinstance(segment, (OperationGroup, Pulldown)):
+            yield segment
+
         else:
             raise NotImplementedError("Walking {} not implemented".format(
                                       type(segment)))
