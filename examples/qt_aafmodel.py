@@ -1,5 +1,11 @@
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
 import sys
-from PyQt4 import QtCore
+from PySide2 import QtCore
 
 import aaf2
 
@@ -37,7 +43,7 @@ class TreeItem(object):
             t = TreeItem(item ,self, row)
         else:
             return None
-        print row, item
+        print(row, item)
         self.children[row] = t
         return t
 
@@ -117,8 +123,8 @@ class AAFModel(QtCore.QAbstractItemModel):
 
     def headerData(self, column, orientation,role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return QtCore.QVariant(self.headers[column])
-        return QtCore.QVariant()
+            return self.headers[column]
+        return None
 
     def columnCount(self,index):
         #item = self.getItem(index)
@@ -179,7 +185,7 @@ class AAFModel(QtCore.QAbstractItemModel):
 
 if __name__ == "__main__":
 
-    from PyQt4 import QtGui
+    from PySide2 import QtWidgets
     from optparse import OptionParser
 
     parser = OptionParser()
@@ -221,12 +227,12 @@ if __name__ == "__main__":
     if options.root:
         root = f.root
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     model = AAFModel(root)
 
-    tree = QtGui.QTreeView()
-    # tree = QtGui.QColumnView()
+    tree = QtWidgets.QTreeView()
+    # tree = QtWidgets.QColumnView()
     tree.setModel(model)
 
     tree.resize(700,600)
