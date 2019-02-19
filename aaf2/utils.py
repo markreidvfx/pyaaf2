@@ -189,6 +189,14 @@ def mangle_name(name, pid, size):
     new_name = squeeze_name(name, max_size)
     return "%s-%s" % (new_name, p)
 
+def safe_print(*args):
+    # python 2.7
+    if bytes is str:
+        s = u' '.join([unicode(item) for item in args])
+        print(s.encode('utf-8'))
+    else:
+        print(*args)
+
 AAFClaseID_dict = {}
 AAFClassName_dict = {}
 def register_class(classobj):

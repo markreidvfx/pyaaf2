@@ -19,6 +19,7 @@ from .utils import (
     write_u8,
     write_u16le,
     write_u32le,
+    safe_print,
     )
 from .exceptions import AAFPropertyError, AAFAttachError
 from . import properties
@@ -361,24 +362,24 @@ class AAFObject(object):
         for p in self.properties():
 
             if isinstance(p, properties.StrongRefProperty):
-                print(space, p.name, p.typedef)
+                safe_print(space, p.name, p.typedef)
 
                 p.value.dump(space + indent)
 
             if isinstance(p, properties.StrongRefVectorProperty):
-                print(space, p.name, p.typedef)
+                safe_print(space, p.name, p.typedef)
                 for obj in p.value:
-                    print(space + indent, obj)
+                    safe_print(space + indent, obj)
                     obj.dump(space + indent*2)
                 continue
 
             if isinstance(p, properties.StrongRefSetProperty):
-                print(space, p.name, p.typedef)
+                safe_print(space, p.name, p.typedef)
                 for key, obj in p.items():
-                    print(space + indent, obj)
+                    safe_print(space + indent, obj)
                     obj.dump(space + indent*2)
 
                 continue
                 # print(space, p.name,  p.typedef)
 
-            print(space, p.name, p.typedef, p.value)
+            safe_print(space, p.name, p.typedef, p.value)
