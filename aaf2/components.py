@@ -202,9 +202,15 @@ class SourceClip(SourceReference):
 
         elif isinstance(segment, Filler):
             yield segment
-        
+
         elif isinstance(segment, (OperationGroup, Pulldown)):
             yield segment
+
+        elif isinstance(segment, Selector):
+            yield segment
+            yield segment.selected
+            for alternate in segment.alternates:
+                yield alternate
 
         else:
             raise NotImplementedError("Walking {} not implemented".format(
@@ -239,6 +245,14 @@ class ScopeReference(Segment):
 class Selector(Segment):
     class_id = AUID("0d010101-0101-0e00-060e-2b3402060101")
     __slots__ = ()
+
+    @property
+    def selected(self):
+        return self['Selected']
+
+    @property
+    def alternates(self):
+        return self['Alternates']
 
 @register_class
 class Timecode(Segment):
