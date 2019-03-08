@@ -199,8 +199,8 @@ def conform_media(path,
                     scale_width = int(input_width*scale)
                     scale_height = int(input_height*scale)
 
-                    padding_ofs_x = (max_width  - scale_width)/2
-                    padding_ofs_y = (max_height - scale_height)/2
+                    padding_ofs_x = (max_width  - scale_width)//2
+                    padding_ofs_y = (max_height - scale_height)//2
 
 
                     vfilter.append("scale=%d:%d,pad=%d:%d:%d:%d" % (scale_width,scale_height,
