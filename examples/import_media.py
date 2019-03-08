@@ -1,5 +1,12 @@
-import aaf2
+#!/usr/bin/env python
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
 
+import aaf2
 import traceback
 import subprocess
 import json
