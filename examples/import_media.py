@@ -1,5 +1,12 @@
-import aaf2
+#!/usr/bin/env python
+from __future__ import (
+    unicode_literals,
+    absolute_import,
+    print_function,
+    division,
+    )
 
+import aaf2
 import traceback
 import subprocess
 import json
@@ -29,7 +36,7 @@ def probe(path, show_packets=False):
 
     if show_packets:
         cmd.extend(['-show_packets',])
-    print subprocess.list2cmdline(cmd)
+    print(subprocess.list2cmdline(cmd))
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     stdout,stderr = p.communicate()
@@ -192,8 +199,8 @@ def conform_media(path,
                     scale_width = int(input_width*scale)
                     scale_height = int(input_height*scale)
 
-                    padding_ofs_x = (max_width  - scale_width)/2
-                    padding_ofs_y = (max_height - scale_height)/2
+                    padding_ofs_x = (max_width  - scale_width)//2
+                    padding_ofs_y = (max_height - scale_height)//2
 
 
                     vfilter.append("scale=%d:%d,pad=%d:%d:%d:%d" % (scale_width,scale_height,
@@ -219,7 +226,7 @@ def conform_media(path,
                 cmd.extend([out_file])
 
                 #pprint(stream)
-                print "USING FRAMREATE",  out_rate, str(stream['avg_frame_rate'])
+                print("USING FRAMREATE",  out_rate, str(stream['avg_frame_rate']))
 
             out_files.append(out_meta)
 
@@ -243,7 +250,7 @@ def conform_media(path,
 
             out_files.append({'path':out_file, 'sample_rate':sample_rate, 'channels':channels,'type': 'audio'})
 
-    print subprocess.list2cmdline(cmd)
+    print(subprocess.list2cmdline(cmd))
 
     subprocess.check_call(cmd)
 
@@ -350,14 +357,14 @@ def create_aaf(path, media_streams, mobname, tape_name=None, start_timecode=None
 
         for stream in media_streams:
             if stream['type'] == 'video':
-                print "importing video..."
+                print("importing video...")
                 start = time.time()
                 import_video_essence(f, mastermob, stream, compmob, tapemob)
-                print "imported video in %f secs" % (time.time()- start)
+                print("imported video in %f secs" % (time.time()- start))
 
         for stream in media_streams:
             if stream['type'] == 'audio':
-                print "importing audio..."
+                print("importing audio...")
                 start = time.time()
                 sample_rate = stream['sample_rate']
                 slot = mastermob.import_audio_essence(stream['path'], edit_rate)
@@ -365,7 +372,7 @@ def create_aaf(path, media_streams, mobname, tape_name=None, start_timecode=None
                     sound_slot = compmob.create_sound_slot(edit_rate)
                     sound_slot.segment = mastermob.create_source_clip(slot.slot_id, length = slot.segment.length)
 
-                print "imported audio in %f secs" % (time.time()- start)
+                print("imported audio in %f secs" % (time.time()- start))
 
 
 
@@ -413,24 +420,24 @@ if __name__ == "__main__":
         titles = ['Audio Profile', 'Sample Rate', 'Sample Fmt']
         row_format ="{:<25}{:<15}{:<15}"
 
-        print ""
-        print row_format.format( *titles)
-        print ""
+        print("")
+        print(row_format.format( *titles))
+        print("")
 
         for key,value in sorted(Audio_Profiles.items()):
-            print row_format.format(key, value['sample_rate'], value['sample_format'])
+            print(row_format.format(key, value['sample_rate'], value['sample_format']))
 
         titles = ['Video Profile', "Size", 'Frame Rate', "Bitrate", "Pix Fmt", "Codec"]
         row_format ="{:<25}{:<15}{:<15}{:<10}{:<12}{:<10}"
-        print ""
-        print row_format.format( *titles)
-        print ""
+        print("")
+        print(row_format.format( *titles))
+        print("")
         for key, value in sorted(Video_Profiles.items()):
             codec = 'dnxhd'
             if key.startswith("dnxhr"):
                 codec = 'dnxhr'
-            print row_format.format(key, value['size'],
-                                    value['frame_rate'], value['bitrate'], value['pix_fmt'], codec)
+            print(row_format.format(key, value['size'],
+                                    value['frame_rate'], value['bitrate'], value['pix_fmt'], codec))
 
         sys.exit()
 
@@ -446,10 +453,11 @@ if __name__ == "__main__":
     if options.end and options.duration:
         parser.error("Can only use --duration or --end not both")
 
-    if not Audio_Profiles.has_key(options.audio_profile.lower()):
+    print(options.audio_profile)
+    if not options.audio_profile in Audio_Profiles:
         parser.error("No such audio profile: %s" % options.audio_profile)
 
-    if not Video_Profiles.has_key(options.video_profile.lower()):
+    if not options.video_profile.lower() in Video_Profiles:
         parser.error("No such video profile: %s" % options.video_profile)
 
     aaf_file = args[0]
@@ -458,7 +466,7 @@ if __name__ == "__main__":
     # if not os.path.exists(tempdir):
     #     os.makedirs(tempdir)
     tempdir = tempfile.mkdtemp("-aaf_import")
-    print tempdir
+    print(tempdir)
 
     media_streams = []
 
@@ -484,7 +492,7 @@ if __name__ == "__main__":
                                  ignore_alpha = options.ignore_alpha)
                                  )
     except:
-        print traceback.format_exc()
+        print(traceback.format_exc())
         shutil.rmtree(tempdir)
         parser.error("error conforming media")
 
