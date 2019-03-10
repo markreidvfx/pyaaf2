@@ -6,6 +6,7 @@ from __future__ import (
     )
 import sys
 from PySide2 import QtCore
+from PySide2 import QtWidgets
 
 import aaf2
 
@@ -183,6 +184,50 @@ class AAFModel(QtCore.QAbstractItemModel):
                 return item
         return self.rootItem
 
+class Window(QtWidgets.QTreeView):
+    def __init__(self, options):
+        super(Window, self).__init__()
+
+        self.options = options
+
+        self.resize(700,600)
+        self.setAlternatingRowColors(True)
+        self.setUniformRowHeights(True)
+
+    def setFilePath(self, path):
+        print(path)
+        f = aaf2.open(file_path)
+
+        root = f.content
+        if options.toplevel:
+            root = list(f.content.toplevel())
+        if options.compmobs:
+            root = list(f.content.compositionmobs())
+
+        if options.mastermobs:
+            root = list(f.content.mastermobs())
+
+        if options.sourcemobs:
+           root = list(f.content.GetSourceMobs())
+
+        if options.dictionary:
+            root = f.dictionary
+
+        if options.metadict:
+            root = f.metadict
+
+        if options.root:
+            root = f.root
+
+        model = AAFModel(root)
+
+        self.setModel(model)
+
+        self.setWindowTitle(file_path)
+        self.expandToDepth(1)
+        self.resizeColumnToContents(0)
+        self.resizeColumnToContents(1)
+
 if __name__ == "__main__":
 
     from PySide2 import QtWidgets
@@ -204,47 +249,17 @@ if __name__ == "__main__":
 
     file_path = args[0]
 
-    f = aaf2.open(file_path)
-
-    root = f.content
-    if options.toplevel:
-        root = list(f.content.toplevel())
-    if options.compmobs:
-        root = list(f.content.compositionmobs())
-
-    if options.mastermobs:
-        root = list(f.content.mastermobs())
-
-    if options.sourcemobs:
-       root = list(f.content.GetSourceMobs())
-
-    if options.dictionary:
-        root = f.dictionary
-
-    if options.metadict:
-        root = f.metadict
-
-    if options.root:
-        root = f.root
-
     app = QtWidgets.QApplication(sys.argv)
-
-    model = AAFModel(root)
 
     tree = QtWidgets.QTreeView()
 
-    tree.setWindowTitle(file_path)
+    window = Window(options)
 
-    # tree = QtWidgets.QColumnView()
-    tree.setModel(model)
+    window.setFilePath(file_path)
 
-    tree.resize(700,600)
-    tree.setAlternatingRowColors(True)
-    tree.setUniformRowHeights(True)
+    window.show()
 
-    tree.expandToDepth(1)
-    tree.resizeColumnToContents(0)
-    tree.resizeColumnToContents(1)
-    tree.show()
+    fs_watcher = QtCore.QFileSystemWatcher([file_path])
+    fs_watcher.fileChanged.connect(window.setFilePath)
 
     sys.exit(app.exec_())
