@@ -178,6 +178,11 @@ class InterpolationDef(DefinitionObject):
     __slots__ = ()
 
 @register_class
+class TaggedValueDef(DefinitionObject):
+    class_id = AUID("0d010101-0101-4c00-060e-2b3402060101")
+    __slots__ = ()
+
+@register_class
 class Dictionary(core.AAFObject):
     class_id = AUID("0d010101-0101-2200-060e-2b3402060101")
     __slots__ = ()
@@ -213,6 +218,8 @@ class Dictionary(core.AAFObject):
             self['OperationDefinitions'].append(defobject)
         elif isinstance(defobject, InterpolationDef):
             self['InterpolationDefinitions'].append(defobject)
+        elif isinstance(defobject, TaggedValueDef):
+            self['TaggedValueDefinitions'].append(defobject)
         else:
             raise ValueError("unknown definitions type: %s" % str(type(defobject)))
 
@@ -236,3 +243,6 @@ class Dictionary(core.AAFObject):
 
     def lookup_interperlationdef(self, name):
         return lookup_def(self, name, InterpolationDef, 'InterpolationDefinitions')
+
+    def lookup_taggedvaluedef(self, name):
+        return lookup_def(self, name, TaggedValueDef, 'TaggedValueDefinitions')

@@ -637,6 +637,7 @@ aliases = {
 "Object"                 : "InterchangeObject",
 "ParameterDef"           : "ParameterDefinition",
 "InterpolationDef"       : "InterpolationDefinition",
+"TaggedValueDef"         : "TaggedValueDefinition",
 "PropertyDef"            : "PropertyDefinition",
 "TypeDef"                : "TypeDefinition",
 "TypeDefCharacter"       : "TypeDefinitionCharacter",
