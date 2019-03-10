@@ -232,6 +232,9 @@ if __name__ == "__main__":
     model = AAFModel(root)
 
     tree = QtWidgets.QTreeView()
+
+    tree.setWindowTitle(file_path)
+
     # tree = QtWidgets.QColumnView()
     tree.setModel(model)
 
