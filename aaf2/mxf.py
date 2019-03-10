@@ -81,6 +81,9 @@ def decode_indirect_value(data):
     elif typedef == AUID("00060e2b-3401-0401-4201-100200000000"):
         assert data[16] == 0x01# byte order?
         return data[17:].decode('utf-16be').rstrip('\x00')
+    elif typedef == AUID("00060e2b-3401-0401-4c00-070101000000"):
+        assert data[16] == 0x01# byte order?
+        return struct.unpack(b"<i", data[17:])[0]
     else:
         # unhandled indirect type
         return
@@ -171,6 +174,10 @@ class MXFObject(object):
                 self.data['AppCode'] = read_s32be(BytesIO(data))
             elif uid == AUID("060e2b34-0101-0109-0601-010406100000"):
                 self.data['SubDescriptors'] = decode_strong_ref_array(data)
+            elif uid == AUID("a01c0004-ac96-9f50-6095-818347b111d4"):
+                self.data["MobAttributeList"] = decode_strong_ref_array(data)
+            elif uid == AUID("a01c0004-ac96-9f50-6095-818547b111d4"):
+                self.data["TaggedValueAttributeList"] = decode_strong_ref_array(data)
 
     def resolve_ref(self, key):
         ref = self.data.get(key, None)
@@ -265,6 +272,11 @@ class MXFPackage(MXFObject):
             tag = item.link()
             if tag:
                 mob['UserComments'].append(tag)
+
+        for item in self.iter_strong_refs('MobAttributeList'):
+            tag = item.link()
+            if tag:
+                mob['MobAttributeList'].append(tag)
 
         if 'Descriptor' in self.data:
             d = self.resolve_ref('Descriptor')
@@ -762,6 +774,12 @@ class MXFTaggedValue(MXFObject):
         tag = self.create_aaf_instance()
         tag.name = self.data["Name"]
         tag.value = v
+
+        for item in self.iter_strong_refs('TaggedValueAttributeList'):
+            attr = item.link()
+            if attr:
+                tag['TaggedValueAttributeList'].append(attr)
+
         return tag
 
 def ber_length(f):
