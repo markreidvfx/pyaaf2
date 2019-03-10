@@ -333,6 +333,26 @@ class MobID(object):
             return self.bytes_le == other.bytes_le
         return NotImplemented
 
+    def __lt__(self, other):
+        if isinstance(other, MobID):
+            return self.int < other.int
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, MobID):
+            return self.int <= other.int
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, MobID):
+            return self.int > other.int
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, MobID):
+            return self.int >= other.int
+        return NotImplemented
+
     def __hash__(self):
         return hash(bytes(self.bytes_le))
 
