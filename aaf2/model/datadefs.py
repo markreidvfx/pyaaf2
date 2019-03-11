@@ -188,7 +188,7 @@ ContainerDefs = {
 "0d010301-020a-0100-060e-2b3404010103" : ("ContainerDef_MXFGC_Framewrapped_Alaw_Audio", ""),
 "0d010301-020a-0200-060e-2b3404010103" : ("ContainerDef_MXFGC_Clipwrapped_Alaw_Audio", ""),
 "0d010301-020a-0300-060e-2b3404010103" : ("ContainerDef_MXFGC_Customwrapped_Alaw_Audio", ""),
-"0d010301-0210-6002-060e-2b340401010a" : ("ContainerDef_MXFGC_Clipwrapped_AVCbytestream_VideoStream0_SID", ""),
+"0d010301-0210-6002-060e-2b340401010a" : ("ContainerDef_MXFGC_Clipwrapped_AVCByteStream_VideoStream0_SID", ""),
 "0d010301-0211-0100-060e-2b340401010a" : ("ContainerDef_MXFGC_Framewrapped_VC3", ""),
 "0d010301-0211-0200-060e-2b340401010a" : ("ContainerDef_MXFGC_Clipwrapped_VC3", ""),
 "0d010301-0212-0100-060e-2b340401010a" : ("ContainerDef_MXFGC_Framewrapped_VC1", ""),
