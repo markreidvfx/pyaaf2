@@ -36,7 +36,7 @@ class AAFRational(Fraction):
 
                 # make sure fraction can fit in a int32
                 value = value.limit_denominator(0x7FFFFFFF)
-                if value._numerator > 0x7FFFFFFF:
+                if value._numerator > 0x7FFFFFFF or value._numerator < -0x7FFFFFFF:
                     value._denominator = int(value._denominator * (0x7FFFFFFF / float(value._numerator)))
                     value._numerator = 0x7FFFFFFF
 
