@@ -218,8 +218,8 @@ class Stream(object):
             minifat = False
             self.fat_chain = []
 
-        sector_size = self.sector_size()
         self.dir.byte_size = byte_size
+        sector_size = self.sector_size()
         sector_count = (byte_size + sector_size - 1) // sector_size
 
         current_sects= len(self.fat_chain)
