@@ -8,6 +8,7 @@ from __future__ import (
 from . import core
 from .utils import register_class
 from .auid import AUID
+from . import components
 
 @register_class
 class MobSlot(core.AAFObject):
@@ -71,6 +72,10 @@ class MobSlot(core.AAFObject):
 
         return '<%s at 0x%x>' % (s, id(self))
 
+    @property
+    def length(self):
+        return 0
+
 @register_class
 class EventMobSlot(MobSlot):
     class_id = AUID( "0d010101-0101-3900-060e-2b3402060101")
@@ -107,6 +112,27 @@ class TimelineMobSlot(MobSlot):
     @edit_rate.setter
     def edit_rate(self, value):
         self['EditRate'].value = value
+
+    @property
+    def length(self):
+        segment = self.segment
+
+        if isinstance(segment, components.Sequence):
+            length = 0
+            for c in segment.components:
+                if isinstance(c, components.Transition):
+                    length -= c.length
+                else:
+                    length += c.length
+            return length
+
+        elif isinstance(segment, components.NestedScope):
+            length = 0
+            for slot in segment.slots:
+                max(length, slot.length)
+            return length
+        else:
+            return segment.length
 
 @register_class
 class StaticMobSlot(MobSlot):

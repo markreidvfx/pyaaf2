@@ -113,6 +113,11 @@ class Mob(core.AAFObject):
         return self.create_empty_sequence_slot(edit_rate, media_kind="sound")
 
     def create_source_clip(self, slot_id=None, start=None, length=None, media_kind=None):
+        """
+            Create a SourceClip of Mobs slot with `slot_id`. If no length given the default
+            length will be the full length of slots segment minius `start`.
+            Returns :class:`aaf2.components.SourceClip` Object
+        """
         source_slot = self.slot_at(slot_id)
         if not media_kind:
             media_kind = source_slot.media_kind
@@ -121,7 +126,7 @@ class Mob(core.AAFObject):
         clip.mob = self
         clip.slot = source_slot
         clip.start = start or 0
-        clip.length = length or 0
+        clip.length = length or max(source_slot.length - clip.start, 0)
         return clip
 
     def __repr__(self):

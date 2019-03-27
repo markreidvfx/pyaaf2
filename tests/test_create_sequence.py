@@ -85,7 +85,8 @@ class TestCreateSequence(unittest.TestCase):
                 assert master_mob.comments['Test'] == "Value"
                 assert master_mob.comments['Test2'] == 42
 
-                clip = file_mob.create_source_clip(slot_id=1, length=length)
+                clip = file_mob.create_source_clip(slot_id=1)
+                assert clip.length == length
                 slot = master_mob.create_picture_slot(video_rate)
                 slot.segment.components.append(clip)
 
@@ -93,7 +94,8 @@ class TestCreateSequence(unittest.TestCase):
                 mob_count += 1
 
                 # Create a SourceClip
-                clip = master_mob.create_source_clip(slot_id=1, length=length)
+                clip = master_mob.create_source_clip(slot_id=1)
+                assert clip.length == length
                 sequence.components.append(clip)
                 components += 1
 
