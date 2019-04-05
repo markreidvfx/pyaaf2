@@ -48,6 +48,10 @@ class Segment(Component):
     class_id = AUID("0d010101-0101-0300-060e-2b3402060101")
     __slots__ = ()
 
+    def walk(self, edit_unit=None):
+        raise NotImplementedError("Walking {} not implemented".format(
+                                    type(self)))
+
 @register_class
 class Transition(Component):
     class_id = AUID("0d010101-0101-1700-060e-2b3402060101")
@@ -100,6 +104,16 @@ class Sequence(Segment):
                 yield (index, length, component)
                 length += component.length
 
+    def walk(self, edit_unit=None):
+        try:
+            clip = self.component_at_time(edit_unit)
+        except AttributeError as e:
+            print(e)
+        else:
+            yield clip
+            for item in clip.walk():
+                yield item
+
 @register_class
 class NestedScope(Segment):
     class_id = AUID("0d010101-0101-0b00-060e-2b3402060101")
@@ -108,6 +122,12 @@ class NestedScope(Segment):
     @property
     def slots(self):
         return self['Slots']
+
+    def walk(self, edit_unit=None):
+        for slot in self.slots:
+            yield slot
+            for item in slot.walk():
+                yield item
 
 class SourceReference(Segment):
     class_id = AUID("0d010101-0101-1000-060e-2b3402060101")
@@ -171,70 +191,52 @@ class SourceClip(SourceReference):
     def start(self, value):
         self['StartTime'].value = value
 
-    def walk(self):
+    def walk(self, edit_unit=None):
         if not self.slot:
             return
 
         segment = self.slot.segment
 
-        if isinstance(segment, SourceClip):
-            yield segment
-            for item in segment.walk():
+        yield segment
+        if hasattr(segment, "walk"):
+            for item in segment.walk(self.start):
                 yield item
-
-        elif isinstance(segment, Sequence):
-            try:
-                clip = segment.component_at_time(self.start)
-            except AttributeError as e:
-                print(e)
-            else:
-                if isinstance(clip, SourceClip):
-                    yield clip
-                    for item in clip.walk():
-                        yield item
-                else:
-                    raise NotImplementedError("Sequence returned {} not "
-                                              "implemented".format(
-                                                  type(segment)))
-
-        elif isinstance(segment, EssenceGroup):
-            yield segment
-
-        elif isinstance(segment, Filler):
-            yield segment
-
-        elif isinstance(segment, (OperationGroup, Pulldown)):
-            yield segment
-
-        elif isinstance(segment, Selector):
-            yield segment
-            yield segment.selected
-            for alternate in segment.alternates:
-                yield alternate
-
-        else:
-            raise NotImplementedError("Walking {} not implemented".format(
-                                      type(segment)))
 
 @register_class
 class Filler(Segment):
     class_id = AUID("0d010101-0101-0900-060e-2b3402060101")
     __slots__ = ()
 
+    def walk(self, edit_unit=None):
+        return
+        yield
+
 @register_class
 class EssenceGroup(Segment):
     class_id = AUID("0d010101-0101-0500-060e-2b3402060101")
     __slots__ = ()
+
+    def walk(self, edit_unit=None):
+        return
+        yield
 
 @register_class
 class EdgeCode(Segment):
     class_id = AUID("0d010101-0101-0400-060e-2b3402060101")
     __slots__ = ()
 
+    def walk(self, edit_unit=None):
+        return
+        yield
+
 @register_class
 class Pulldown(Segment):
     class_id = AUID("0d010101-0101-0c00-060e-2b3402060101")
     __slots__ = ()
+
+    def walk(self, edit_unit=None):
+        return
+        yield
 
 @register_class
 class ScopeReference(Segment):
@@ -253,6 +255,15 @@ class Selector(Segment):
     @property
     def alternates(self):
         return self['Alternates']
+
+    def walk(self, edit_unit=None):
+        if self.selected:
+            yield self.selected
+            # Don't yield alternates
+            for item in self.selected.walk():
+                yield item
+        return
+
 
 @register_class
 class Timecode(Segment):
