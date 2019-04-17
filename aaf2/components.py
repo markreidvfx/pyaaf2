@@ -196,11 +196,8 @@ class SourceClip(SourceReference):
             return
 
         segment = self.slot.segment
-
         yield segment
-        if hasattr(segment, "walk"):
-            for item in segment.walk(self.start):
-                yield item
+        yield from segment.walk(self.start) if segment else ()
 
 @register_class
 class Filler(Segment):
@@ -208,8 +205,7 @@ class Filler(Segment):
     __slots__ = ()
 
     def walk(self, edit_unit=None):
-        return
-        yield
+        yield ()
 
 @register_class
 class EssenceGroup(Segment):
@@ -217,8 +213,7 @@ class EssenceGroup(Segment):
     __slots__ = ()
 
     def walk(self, edit_unit=None):
-        return
-        yield
+        yield ()
 
 @register_class
 class EdgeCode(Segment):
@@ -226,8 +221,7 @@ class EdgeCode(Segment):
     __slots__ = ()
 
     def walk(self, edit_unit=None):
-        return
-        yield
+        yield ()
 
 @register_class
 class Pulldown(Segment):
@@ -235,8 +229,7 @@ class Pulldown(Segment):
     __slots__ = ()
 
     def walk(self, edit_unit=None):
-        return
-        yield
+        yield ()
 
 @register_class
 class ScopeReference(Segment):
@@ -257,12 +250,8 @@ class Selector(Segment):
         return self['Alternates']
 
     def walk(self, edit_unit=None):
-        if self.selected:
-            yield self.selected
-            # Don't yield alternates
-            for item in self.selected.walk():
-                yield item
-        return
+        # FYI, don't yield alternates, just selected.
+        yield from self.selected.value.walk(edit_unit) if self.selected else ()
 
 
 @register_class
@@ -326,6 +315,9 @@ class OperationGroup(Segment):
     @property
     def segments(self):
         return self['InputSegments']
+
+    def walk(self, edit_unit=None):
+        yield from self.segments
 
 class Event(Segment):
     class_id = AUID("0d010101-0101-0600-060e-2b3402060101")
