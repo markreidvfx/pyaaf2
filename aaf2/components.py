@@ -197,7 +197,8 @@ class SourceClip(SourceReference):
 
         segment = self.slot.segment
         yield segment
-        yield from segment.walk(self.start) if segment else ()
+        for item in segment.walk(self.start) if segment else ():
+            yield item
 
 @register_class
 class Filler(Segment):
@@ -251,7 +252,8 @@ class Selector(Segment):
 
     def walk(self, edit_unit=None):
         # FYI, don't yield alternates, just selected.
-        yield from self.selected.value.walk(edit_unit) if self.selected else ()
+        for item in self.selected.value.walk(edit_unit) if self.selected else ():
+            yield item
 
 
 @register_class
@@ -317,7 +319,8 @@ class OperationGroup(Segment):
         return self['InputSegments']
 
     def walk(self, edit_unit=None):
-        yield from self.segments
+        for item in self.segments:
+            yield item
 
 class Event(Segment):
     class_id = AUID("0d010101-0101-0600-060e-2b3402060101")
