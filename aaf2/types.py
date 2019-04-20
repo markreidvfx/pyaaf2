@@ -119,7 +119,8 @@ class TypeDefInt(TypeDef):
 
     def decode(self, data):
         assert len(data) == self.size
-        return unpack(self.pack_format(), data)[0]
+        (result,) = unpack(self.pack_format(), data)
+        return result
 
     def encode(self, value):
         return pack(self.pack_format(), value)
@@ -316,7 +317,8 @@ class TypeDefFixedArray(TypeDef):
 
     @property
     def size(self):
-        return unpack(b'<I', self.property_entries[PID_FIXED_COUNT].data)[0]
+        (result, ) = unpack(b'<I', self.property_entries[PID_FIXED_COUNT].data)
+        return result
 
     @property
     def byte_size(self):

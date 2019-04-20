@@ -9,40 +9,49 @@ from struct import unpack, pack
 from . import auid
 
 def read_u8(f):
-    return unpack(b"B", f.read(1))[0]
+    (result, ) = unpack(b"B", f.read(1))
+    return result
 
 def write_u8(f, value):
     f.write(pack(b"B", value))
 
 def read_u16le(f):
-    return unpack(b"<H", f.read(2))[0]
+    (result, ) = unpack(b"<H", f.read(2))
+    return result
 
 def read_u16be(f):
-    return unpack(b">H", f.read(2))[0]
+    (result, ) = unpack(b">H", f.read(2))
+    return result
 
 def write_u16le(f, value):
     f.write(pack(b"<H", value))
 
 def read_u32le(f):
-    return unpack(b"<I", f.read(4))[0]
+    (result, ) = unpack(b"<I", f.read(4))
+    return result
 
 def read_u32be(f):
-    return unpack(b">I", f.read(4))[0]
+    (result, ) = unpack(b">I", f.read(4))
+    return result
 
 def read_s32be(f):
-    return unpack(b">i", f.read(4))[0]
+    (result, ) = unpack(b">i", f.read(4))
+    return result
 
 def write_u32le(f, value):
     return f.write(pack(b"<I", value))
 
 def read_u64le(f):
-    return unpack(b"<Q", f.read(8))[0]
+    (result, ) = unpack(b"<Q", f.read(8))
+    return result
 
 def read_u64be(f):
-    return unpack(b">Q", f.read(8))[0]
+    (result, ) = unpack(b">Q", f.read(8))
+    return result
 
 def read_s64be(f):
-    return unpack(b">q", f.read(8))[0]
+    (result, ) = unpack(b">q", f.read(8))
+    return result
 
 def write_u64le(f, value):
     return f.write(pack(b"<Q", value))
