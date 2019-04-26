@@ -54,7 +54,7 @@ def decode_strong_ref_array(data):
 
 
 def decode_utf16be(data):
-    return data.decode('utf-16be').rstrip('\x00')
+    return data.decode('utf-16be').split(u'\x00')[0]
 
 def decode_auid(data):
     return AUID(bytes_be=data)
