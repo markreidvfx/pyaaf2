@@ -313,9 +313,11 @@ class StrongRefProperty(Property):
         p = super(StrongRefProperty, self).copy(parent)
         p.ref = self.ref
 
-        dir_entry = parent.dir.get(p.ref)
-        if dir_entry is None:
-            dir_entry = parent.dir.makedir(p.ref)
+        dir_entry = None
+        if parent.dir:
+            dir_entry = parent.dir.get(p.ref)
+            if dir_entry is None:
+                dir_entry = parent.dir.makedir(p.ref)
 
         p.object = self.value.copy(dir_entry)
         return p
@@ -422,9 +424,12 @@ class StrongRefVectorProperty(Property):
 
         for i, value in enumerate(self):
             ref = self.index_ref_name(self.references[i])
-            dir_entry = parent.dir.get(ref)
-            if dir_entry is None:
-                dir_entry = parent.dir.makedir(ref)
+            dir_entry = None
+            if parent.dir:
+                dir_entry = parent.dir.get(ref)
+                if dir_entry is None:
+                    dir_entry = parent.dir.makedir(ref)
+
             c = value.copy(dir_entry)
             p.objects[i] = c
 
@@ -698,9 +703,11 @@ class StrongRefSetProperty(Property):
 
         for key, value in self.items():
             ref = self.index_ref_name(key)
-            dir_entry = parent.dir.get(ref)
-            if dir_entry is None:
-                dir_entry = parent.dir.makedir(ref)
+            dir_entry = None
+            if parent.dir:
+                dir_entry = parent.dir.get(ref)
+                if dir_entry is None:
+                    dir_entry = parent.dir.makedir(ref)
             p.objects[key] = value.copy(dir_entry)
 
         return p

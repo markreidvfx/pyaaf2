@@ -266,7 +266,8 @@ class AAFObject(object):
         if type(new_obj) is AAFObject:
             new_obj.class_id = self.class_id
         new_obj.dir = new_dir
-        new_obj.dir.class_id = self.class_id
+        if new_dir:
+            new_obj.dir.class_id = self.class_id
 
         for pid, p in self.property_entries.items():
             new_obj.property_entries[pid] = p.copy(new_obj)
