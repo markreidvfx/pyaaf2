@@ -51,7 +51,7 @@ TODO
 - CFB red black tree
 - XML support
 
-.. |python-versions| image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6-blue.svg
+.. |python-versions| image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6%2C%203.7-blue.svg
 
 .. |travis-build| image:: https://travis-ci.org/markreidvfx/pyaaf2.svg?branch=master
     :alt: travis build status
