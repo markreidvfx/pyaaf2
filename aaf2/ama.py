@@ -189,14 +189,50 @@ def guess_length(metadata, edit_rate):
             return int(st['nb_frames'])
 
 
-def get_container_guid(metadata):
+def get_container_guid(metadata, stream=0):
 
-    for st in metadata['streams']:
-        codec_name = st['codec_name']
-        if codec_name in ('prores', ):
-            return MediaContainerGUID['QuickTime']
+    st = metadata['streams'][0]
+
+    if metadata['format']['format_name'] in ('wav',):
+        return MediaContainerGUID['WaveAiff']
+
+    codec_name = st['codec_name']
+    if codec_name in ('prores', ):
+        return MediaContainerGUID['QuickTime']
 
     return MediaContainerGUID['Generic']
+
+
+def create_mob_trio(f, basename):
+
+    master_mob = f.create.MasterMob()
+    src_mob = f.create.SourceMob()
+    tape_mob = f.create.SourceMob()
+    master_mob.name = basename
+
+    f.content.mobs.append(master_mob)
+    f.content.mobs.append(src_mob)
+    f.content.mobs.append(tape_mob)
+
+    master_mob.name = basename
+    src_mob.name = basename + " Source MOB"
+    tape_mob.name   = basename + " Tape MOB"
+    return master_mob, src_mob, tape_mob
+
+
+def attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata):
+    t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
+    tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
+    tc.length = int(length)
+    if 'tags' not in metadata['format'].keys() or \
+            'time_reference' not in metadata['format']['tags']:
+        tc.start = 0
+    else:
+        tc.start = metadata['format']['tags']['time_reference'] or 0
+
+    t.segment.length = int(length)
+    t.segment.components.append(tc)
+
 
 def create_ama_link(f, path, metadata):
 
@@ -216,26 +252,13 @@ def create_ama_link(f, path, metadata):
     length = guess_length(metadata, edit_rate)
     container_guid, formats = get_container_guid(metadata)
 
-    master_mob = f.create.MasterMob()
-    src_mob = f.create.SourceMob()
-    tape_mob = f.create.SourceMob()
-
-    master_mob.name = basename
-
-    f.content.mobs.append(master_mob)
-    f.content.mobs.append(src_mob)
-    f.content.mobs.append(tape_mob)
+    master_mob, src_mob, tape_mob = create_mob_trio(f,basename)
 
     tape_mob.descriptor = f.create.ImportDescriptor()
     tape_mob.descriptor['MediaContainerGUID'].value = container_guid
     tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
 
-    t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
-    tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
-    tc.length = tape_length
-    tc.start = 0
-    t.segment.length = tape_length
-    t.segment.components.append(tc)
+    attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata)
 
     descriptors = []
 
@@ -264,9 +287,6 @@ def create_ama_link(f, path, metadata):
             src_slot = src_mob.create_empty_sequence_slot(edit_rate, media_kind='picture')
             src_slot.segment.length = length
             src_slot.segment.components.append(tape_clip)
-
-            # src_slot = src_mob.create_empty_slot(edit_rate, media_kind='picture')
-            # src_slot.segment.length = length
 
             clip = src_mob.create_source_clip(src_slot.slot_id)
             clip.length = length
@@ -298,9 +318,6 @@ def create_ama_link(f, path, metadata):
                 src_slot.segment.length = length
                 src_slot.segment.components.append(tape_clip)
                 src_slot['PhysicalTrackNumber'].value = i+1
-
-                # src_slot =  src_mob.create_empty_slot(edit_rate, media_kind='sound')
-                # src_slot.segment.length = length
 
                 clip = src_mob.create_source_clip(src_slot.slot_id)
                 clip.length = length
@@ -352,6 +369,7 @@ def wave_infochunk(path):
             else:
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
 
+
 def create_wav_descriptor(f, source_mob, path, stream_meta):
     d = f.create.WAVEDescriptor()
     rate = stream_meta['sample_rate']
@@ -361,6 +379,7 @@ def create_wav_descriptor(f, source_mob, path, stream_meta):
     d['ContainerFormat'].value = source_mob.root.dictionary.lookup_containerdef("AAF")
     d['Locator'].append( create_network_locator(f,path) )
     return d
+
 
 def create_wav_link(f, metadata):
     """
@@ -376,38 +395,19 @@ def create_wav_link(f, metadata):
     could all bear to be refactored.
     """
     path       = metadata['format']['filename']
-    master_mob = f.create.MasterMob()
-    source_mob = f.create.SourceMob()
-    tape_mob   = f.create.SourceMob()
-
+    basename   = os.path.basename(path)
     edit_rate  = metadata['streams'][0]['sample_rate']
     length     = metadata['streams'][0]['duration_ts']
 
-    master_mob.name = os.path.basename(path)
-    source_mob.name = os.path.basename(path) + " Source MOB"
-    tape_mob.name   = os.path.basename(path) + " Tape MOB"
-    container_guid  = AUID("3711d3cc-62d0-49d7-b0ae-c118101d1a16") # WAVE/AIFF
+    container_guid  = get_container_guid(metadata)
 
-    f.content.mobs.append(master_mob)
-    f.content.mobs.append(source_mob)
-    f.content.mobs.append(tape_mob)
+    master_mob, source_mob, tape_mob = create_mob_trio(f,basename)
 
     tape_mob.descriptor = f.create.TapeDescriptor()
     tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
 
     # Tape timecode
-
-    t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
-    tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
-    tc.length = int(length)
-    if 'tags' not in metadata['format'].keys() or \
-            'time_reference' not in metadata['format']['tags']:
-        tc.start = 0
-    else:
-        tc.start = metadata['format']['tags']['time_reference'] or 0
-
-    t.segment.length = int(length)
-    t.segment.components.append(tc)
+    attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata)
 
     descriptor = create_wav_descriptor(f, source_mob, path, metadata['streams'][0])
     source_mob.descriptor = descriptor
