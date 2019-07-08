@@ -233,7 +233,6 @@ def guess_length(metadata, edit_rate):
 
 
 def get_container_guid(metadata, stream=0):
-
     st = metadata['streams'][0]
 
     if metadata['format']['format_name'] in ('wav',):
@@ -251,7 +250,6 @@ def create_mob_trio(f, basename):
     master_mob = f.create.MasterMob()
     src_mob = f.create.SourceMob()
     tape_mob = f.create.SourceMob()
-    master_mob.name = basename
 
     f.content.mobs.append(master_mob)
     f.content.mobs.append(src_mob)
@@ -277,104 +275,50 @@ def attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata):
     t.segment.components.append(tc)
 
 
-def add_stream(f, tape_mob, source_mob, master_mob,
-        edit_rate, length, stream_type='sound', channel_index=None):
-    tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
+def add_stream_to_tape_mob(f, tape_mob, edit_rate, length, media_kind):
+    tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind=media_kind)
     tape_slot.segment.length = length
-    nul_ref = f.create.SourceClip(media_kind=stream_type)
+    nul_ref = f.create.SourceClip(media_kind=media_kind)
     nul_ref.length = length
     tape_slot.segment.components.append(nul_ref)
 
     tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
     tape_clip.length = length
-    tape_clip.media_kind = stream_type
+    tape_clip.media_kind = media_kind
+    return tape_clip
 
-    src_slot = source_mob.create_empty_sequence_slot(edit_rate, media_kind=stream_type)
+
+def add_tape_clip_to_source_mob(tape_clip, source_mob, edit_rate, length, media_kind,
+        channel_index):
+    src_slot = source_mob.create_empty_sequence_slot(edit_rate, media_kind=media_kind)
     src_slot.segment.length = length
     src_slot.segment.components.append(tape_clip)
     if channel_index is not None:
         src_slot['PhysicalTrackNumber'].value = channel_index + 1
 
+    return src_slot
+
+
+def add_stream_to_mobs(f, tape_mob, source_mob, master_mob,
+        edit_rate, length, media_kind, channel_index=None):
+
+    tape_clip = add_stream_to_tape_mob(f, tape_mob, edit_rate, length, media_kind)
+
+    src_slot  = add_tape_clip_to_source_mob(tape_clip, source_mob, edit_rate,
+            length, media_kind, channel_index)
+
     clip = source_mob.create_source_clip(src_slot.slot_id)
     clip.length = length
-    clip.media_kind = stream_type
+    clip.media_kind = media_kind
 
-    master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind=stream_type)
+    master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind=media_kind)
     master_slot.segment.components.append(clip)
     master_slot.segment.length = length
 
     if channel_index is not None:
         master_slot['PhysicalTrackNumber'].value = channel_index + 1
 
-
-def create_ama_link(f, path, metadata):
-
-    #tape_length = 4142016
-    basename = os.path.basename(path)
-    name, ext = os.path.splitext(basename)
-    path = os.path.abspath(path)
-
-    if ext.lower() == '.mxf':
-
-        m = mxf.MXFFile(path)
-        m.ama = True
-        m.dump()
-        return m.link(f)
-
-    edit_rate = guess_edit_rate(metadata)
-    length = guess_length(metadata, edit_rate)
-    container_guid, formats = get_container_guid(metadata)
-
-    master_mob, src_mob, tape_mob = create_mob_trio(f,basename)
-
-    attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata)
-
-    descriptors = []
-
-    if len(metadata['streams']) == 1 and MediaContainerGUID['WaveAiff']:
-        tape_mob.descriptor = f.create.TapeDescriptor()
-        tape_mob.descriptor['MediaContainerGUID'].value = container_guid
-        tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
-        tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
-
-        st = metadata['streams'][0]
-        rate = st['sample_rate']
-        desc = create_wav_descriptor(f, src_mob, path, st)
-
-        for i in range(st['channels']):
-           add_stream(f,tape_mob, src_mob, master_mob, edit_rate, length, stream_type='sound', channel_index=i)
-
-        descriptors.append(desc)
-
-    else:
-        tape_mob.descriptor = f.create.ImportDescriptor()
-        tape_mob.descriptor['MediaContainerGUID'].value = container_guid
-        tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
-        for st in metadata['streams']:
-            codec_name = st.get('codec_name', None)
-            codec_type = st['codec_type']
-            if codec_type == 'video':
-                desc = create_video_descriptor(f, st)
-                desc['Locator'].append(create_network_locator(f, path))
-                desc['MediaContainerGUID'].value = container_guid
-                descriptors.append(desc)
-
-                # MC Quicktime plugin will error if theis is not set to something...
-                src_mob.comments['Video'] = codec_name
-
-                add_stream(f,tape_mob, src_mob, master_mob, edit_rate, length, stream_type='picture',
-                        channel_index=None)
-
-            elif codec_type == 'audio':
-                rate = st['sample_rate']
-                desc = create_pcm_descriptor(f, st)
-                desc['Locator'].append(create_network_locator(f, path))
-                desc['MediaContainerGUID'].value = container_guid
-                descriptors.append(desc)
-                for i in range(st['channels']):
-                   add_stream(f,tape_mob, src_mob, master_mob, edit_rate, length, stream_type='sound', channel_index=i)
-
-
+def coalesce_descriptors(f, descriptors, path, edit_rate, container_guid):
     if len(descriptors) > 1:
         desc = f.create.MultipleDescriptor()
         desc['Length'].value = 0
@@ -382,26 +326,91 @@ def create_ama_link(f, path, metadata):
         desc['MediaContainerGUID'].value = container_guid
         desc['Locator'].append(create_network_locator(f, path))
         desc['FileDescriptors'].value = descriptors
-        src_mob.descriptor = desc
+        return desc
     else:
-        src_mob.descriptor = descriptors[0]
+        return descriptors[0]
 
+
+def mobs_wav(f, basename, container_guid, edit_rate, length, path, metadata):
+
+    master_mob, src_mob, tape_mob = create_mob_trio(f,basename)
+
+    tape_mob.descriptor = f.create.TapeDescriptor()
+    tape_mob.descriptor['MediaContainerGUID'].value = container_guid
+    tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
+    tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
+
+    st = metadata['streams'][0]
+    desc = create_wav_descriptor(f, src_mob, path, st)
+    src_mob.descriptor = desc
+
+    for i in range(st['channels']):
+       add_stream_to_mobs(f,tape_mob, src_mob, master_mob, edit_rate, length,
+               media_kind='sound', channel_index=i)
+
+    attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata)
     return master_mob, src_mob, tape_mob
 
 
+def mobs_other(f, basename, container_guid, edit_rate, length, path, metadata):
+
+    master_mob, src_mob, tape_mob = create_mob_trio(f,basename)
+
+    descriptors = []
+
+    tape_mob.descriptor = f.create.ImportDescriptor()
+    tape_mob.descriptor['MediaContainerGUID'].value = container_guid
+    tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
+
+    for stream_meta in metadata['streams']:
+        if stream_meta['codec_type'] == 'video':
+            desc = create_video_descriptor(f, stream_meta)
+            descriptors.append(desc)
+
+            # MC Quicktime plugin will error if theis is not set to something...
+            src_mob.comments['Video'] = stream_meta.get('codec_name', None)
+
+            add_stream_to_mobs(f,tape_mob, src_mob, master_mob, edit_rate, length,
+                    media_kind='picture',channel_index=None)
+        elif stream_meta['codec_type'] == 'audio':
+            rate = stream_meta['sample_rate']
+            desc = create_pcm_descriptor(f, stream_meta)
+            descriptors.append(desc)
+            for i in range(stream_meta['channels']):
+               add_stream_to_mobs(f,tape_mob, src_mob, master_mob, edit_rate, length,
+                       media_kind='sound',channel_index=i)
+
+    for d in descriptors:
+        desc['Locator'].append(create_network_locator(f, path))
+        desc['MediaContainerGUID'].value = container_guid
+
+    src_mob.descriptor = coalesce_descriptors(f, descriptors,path, edit_rate,
+            container_guid)
+
+
+
+def create_ama_link(f, path, metadata):
+    basename = os.path.basename(path)
+    name, ext = os.path.splitext(basename)
+    path = os.path.abspath(path)
+
+    if ext.lower() == '.mxf':
+        m = mxf.MXFFile(path)
+        m.ama = True
+        m.dump()
+        return m.link(f)
+
+    edit_rate = guess_edit_rate(metadata)
+    length    = guess_length(metadata, edit_rate)
+    container_guid, formats = get_container_guid(metadata)
+
+    if len(metadata['streams']) == 1 and MediaContainerGUID['WaveAiff']:
+        return mobs_wav(f, basename, container_guid, edit_rate, length, path, metadata)
+    else:
+        return mobs_other(f, basename, container_guid, edit_rate, length, path, metadata)
+
+
 def create_wav_link(f, metadata):
-    """
-    This will return three MOBs for the given `metadata`: master_mob, source_mob,
-    tape_mob
-
-    The parameter `metadata` is presumed to be a dictionary from a run of ffprobe.
-
-    It's not clear for the purposes of Pro Tools that a tape_mob needs to be made,
-    it'll open the AAF perfectly well without out one.
-
-    A lot of this recaps the AMA link code but it's subtly different enough, but it
-    could all bear to be refactored.
-    """
     path       = metadata['format']['filename']
     return create_ama_link(f, path, metadata)
 
