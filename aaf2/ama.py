@@ -256,8 +256,8 @@ def create_mob_trio(f, basename):
     f.content.mobs.append(tape_mob)
 
     master_mob.name = basename
-    src_mob.name = basename + " Source MOB"
-    tape_mob.name   = basename + " Tape MOB"
+    src_mob.name = basename + " <Source MOB>"
+    tape_mob.name   = basename + " <Tape MOB>"
     return master_mob, src_mob, tape_mob
 
 
