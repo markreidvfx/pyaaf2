@@ -109,6 +109,19 @@ def get_compression(meta):
     return video.compression_ids['CompressedPicture']
 
 
+def get_container_guid(metadata, stream=0):
+    st = metadata['streams'][0]
+
+    if metadata['format']['format_name'] in ('wav',):
+        return MediaContainerGUID['WaveAiff']
+
+    codec_name = st['codec_name']
+    if codec_name in ('prores', ):
+        return MediaContainerGUID['QuickTime']
+
+    return MediaContainerGUID['Generic']
+
+
 def get_wave_fmt(path):
     """
     Returns a bytearray of the WAVE RIFF header and fmt
@@ -134,6 +147,18 @@ def get_wave_fmt(path):
                 file.seek(size,1)
             else:
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
+
+
+def create_network_locator(f, absolute_path):
+    n = f.create.NetworkLocator()
+    if sys.version_info[0] < 3:
+        import urllib
+        n['URLString'].value = 'file://' + urllib.pathname2url(absolute_path)
+    else:
+        import pathlib
+        n['URLString'].value = pathlib.Path(absolute_path).as_uri()
+
+    return n
 
 
 def create_video_descriptor(f, meta):
@@ -172,7 +197,6 @@ def create_video_descriptor(f, meta):
 
 
 def create_pcm_descriptor(f, meta):
-
     d = f.create.PCMDescriptor()
     rate = meta['sample_rate']
     d['SampleRate'].value = rate
@@ -193,17 +217,6 @@ def create_pcm_descriptor(f, meta):
     return d
 
 
-def create_network_locator(f, absolute_path):
-    n = f.create.NetworkLocator()
-    if sys.version_info[0] < 3:
-        import urllib
-        n['URLString'].value = 'file://' + urllib.pathname2url(absolute_path)
-    else:
-        import pathlib
-        n['URLString'].value = pathlib.Path(absolute_path).as_uri()
-
-    return n
-
 def create_wav_descriptor(f, source_mob, path, stream_meta):
     d = f.create.WAVEDescriptor()
     rate = stream_meta['sample_rate']
@@ -213,6 +226,7 @@ def create_wav_descriptor(f, source_mob, path, stream_meta):
     d['ContainerFormat'].value = source_mob.root.dictionary.lookup_containerdef("AAF")
     d['Locator'].append( create_network_locator(f,path) )
     return d
+
 
 def guess_edit_rate(metadata):
     for st in metadata['streams']:
@@ -230,19 +244,6 @@ def guess_length(metadata, edit_rate):
             return int(st['nb_frames'])
         elif codec_type == 'audio':
             return int(st['duration_ts'])
-
-
-def get_container_guid(metadata, stream=0):
-    st = metadata['streams'][0]
-
-    if metadata['format']['format_name'] in ('wav',):
-        return MediaContainerGUID['WaveAiff']
-
-    codec_name = st['codec_name']
-    if codec_name in ('prores', ):
-        return MediaContainerGUID['QuickTime']
-
-    return MediaContainerGUID['Generic']
 
 
 def create_mob_trio(f, basename):
