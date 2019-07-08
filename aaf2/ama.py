@@ -60,6 +60,7 @@ def pixel_sizes(pix_fmt):
 
     return (depth, h_samp, v_samp)
 
+
 def get_avc_compression(meta):
 
     profile = meta.get('profile', None)
@@ -97,6 +98,7 @@ def get_avc_compression(meta):
 
     return video.compression_ids[key]
 
+
 def get_compression(meta):
     codec_name = meta.get('codec_name', None)
     if codec_name == 'mjpeg':
@@ -105,6 +107,34 @@ def get_compression(meta):
         return get_avc_compression(meta)
 
     return video.compression_ids['CompressedPicture']
+
+
+def get_wave_fmt(path):
+    """
+    Returns a bytearray of the WAVE RIFF header and fmt
+    chunk for a `WAVEDescriptor` `Summary`
+    """
+    with open(path,'rb') as file:
+        if file.read(4) != b"RIFF":
+            return None
+        data_size = file.read(4) # container size
+        if file.read(4) != b"WAVE":
+            return None
+        while True:
+            chunkid = file.read(4)
+            sizebuf = file.read(4)
+            if len(sizebuf) < 4 or len(chunkid) < 4:
+                return None
+            size    = struct.unpack(b'<L', sizebuf )[0]
+            if chunkid[0:3] != b"fmt":
+                if size % 2 == 1:
+                    seek = size + 1
+                else:
+                    seek = size
+                file.seek(size,1)
+            else:
+                return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
+
 
 def create_video_descriptor(f, meta):
     d = f.create.CDCIDescriptor()
@@ -140,7 +170,8 @@ def create_video_descriptor(f, meta):
 
     return d
 
-def create_audio_descriptor(f, meta):
+
+def create_pcm_descriptor(f, meta):
 
     d = f.create.PCMDescriptor()
     rate = meta['sample_rate']
@@ -173,8 +204,17 @@ def create_network_locator(f, absolute_path):
 
     return n
 
-def guess_edit_rate(metadata):
+def create_wav_descriptor(f, source_mob, path, stream_meta):
+    d = f.create.WAVEDescriptor()
+    rate = stream_meta['sample_rate']
+    d['SampleRate'].value = rate
+    d['Summary'].value = get_wave_fmt(path)
+    d['Length'].value = stream_meta['duration_ts']
+    d['ContainerFormat'].value = source_mob.root.dictionary.lookup_containerdef("AAF")
+    d['Locator'].append( create_network_locator(f,path) )
+    return d
 
+def guess_edit_rate(metadata):
     for st in metadata['streams']:
         codec_type = st['codec_type']
         if codec_type == 'video':
@@ -182,25 +222,94 @@ def guess_edit_rate(metadata):
         elif codec_type == 'audio':
             return AAFRational(st['sample_rate'])
 
+
 def guess_length(metadata, edit_rate):
     for st in metadata['streams']:
         codec_type = st['codec_type']
         if codec_type == 'video':
             return int(st['nb_frames'])
+        elif codec_type == 'audio':
+            return int(st['duration_ts'])
 
 
-def get_container_guid(metadata):
+def get_container_guid(metadata, stream=0):
 
-    for st in metadata['streams']:
-        codec_name = st['codec_name']
-        if codec_name in ('prores', ):
-            return MediaContainerGUID['QuickTime']
+    st = metadata['streams'][0]
+
+    if metadata['format']['format_name'] in ('wav',):
+        return MediaContainerGUID['WaveAiff']
+
+    codec_name = st['codec_name']
+    if codec_name in ('prores', ):
+        return MediaContainerGUID['QuickTime']
 
     return MediaContainerGUID['Generic']
 
+
+def create_mob_trio(f, basename):
+
+    master_mob = f.create.MasterMob()
+    src_mob = f.create.SourceMob()
+    tape_mob = f.create.SourceMob()
+    master_mob.name = basename
+
+    f.content.mobs.append(master_mob)
+    f.content.mobs.append(src_mob)
+    f.content.mobs.append(tape_mob)
+
+    master_mob.name = basename
+    src_mob.name = basename + " Source MOB"
+    tape_mob.name   = basename + " Tape MOB"
+    return master_mob, src_mob, tape_mob
+
+
+def attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata):
+    t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
+    tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
+    tc.length = int(length)
+    if 'tags' not in metadata['format'].keys() or \
+            'time_reference' not in metadata['format']['tags']:
+        tc.start = 0
+    else:
+        tc.start = metadata['format']['tags']['time_reference'] or 0
+
+    t.segment.length = int(length)
+    t.segment.components.append(tc)
+
+
+def add_stream(f, tape_mob, source_mob, master_mob,
+        edit_rate, length, stream_type='sound', channel_index=None):
+    tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
+    tape_slot.segment.length = length
+    nul_ref = f.create.SourceClip(media_kind=stream_type)
+    nul_ref.length = length
+    tape_slot.segment.components.append(nul_ref)
+
+    tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
+    tape_clip.length = length
+    tape_clip.media_kind = stream_type
+
+    src_slot = source_mob.create_empty_sequence_slot(edit_rate, media_kind=stream_type)
+    src_slot.segment.length = length
+    src_slot.segment.components.append(tape_clip)
+    if channel_index is not None:
+        src_slot['PhysicalTrackNumber'].value = channel_index + 1
+
+    clip = source_mob.create_source_clip(src_slot.slot_id)
+    clip.length = length
+    clip.media_kind = stream_type
+
+    master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind=stream_type)
+    master_slot.segment.components.append(clip)
+    master_slot.segment.length = length
+
+    if channel_index is not None:
+        master_slot['PhysicalTrackNumber'].value = channel_index + 1
+
+
 def create_ama_link(f, path, metadata):
 
-    tape_length = 4142016
+    #tape_length = 4142016
     basename = os.path.basename(path)
     name, ext = os.path.splitext(basename)
     path = os.path.abspath(path)
@@ -216,101 +325,55 @@ def create_ama_link(f, path, metadata):
     length = guess_length(metadata, edit_rate)
     container_guid, formats = get_container_guid(metadata)
 
-    master_mob = f.create.MasterMob()
-    src_mob = f.create.SourceMob()
-    tape_mob = f.create.SourceMob()
+    master_mob, src_mob, tape_mob = create_mob_trio(f,basename)
 
-    master_mob.name = basename
-
-    f.content.mobs.append(master_mob)
-    f.content.mobs.append(src_mob)
-    f.content.mobs.append(tape_mob)
-
-    tape_mob.descriptor = f.create.ImportDescriptor()
-    tape_mob.descriptor['MediaContainerGUID'].value = container_guid
-    tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
-
-    t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
-    tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
-    tc.length = tape_length
-    tc.start = 0
-    t.segment.length = tape_length
-    t.segment.components.append(tc)
+    attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata)
 
     descriptors = []
 
-    for st in metadata['streams']:
-        codec_name = st.get('codec_name', None)
-        codec_type = st['codec_type']
-        if codec_type == 'video':
-            desc = create_video_descriptor(f, st)
-            desc['Locator'].append(create_network_locator(f, path))
-            desc['MediaContainerGUID'].value = container_guid
-            descriptors.append(desc)
+    if len(metadata['streams']) == 1 and MediaContainerGUID['WaveAiff']:
+        tape_mob.descriptor = f.create.TapeDescriptor()
+        tape_mob.descriptor['MediaContainerGUID'].value = container_guid
+        tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
+        tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
 
-            # MC Quicktime plugin will error if theis is not set to something...
-            src_mob.comments['Video'] = codec_name
+        st = metadata['streams'][0]
+        rate = st['sample_rate']
+        desc = create_wav_descriptor(f, src_mob, path, st)
 
-            tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='picture')
-            tape_slot.segment.length = tape_length
-            nul_ref = f.create.SourceClip(media_kind='picture')
-            nul_ref.length = tape_length
-            tape_slot.segment.components.append(nul_ref)
+        for i in range(st['channels']):
+           add_stream(f,tape_mob, src_mob, master_mob, edit_rate, length, stream_type='sound', channel_index=i)
 
-            tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
-            tape_clip.length = length
-            tape_clip.media_kind = 'picture'
+        descriptors.append(desc)
 
-            src_slot = src_mob.create_empty_sequence_slot(edit_rate, media_kind='picture')
-            src_slot.segment.length = length
-            src_slot.segment.components.append(tape_clip)
+    else:
+        tape_mob.descriptor = f.create.ImportDescriptor()
+        tape_mob.descriptor['MediaContainerGUID'].value = container_guid
+        tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
+        for st in metadata['streams']:
+            codec_name = st.get('codec_name', None)
+            codec_type = st['codec_type']
+            if codec_type == 'video':
+                desc = create_video_descriptor(f, st)
+                desc['Locator'].append(create_network_locator(f, path))
+                desc['MediaContainerGUID'].value = container_guid
+                descriptors.append(desc)
 
-            # src_slot = src_mob.create_empty_slot(edit_rate, media_kind='picture')
-            # src_slot.segment.length = length
+                # MC Quicktime plugin will error if theis is not set to something...
+                src_mob.comments['Video'] = codec_name
 
-            clip = src_mob.create_source_clip(src_slot.slot_id)
-            clip.length = length
-            clip.media_kind = 'picture'
+                add_stream(f,tape_mob, src_mob, master_mob, edit_rate, length, stream_type='picture',
+                        channel_index=None)
 
-            master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='picture')
-            master_slot.segment.components.append(clip)
-            master_slot.segment.length = length
+            elif codec_type == 'audio':
+                rate = st['sample_rate']
+                desc = create_pcm_descriptor(f, st)
+                desc['Locator'].append(create_network_locator(f, path))
+                desc['MediaContainerGUID'].value = container_guid
+                descriptors.append(desc)
+                for i in range(st['channels']):
+                   add_stream(f,tape_mob, src_mob, master_mob, edit_rate, length, stream_type='sound', channel_index=i)
 
-        elif codec_type == 'audio':
-            rate = st['sample_rate']
-            desc = create_audio_descriptor(f, st)
-            desc['Locator'].append(create_network_locator(f, path))
-            desc['MediaContainerGUID'].value = container_guid
-            descriptors.append(desc)
-            for i in range(st['channels']):
-
-                tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-                tape_slot.segment.length = tape_length
-                nul_ref = f.create.SourceClip(media_kind='sound')
-                nul_ref.length = tape_length
-                tape_slot.segment.components.append(nul_ref)
-
-                tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
-                tape_clip.length = length
-                tape_clip.media_kind = 'sound'
-
-                src_slot =  src_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-                src_slot.segment.length = length
-                src_slot.segment.components.append(tape_clip)
-                src_slot['PhysicalTrackNumber'].value = i+1
-
-                # src_slot =  src_mob.create_empty_slot(edit_rate, media_kind='sound')
-                # src_slot.segment.length = length
-
-                clip = src_mob.create_source_clip(src_slot.slot_id)
-                clip.length = length
-                clip.media_kind = 'sound'
-
-                master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-                master_slot.segment.components.append(clip)
-                master_slot.segment.length = length
-
-                master_slot['PhysicalTrackNumber'].value = i+1
 
     if len(descriptors) > 1:
         desc = f.create.MultipleDescriptor()
@@ -326,42 +389,6 @@ def create_ama_link(f, path, metadata):
     return master_mob, src_mob, tape_mob
 
 
-def wave_infochunk(path):
-    """
-    Returns a bytearray of the WAVE RIFF header and fmt
-    chunk for a `WAVEDescriptor` `Summary`
-    """
-    with open(path,'rb') as file:
-        if file.read(4) != b"RIFF":
-            return None
-        data_size = file.read(4) # container size
-        if file.read(4) != b"WAVE":
-            return None
-        while True:
-            chunkid = file.read(4)
-            sizebuf = file.read(4)
-            if len(sizebuf) < 4 or len(chunkid) < 4:
-                return None
-            size    = struct.unpack(b'<L', sizebuf )[0]
-            if chunkid[0:3] != b"fmt":
-                if size % 2 == 1:
-                    seek = size + 1
-                else:
-                    seek = size
-                file.seek(size,1)
-            else:
-                return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
-
-def create_wav_descriptor(f, source_mob, path, stream_meta):
-    d = f.create.WAVEDescriptor()
-    rate = stream_meta['sample_rate']
-    d['SampleRate'].value = rate
-    d['Summary'].value = wave_infochunk(path)
-    d['Length'].value = stream_meta['duration_ts']
-    d['ContainerFormat'].value = source_mob.root.dictionary.lookup_containerdef("AAF")
-    d['Locator'].append( create_network_locator(f,path) )
-    return d
-
 def create_wav_link(f, metadata):
     """
     This will return three MOBs for the given `metadata`: master_mob, source_mob,
@@ -371,71 +398,6 @@ def create_wav_link(f, metadata):
 
     It's not clear for the purposes of Pro Tools that a tape_mob needs to be made,
     it'll open the AAF perfectly well without out one.
-
-    A lot of this recaps the AMA link code but it's subtly different enough, but it
-    could all bear to be refactored.
     """
     path       = metadata['format']['filename']
-    master_mob = f.create.MasterMob()
-    source_mob = f.create.SourceMob()
-    tape_mob   = f.create.SourceMob()
-
-    edit_rate  = metadata['streams'][0]['sample_rate']
-    length     = metadata['streams'][0]['duration_ts']
-
-    master_mob.name = os.path.basename(path)
-    source_mob.name = os.path.basename(path) + " Source MOB"
-    tape_mob.name   = os.path.basename(path) + " Tape MOB"
-    container_guid  = AUID("3711d3cc-62d0-49d7-b0ae-c118101d1a16") # WAVE/AIFF
-
-    f.content.mobs.append(master_mob)
-    f.content.mobs.append(source_mob)
-    f.content.mobs.append(tape_mob)
-
-    tape_mob.descriptor = f.create.TapeDescriptor()
-    tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
-
-    # Tape timecode
-
-    t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
-    tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
-    tc.length = int(length)
-    if 'tags' not in metadata['format'].keys() or \
-            'time_reference' not in metadata['format']['tags']:
-        tc.start = 0
-    else:
-        tc.start = metadata['format']['tags']['time_reference'] or 0
-
-    t.segment.length = int(length)
-    t.segment.components.append(tc)
-
-    descriptor = create_wav_descriptor(f, source_mob, path, metadata['streams'][0])
-    source_mob.descriptor = descriptor
-
-    for channel_index in range(metadata['streams'][0]['channels']):
-        tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-        tape_slot.segment.length = length
-        nul_ref = f.create.SourceClip(media_kind='sound')
-        nul_ref.length = length
-        tape_slot.segment.components.append(nul_ref)
-
-        tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
-        tape_clip.length = length
-        tape_clip.media_kind = 'sound'
-
-        src_slot = source_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-        src_slot.segment.length = length
-        src_slot.segment.components.append(tape_clip)
-        src_slot['PhysicalTrackNumber'].value = channel_index + 1
-
-        clip = source_mob.create_source_clip(src_slot.slot_id)
-        clip.length = length
-        clip.media_kind = 'sound'
-
-        master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-        master_slot.segment.components.append(clip)
-        master_slot.segment.length = length
-
-        master_slot['PhysicalTrackNumber'].value = channel_index + 1
-
-    return master_mob, source_mob, tape_mob
+    return create_ama_link(f, path, metadata)
