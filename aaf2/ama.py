@@ -234,6 +234,32 @@ def attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata):
     t.segment.components.append(tc)
 
 
+def add_sound_stream_for_channel(f, tape_mob, source_mob, master_mob, edit_rate, length, channel_index):
+    tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
+    tape_slot.segment.length = length
+    nul_ref = f.create.SourceClip(media_kind='sound')
+    nul_ref.length = length
+    tape_slot.segment.components.append(nul_ref)
+
+    tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
+    tape_clip.length = length
+    tape_clip.media_kind = 'sound'
+
+    src_slot = source_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
+    src_slot.segment.length = length
+    src_slot.segment.components.append(tape_clip)
+    src_slot['PhysicalTrackNumber'].value = channel_index + 1
+
+    clip = source_mob.create_source_clip(src_slot.slot_id)
+    clip.length = length
+    clip.media_kind = 'sound'
+
+    master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
+    master_slot.segment.components.append(clip)
+    master_slot.segment.length = length
+
+    master_slot['PhysicalTrackNumber'].value = channel_index + 1
+
 def create_ama_link(f, path, metadata):
 
     tape_length = 4142016
@@ -259,6 +285,11 @@ def create_ama_link(f, path, metadata):
     tape_mob.descriptor['Locator'].append(create_network_locator(f, path))
 
     attach_timecode_to_tape_mob(f, tape_mob, edit_rate, length, metadata)
+
+    codec_types = (st['codec_type'] for st in metadata['streams'])
+
+    if 'video' not in codec_types:
+        tape_mob.descriptor["VideoSignal"].value = "VideoSignalNull"
 
     descriptors = []
 
@@ -303,31 +334,8 @@ def create_ama_link(f, path, metadata):
             desc['MediaContainerGUID'].value = container_guid
             descriptors.append(desc)
             for i in range(st['channels']):
+               add_sound_stream_for_channel(f, tape_mob, src_mob, master_mob, edit_rate, length, channel_index=i)
 
-                tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-                tape_slot.segment.length = tape_length
-                nul_ref = f.create.SourceClip(media_kind='sound')
-                nul_ref.length = tape_length
-                tape_slot.segment.components.append(nul_ref)
-
-                tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
-                tape_clip.length = length
-                tape_clip.media_kind = 'sound'
-
-                src_slot =  src_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-                src_slot.segment.length = length
-                src_slot.segment.components.append(tape_clip)
-                src_slot['PhysicalTrackNumber'].value = i+1
-
-                clip = src_mob.create_source_clip(src_slot.slot_id)
-                clip.length = length
-                clip.media_kind = 'sound'
-
-                master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-                master_slot.segment.components.append(clip)
-                master_slot.segment.length = length
-
-                master_slot['PhysicalTrackNumber'].value = i+1
 
     if len(descriptors) > 1:
         desc = f.create.MultipleDescriptor()
@@ -381,6 +389,7 @@ def create_wav_descriptor(f, source_mob, path, stream_meta):
     return d
 
 
+
 def create_wav_link(f, metadata):
     """
     This will return three MOBs for the given `metadata`: master_mob, source_mob,
@@ -413,29 +422,6 @@ def create_wav_link(f, metadata):
     source_mob.descriptor = descriptor
 
     for channel_index in range(metadata['streams'][0]['channels']):
-        tape_slot = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-        tape_slot.segment.length = length
-        nul_ref = f.create.SourceClip(media_kind='sound')
-        nul_ref.length = length
-        tape_slot.segment.components.append(nul_ref)
-
-        tape_clip = tape_mob.create_source_clip(tape_slot.slot_id)
-        tape_clip.length = length
-        tape_clip.media_kind = 'sound'
-
-        src_slot = source_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-        src_slot.segment.length = length
-        src_slot.segment.components.append(tape_clip)
-        src_slot['PhysicalTrackNumber'].value = channel_index + 1
-
-        clip = source_mob.create_source_clip(src_slot.slot_id)
-        clip.length = length
-        clip.media_kind = 'sound'
-
-        master_slot = master_mob.create_empty_sequence_slot(edit_rate, media_kind='sound')
-        master_slot.segment.components.append(clip)
-        master_slot.segment.length = length
-
-        master_slot['PhysicalTrackNumber'].value = channel_index + 1
+        add_sound_stream_for_channel(f, tape_mob, source_mob, master_mob, edit_rate, length, channel_index)
 
     return master_mob, source_mob, tape_mob
