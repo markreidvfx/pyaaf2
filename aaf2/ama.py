@@ -144,7 +144,7 @@ def get_wave_fmt(path):
                     seek = size + 1
                 else:
                     seek = size
-                file.seek(size,1)
+                file.seek(seek,1)
             else:
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
 
