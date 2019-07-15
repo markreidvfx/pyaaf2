@@ -739,7 +739,7 @@ class MXFNetworkLocator(MXFLocator):
 
     def link(self):
         n = self.create_aaf_instance()
-        n['slot_id'].value = self.data['URLString']
+        n['URLString'].value = self.data['URLString']
         return n
 
 @register_mxf_class
