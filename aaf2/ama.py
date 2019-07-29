@@ -8,11 +8,8 @@ from __future__ import (
 import os
 import sys
 from .rational import AAFRational
-from . import video
-from . import audio
-from . import mxf
+from . import video, audio, mxf, file, content, essence
 from .auid import AUID
-from . import essence
 
 import struct
 
@@ -237,78 +234,9 @@ def create_network_locator(f, absolute_path):
 #     path = metadata['format']['filename']
 #     return create_ama_link(f, path, metadata)
 
-def create_wav_descriptor(f, path, finfo):
-    d = f.create.WAVEDescriptor()
-    stream = finfo.first_sound_stream
-    d['SampleRate'].value = stream.sample_rate
-    d['Summary'].value = get_wave_fmt(path)
-    d['Length'].value = stream.length
-    d['ContainerFormat'].value = f.dictionary.lookup_containerdef("AAF")
-    d['Locator'].append(create_network_locator(f, path))
-    return d
 
 
-def coalesce_descriptors(f, descriptors, path, formatinfo):
-    if len(descriptors) > 1:
-        desc = f.create.MultipleDescriptor()
-        desc['Length'].value = formatinfo.length
-        desc['SampleRate'].value = formatinfo.edit_rate
-        desc['MediaContainerGUID'].value = formatinfo.container_guid
-        desc['Locator'].append(create_network_locator(f, path))
-        desc['FileDescriptors'].value = descriptors
-        return desc
-    else:
-        return descriptors[0]
 
-
-def create_multistream_descriptor(f, path, formatinfo):
-    descriptor_list = []
-
-    for stream in formatinfo.streams:
-        if stream.is_picture:
-            desc = stream.create_video_descriptor(f)
-            descriptor_list.append(desc)
-
-        elif stream.is_sound:
-            desc = stream.create_pcm_descriptor(f)
-            descriptor_list.append(desc)
-
-    return coalesce_descriptors(f, descriptor_list, path, formatinfo)
-
-def add_slots_for_descriptor_to_source(descriptor, to):
-    if isinstance(descriptor, essence.MultipleDescriptor):
-        for desc in descriptor['FileDescriptors'].value:
-            add_slots_for_descriptor_to_source(desc, to)
-    else:
-        if descriptor.
-
-def add_slots_for_source_to_tape(source, to)
-    pass
-
-def add_slots_for_source_to_master(source, to):
-    pass
-
-def create_mobs_for_descriptor(f, name, descriptor):
-    source_mob = f.create.SourceMob()
-    tape_mob = f.create.SourceMob()
-    master_mob = f.create.MasterMob()
-
-    source_mob.descriptor = descriptor
-    tape_mob.descriptor = f.create.ImportDescriptor()
-
-    master_mob.name = name
-    source_mob.name = name + " <Source MOB>"
-    tape_mob.name = name + " <Tape MOB>"
-
-    f.content.mobs.append(source_mob)
-    f.content.mobs.append(tape_mob)
-    f.content.mobs.append(master_mob)
-
-    add_slots_for_descriptor_to_source(descriptor, to=source_mob)
-    add_slots_for_source_to_tape(source_mob, to=tape_mob)
-    add_slots_for_source_to_master(source_mob, to=master_mob)
-
-    return master_mob
 
 
 class FormatInfo:
@@ -363,6 +291,52 @@ class FormatInfo:
             return self.first_sound_stream.length
         else:
             return pix.length
+
+    def create_descriptor(self,f, path):
+        if self.container_guid == MediaContainerGUID['WaveAiff']:
+            return self.create_wav_descriptor(f, path)
+
+        elif self.container_guid == MediaContainerGUID['QuickTime']:
+            return self.create_multistream_descriptor(f, path)
+
+        elif self.container_guid == MediaContainerGUID['MXF']:
+            pass
+
+    def create_wav_descriptor(f, path):
+        d = f.create.WAVEDescriptor()
+        stream = self.first_sound_stream
+        d['SampleRate'].value = stream.sample_rate
+        d['Summary'].value = get_wave_fmt(path)
+        d['Length'].value = stream.length
+        d['ContainerFormat'].value = f.dictionary.lookup_containerdef("AAF")
+        d['Locator'].append(create_network_locator(f, path))
+        return d
+
+    def coalesce_descriptors(f, descriptors, path):
+        if len(descriptors) > 1:
+            desc = f.create.MultipleDescriptor()
+            desc['Length'].value = self.length
+            desc['SampleRate'].value = self.edit_rate
+            desc['MediaContainerGUID'].value = self.container_guid
+            desc['Locator'].append(create_network_locator(f, path))
+            desc['FileDescriptors'].value = descriptors
+            return desc
+        else:
+            return descriptors[0]
+
+    def create_multistream_descriptor(self, f, path):
+        descriptor_list = []
+
+        for stream in self.streams:
+            if stream.is_picture:
+                desc = stream.create_video_descriptor(f)
+                descriptor_list.append(desc)
+
+            elif stream.is_sound:
+                desc = stream.create_pcm_descriptor(f)
+                descriptor_list.append(desc)
+
+        return self.coalesce_descriptors(f, descriptor_list, path)
 
 
 class StreamInfo:
@@ -534,6 +508,37 @@ class StreamInfo:
         d['Length'].value = int(self.length)
 
         return d
+
+def add_slots_for_descriptor_to_source(descriptor, to):
+    pass
+
+def add_slots_for_source_to_tape(source, to)
+    pass
+
+def add_slots_for_source_to_master(source, to):
+    pass
+
+def create_mobs_for_descriptor(f, name, descriptor):
+    source_mob = f.create.SourceMob()
+    tape_mob = f.create.SourceMob()
+    master_mob = f.create.MasterMob()
+
+    source_mob.descriptor = descriptor
+    tape_mob.descriptor = f.create.ImportDescriptor()
+
+    master_mob.name = name
+    source_mob.name = name + " <Source MOB>"
+    tape_mob.name = name + " <Tape MOB>"
+
+    f.content.mobs.append(source_mob)
+    f.content.mobs.append(tape_mob)
+    f.content.mobs.append(master_mob)
+
+    add_slots_for_descriptor_to_source(descriptor, to=source_mob)
+    add_slots_for_source_to_tape(source_mob, to=tape_mob)
+    add_slots_for_source_to_master(source_mob, to=master_mob)
+
+    return master_mob
 
 
 def create_media_link(f, path, metadata):
