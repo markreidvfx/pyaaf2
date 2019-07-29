@@ -187,6 +187,8 @@ def guess_length(metadata, edit_rate):
         codec_type = st['codec_type']
         if codec_type == 'video':
             return int(st['nb_frames'])
+        elif codec_type == 'audio':
+            return int(st['duration_ts'])
 
 
 def get_container_guid(metadata):
