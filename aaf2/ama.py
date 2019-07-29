@@ -331,7 +331,7 @@ def coalesce_descriptors(f, descriptors, path, edit_rate, container_guid):
         return descriptors[0]
 
 
-def mobs_wav(f, basename, container_guid, edit_rate, length, path, metadata):
+def mobs_wav(f, basename, container_guid, length, path, metadata):
     master_mob, src_mob, tape_mob = create_mob_trio(f, basename)
 
     tape_mob.descriptor = f.create.TapeDescriptor()
@@ -343,6 +343,7 @@ def mobs_wav(f, basename, container_guid, edit_rate, length, path, metadata):
     desc = create_wav_descriptor(f, src_mob, path, st)
     src_mob.descriptor = desc
 
+    edit_rate = st['sample_rate']
     for i in range(st['channels']):
         add_stream_to_mobs(f, tape_mob, src_mob, master_mob, edit_rate, length,
                            media_kind='sound', channel_index=i)
@@ -375,7 +376,7 @@ def mobs_other(f, basename, container_guid, edit_rate, length, path, metadata):
             desc = create_pcm_descriptor(f, stream_meta)
             descriptors.append(desc)
             for i in range(stream_meta['channels']):
-                add_stream_to_mobs(f, tape_mob, src_mob, master_mob, edit_rate, length,
+                add_stream_to_mobs(f, tape_mob, src_mob, master_mob, rate, length,
                                    media_kind='sound', channel_index=i)
 
     for d in descriptors:
@@ -402,9 +403,9 @@ def create_ama_link(f, path, metadata):
     container_guid, formats = get_container_guid(metadata)
 
     if len(metadata['streams']) == 1 and MediaContainerGUID['WaveAiff']:
-        return mobs_wav(f, basename, container_guid, edit_rate, length, path, metadata)
+        return mobs_wav(f, basename, container_guid, length, path, metadata)
     else:
-        return mobs_other(f, basename, container_guid, edit_rate, length, path, metadata)
+        return mobs_other(f, basename, container_guid, length, path, metadata)
 
 
 def create_wav_link(f, metadata):
