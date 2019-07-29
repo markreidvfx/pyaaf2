@@ -379,12 +379,14 @@ def mobs_other(f, basename, container_guid, edit_rate, length, path, metadata):
                 add_stream_to_mobs(f, tape_mob, src_mob, master_mob, rate, length,
                                    media_kind='sound', channel_index=i)
 
-    for d in descriptors:
+    for desc in descriptors:
         desc['Locator'].append(create_network_locator(f, path))
         desc['MediaContainerGUID'].value = container_guid
 
     src_mob.descriptor = coalesce_descriptors(f, descriptors, path, edit_rate,
                                               container_guid)
+
+    return master_mob, src_mob, tape_mob
 
 
 def create_ama_link(f, path, metadata):
@@ -402,10 +404,10 @@ def create_ama_link(f, path, metadata):
     length = guess_length(metadata, edit_rate)
     container_guid, formats = get_container_guid(metadata)
 
-    if len(metadata['streams']) == 1 and MediaContainerGUID['WaveAiff']:
+    if len(metadata['streams']) == 1 and container_guid == MediaContainerGUID['WaveAiff'][0]:
         return mobs_wav(f, basename, container_guid, length, path, metadata)
     else:
-        return mobs_other(f, basename, container_guid, length, path, metadata)
+        return mobs_other(f, basename, container_guid, edit_rate, length, path, metadata)
 
 
 def create_wav_link(f, metadata):
