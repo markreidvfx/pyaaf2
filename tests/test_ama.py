@@ -8,7 +8,7 @@ import os
 import unittest
 import common
 import aaf2
-from aaf2 import video, audio, mobid, mobs, essence
+from aaf2 import ama
 
 
 avc_profiles = [('yuv420p', 'baseline'),
@@ -37,13 +37,32 @@ class AMATests(unittest.TestCase):
             meta = common.probe(wavfile)
             # print(meta['streams'][0]['profile'])
 
-            mobs = f.content.create_ama_link(wavfile, meta)
+            mobs = ama.create_wav_link(f, meta)
             self.assertTrue(len(mobs),3)
 
 
         with aaf2.open(new_file, 'r') as f:
             common.walk_aaf(f.root)
             self.assertTrue(len(f.content.mobs) == 3)
+            self.assertIsInstance(mobs[0], aaf2.mobs.MasterMob)
+            self.assertIsInstance(mobs[1], aaf2.mobs.SourceMob)
+            self.assertIsInstance(mobs[2], aaf2.mobs.SourceMob)
+            master_mob = mobs[0]
+            self.assertEqual(len(master_mob.slots), 1)
+            self.assertEqual(master_mob.slots[0].media_kind, 'Sound')
+            self.assertIsNotNone(master_mob.slots[0].segment)
+            self.assertEqual(len(master_mob.slots[0].segment.components), 1)
+            source_clip = master_mob.slots[0].segment.components[0]
+            self.assertIsInstance(source_clip, aaf2.components.SourceClip)
+            self.assertIsNotNone(source_clip.start)
+            self.assertIsNotNone(source_clip.length)
+            self.assertTrue(source_clip.length > 0)
+            self.assertIsNotNone(source_clip.mob)
+            self.assertIsNotNone(source_clip.slot)
+            descriptor = source_clip.mob.descriptor
+            self.assertIsNotNone(descriptor)
+            self.assertIsInstance(descriptor, aaf2.essence.WAVEDescriptor)
+            self.assertIsNotNone(descriptor['Summary'].value)
 
 
     def test_avc_mov(self):
@@ -119,15 +138,6 @@ class AMATests(unittest.TestCase):
                 self.assertEqual(physical_sound_tracks.count(1), 1)
                 self.assertEqual(physical_sound_tracks.count(2), 1)
                 self.assertEqual(len(physical_sound_tracks), 2)
-
-    # def test_mxf(self):
-    #     new_file = os.path.join(common.sandbox(), 'prores_mxf.aaf')
-    #
-    #     with aaf2.open(new_file, 'w') as f:
-    #         vcodec = ['-c:v','prores','-profile:v','0']
-    #         mxf_mov = common.generate_dnxhd(profile_name='dnx_1080p_36_23.97',name=new_file,frames=240,fmt='mxf')
-    #         meta = common.probe(mxf_mov)
-    #         mobs = f.content.create_ama_link(mxf_mov,meta)
 
     def test_prores(self):
         new_file = os.path.join(common.sandbox(), 'prores_mov.aaf')
