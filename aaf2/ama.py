@@ -328,6 +328,7 @@ class FormatInfo:
     def first_sound_stream(self):
         return next((stream for stream in self.streams if stream.is_sound), None)
 
+
     @property
     def first_picture_stream(self):
         return next((stream for stream in self.streams if stream.is_picture), None)
