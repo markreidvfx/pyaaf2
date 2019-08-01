@@ -541,7 +541,7 @@ def create_mobs_for_descriptor(f, name, descriptor):
     return master_mob
 
 
-def create_media_link(f, path, metadata):
+def create_media_link(f, path, metadata, name=None):
     """
     Create an essence linked to external media and all obligatory mobs and data structures required by
     the edit spec.
