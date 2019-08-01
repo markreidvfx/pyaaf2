@@ -115,7 +115,7 @@ class AMATests(unittest.TestCase):
                 else:
                     self.fail("Encountered unexpected essence descriptor")
 
-    def test_wav(self):
+    def test_monoaural_wav(self):
         new_file = os.path.join(common.sandbox(), 'ama_wav.aaf')
         with aaf2.open(new_file, 'w') as f:
 
