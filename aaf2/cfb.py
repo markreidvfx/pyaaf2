@@ -1135,8 +1135,12 @@ class CompoundFileBinary(object):
 
             sector_type = fat_sector_types.get(sid, sid)
             if not isinstance(sector_type, int):
-
                 continue
+
+            # some files write zero difat instead of FREESECT
+            if sid <= 0:
+                continue
+
             fat_sectors.append(sid)
 
         #  len(fat_sectors),self.fat_sector_count

@@ -53,6 +53,14 @@ class Transition(Component):
     class_id = AUID("0d010101-0101-1700-060e-2b3402060101")
     __slots__ = ()
 
+    @property
+    def cutpoint(self):
+        return self['CutPoint'].value
+
+    @cutpoint.setter
+    def cutpoint(self, value):
+        self['CutPoint'].value = value
+
 @register_class
 class Sequence(Segment):
     class_id = AUID("0d010101-0101-0f00-060e-2b3402060101")
@@ -202,7 +210,7 @@ class SourceClip(SourceReference):
 
         elif isinstance(segment, Filler):
             yield segment
-        
+
         elif isinstance(segment, (OperationGroup, Pulldown)):
             yield segment
 
