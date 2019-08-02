@@ -350,7 +350,7 @@ def wave_infochunk(path):
                     seek = size + 1
                 else:
                     seek = size
-                file.seek(size,1)
+                file.seek(seek,1)
             else:
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
 
@@ -406,7 +406,8 @@ def create_wav_link(f, metadata):
             'time_reference' not in metadata['format']['tags']:
         tc.start = 0
     else:
-        tc.start = metadata['format']['tags']['time_reference'] or 0
+        tc.start = int(metadata['format']['tags']['time_reference'])
+
 
     t.segment.length = int(length)
     t.segment.components.append(tc)
