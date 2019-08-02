@@ -91,8 +91,8 @@ class AMATests(unittest.TestCase):
     def assert_valid_multiple_descriptor(self, mastermob, expected_audio_channel_count):
         for mob_slot in mastermob.slots:
             source_clip = mob_slot.segment.components[0]
-            self.assertTrue(isinstance(source_clip.mob.comments['Video'], str),
-                            "SourceMob must have a value for 'Video' comment")
+            self.assertIsNotNone(source_clip.mob.comments['Video'],
+                                 "SourceMob must have a value for 'Video' comment")
 
             self.assertEqual(len(source_clip.mob.descriptor['FileDescriptors'].value), 2,
                              "SourceMob's descriptor has incorrect 'FileDescriptor' property value")
