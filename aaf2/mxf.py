@@ -621,7 +621,7 @@ class MXFRGBADescriptor(MXFDescriptor):
     class_id = AUID("060e2b34-0253-0101-0d01-010101012900")
 
     def create_aaf_instance(self):
-        return self.root.aaf.create.RGBADescriptors()
+        return self.root.aaf.create.RGBADescriptor()
 
     def link(self):
         d = self.create_aaf_instance()
@@ -739,7 +739,7 @@ class MXFNetworkLocator(MXFLocator):
 
     def link(self):
         n = self.create_aaf_instance()
-        n['slot_id'].value = self.data['URLString']
+        n['URLString'].value = self.data['URLString']
         return n
 
 @register_mxf_class
