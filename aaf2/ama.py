@@ -496,6 +496,7 @@ class StreamInfo:
         # d['VideoLineMap'].value = [42, 0]
         d['ImageAspectRatio'].value = aspect_ratio
 
+
         d['StoredWidth'].value = width
         d['StoredHeight'].value = height
         d['SampleRate'].value = self.metadata['avg_frame_rate']
@@ -509,6 +510,34 @@ class StreamInfo:
         d['Length'].value = int(self.length)
 
         return d
+
+def wave_infochunk(path):
+    """
+    Returns a bytearray of the WAVE RIFF header and fmt
+    chunk for a `WAVEDescriptor` `Summary`
+    """
+    with open(path,'rb') as file:
+        if file.read(4) != b"RIFF":
+            return None
+        data_size = file.read(4) # container size
+        if file.read(4) != b"WAVE":
+            return None
+        while True:
+            chunkid = file.read(4)
+            sizebuf = file.read(4)
+            if len(sizebuf) < 4 or len(chunkid) < 4:
+                return None
+            size    = struct.unpack(b'<L', sizebuf )[0]
+            if chunkid[0:3] != b"fmt":
+                if size % 2 == 1:
+                    seek = size + 1
+                else:
+                    seek = size
+                file.seek(seek,1)
+            else:
+                return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
+
+
 
 def add_slots_for_descriptor_to_source(descriptor, to):
     pass
@@ -540,6 +569,15 @@ def create_mobs_for_descriptor(f, name, descriptor):
     add_slots_for_source_to_master(source_mob, to=master_mob)
 
     return master_mob
+
+    t = tape_mob.create_empty_sequence_slot(edit_rate, media_kind='timecode')
+    tc = f.create.Timecode(int(float(edit_rate)+0.5), drop=False)
+    tc.length = int(length)
+    if 'tags' not in metadata['format'].keys() or \
+            'time_reference' not in metadata['format']['tags']:
+        tc.start = 0
+    else:
+        tc.start = int(metadata['format']['tags']['time_reference'])
 
 
 def create_media_link(f, path, metadata, name=None):
