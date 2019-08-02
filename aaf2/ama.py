@@ -247,10 +247,12 @@ class FormatInfo:
     def __init__(self, metadata):
         self.metadata = metadata
 
+
     @property
     def streams(self):
         for stream in self.metadata['streams']:
             yield StreamInfo(stream)
+
 
     @property
     def first_sound_stream(self):
@@ -261,6 +263,7 @@ class FormatInfo:
     def first_picture_stream(self):
         return next((stream for stream in self.streams if stream.is_picture), None)
 
+
     @property
     def container_guid(self):
         if self.metadata['format']['format_name'] in ('wav',):
@@ -270,6 +273,7 @@ class FormatInfo:
             return MediaContainerGUID['QuickTime']
 
         return MediaContainerGUID['Generic']
+
 
     @property
     def edit_rate(self):
@@ -282,6 +286,7 @@ class FormatInfo:
         else:
             return pix.edit_rate
 
+
     @property
     def length(self):
         """
@@ -293,6 +298,7 @@ class FormatInfo:
         else:
             return pix.length
 
+
     def create_descriptor(self,f, path):
         if self.container_guid == MediaContainerGUID['WaveAiff']:
             return self.create_wav_descriptor(f, path)
@@ -303,6 +309,7 @@ class FormatInfo:
         elif self.container_guid == MediaContainerGUID['MXF']:
             pass
 
+
     def create_wav_descriptor(f, path):
         d = f.create.WAVEDescriptor()
         stream = self.first_sound_stream
@@ -312,6 +319,7 @@ class FormatInfo:
         d['ContainerFormat'].value = f.dictionary.lookup_containerdef("AAF")
         d['Locator'].append(create_network_locator(f, path))
         return d
+
 
     def coalesce_descriptors(f, descriptors, path):
         if len(descriptors) > 1:
@@ -324,6 +332,7 @@ class FormatInfo:
             return desc
         else:
             return descriptors[0]
+
 
     def create_multistream_descriptor(self, f, path):
         descriptor_list = []
@@ -344,17 +353,21 @@ class StreamInfo:
     def __init__(self, metadata):
         self.metadata = metadata
 
+
     @property
     def codec_type(self):
         return self.metadata['codec_type']
+
 
     @property
     def is_sound(self):
         return self.codec_type == 'audio'
 
+
     @property
     def is_picture(self):
         return self.codec_type == 'video'
+
 
     @property
     def edit_rate(self):
@@ -363,6 +376,7 @@ class StreamInfo:
         elif self.is_picture:
             return AAFRational(self.metadata['avg_frame_rate'])
 
+
     @property
     def length(self):
         if self.is_sound:
@@ -370,10 +384,12 @@ class StreamInfo:
         elif self.is_picture:
             return int(self.metadata['nb_frames'])
 
+
     @property
     def physical_track_count(self):
         if self.is_sound:
             return self.metadata['channels']
+
 
     def create_pcm_descriptor(self, f):
         if not self.is_sound:
@@ -395,6 +411,7 @@ class StreamInfo:
 
         d['Compression'].value = AUID('04020202-0000-0000-060e-2b3404010101')
         return d
+
 
     def pixel_sizes(self):
         if not self.is_picture:
@@ -421,6 +438,7 @@ class StreamInfo:
                 break
 
         return (depth, h_samp, v_samp)
+
 
     def get_avc_compression(self):
         if not self.is_picture:
@@ -461,6 +479,7 @@ class StreamInfo:
 
         return video.compression_ids[key]
 
+
     def get_compression(self):
         if not self.is_picture:
             return None
@@ -472,6 +491,7 @@ class StreamInfo:
             return self.get_avc_compression()
 
         return video.compression_ids['CompressedPicture']
+
 
     def create_video_descriptor(self, f):
         if not self.is_picture:
@@ -511,6 +531,7 @@ class StreamInfo:
 
         return d
 
+
 def wave_infochunk(path):
     """
     Returns a bytearray of the WAVE RIFF header and fmt
@@ -538,15 +559,17 @@ def wave_infochunk(path):
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
 
 
-
 def add_slots_for_descriptor_to_source(descriptor, to):
     pass
+
 
 def add_slots_for_source_to_tape(source, to)
     pass
 
+
 def add_slots_for_source_to_master(source, to):
     pass
+
 
 def create_mobs_for_descriptor(f, name, descriptor):
     source_mob = f.create.SourceMob()
