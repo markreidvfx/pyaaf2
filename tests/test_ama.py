@@ -119,7 +119,7 @@ class AMATests(unittest.TestCase):
         with aaf2.open(new_file, 'w') as f:
             wavfile = common.generate_pcm_audio_mono('test_ama.wav', fmt='wav')
             meta = common.probe(wavfile)
-            mobs = ama.create_wav_link(f, meta)
+            mobs = ama.create_media_link(f, wavfile, meta)
             self.assertTrue(len(mobs), 3)
 
         with aaf2.open(new_file, 'r') as f:
@@ -139,9 +139,10 @@ class AMATests(unittest.TestCase):
 
     def test_avc_mov(self):
         new_file = os.path.join(common.sandbox(), 'avc_mov.aaf')
+
+        audio_channel_count = 2
+        created_mastermob_ids = []
         with aaf2.open(new_file, 'w') as f:
-            audio_channel_count = 2
-            created_mastermob_ids = []
             for (pix_fmt, profile) in avc_profiles:
                 vcodec = ['-pix_fmt', pix_fmt, '-c:v', 'h264', '-profile:v', profile]
 
@@ -151,11 +152,12 @@ class AMATests(unittest.TestCase):
                 # print(meta['streams'][0]['profile'])
 
                 mobs = f.content.create_ama_link(mov, meta)
-               self.assertEqual(len(mobs), 3)
+                self.assertEqual(len(mobs), 3)
                 self.assertIsInstance(mobs[0], aaf2.mobs.MasterMob)
                 self.assertIsInstance(mobs[1], aaf2.mobs.SourceMob)
                 self.assertIsInstance(mobs[2], aaf2.mobs.SourceMob)
                 created_mastermob_ids.append(mobs[0].mob_id)
+
         with aaf2.open(new_file, 'r') as f:
             common.walk_aaf(f.root)
             self.assertEqual(len(f.content.mobs), len(avc_profiles) * 3,
@@ -178,7 +180,7 @@ class AMATests(unittest.TestCase):
                 mov = common.generate_mov('ama_prores_%s.mov' % (name,), overwrite=False, vcodec=vcodec,
                                           audio_channels=2)
                 meta = common.probe(mov)
-                mobs = f.content.create_ama_link(mov, meta)
+                mobs = ama.create_media_link(f, mov, meta)
                 self.assertEqual(len(mobs), 3, "create_ama_link must return exactly three mobs")
                 created_mastermob_ids.append(mobs[0].mob_id)
 
