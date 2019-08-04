@@ -28,6 +28,7 @@ prores_profiles = [
 
 class AMATests(unittest.TestCase):
 
+
     def assert_mastermob_valid_edit_spec(self, master_mob, expected_picture_slots, expected_sound_slots):
         """
         Verifies that a MasterMob has all the required elements for the edit spec
@@ -91,8 +92,8 @@ class AMATests(unittest.TestCase):
     def assert_valid_multiple_descriptor(self, mastermob, expected_audio_channel_count):
         for mob_slot in mastermob.slots:
             source_clip = mob_slot.segment.components[0]
-            self.assertTrue(isinstance(source_clip.mob.comments['Video'], str),
-                            "SourceMob must have a value for 'Video' comment")
+            self.assertIsNotNone(source_clip.mob.comments['Video'],
+                                 "SourceMob must have a value for 'Video' comment")
 
             self.assertEqual(len(source_clip.mob.descriptor['FileDescriptors'].value), 2,
                              "SourceMob's descriptor has incorrect 'FileDescriptor' property value")
@@ -118,7 +119,7 @@ class AMATests(unittest.TestCase):
         with aaf2.open(new_file, 'w') as f:
             wavfile = common.generate_pcm_audio_mono('test_ama.wav', fmt='wav')
             meta = common.probe(wavfile)
-            mobs = ama.create_wav_link(f, meta)
+            mobs = ama.create_media_link(f, wavfile, meta)
             self.assertTrue(len(mobs), 3)
 
         with aaf2.open(new_file, 'r') as f:
@@ -138,9 +139,10 @@ class AMATests(unittest.TestCase):
 
     def test_avc_mov(self):
         new_file = os.path.join(common.sandbox(), 'avc_mov.aaf')
+
+        audio_channel_count = 2
+        created_mastermob_ids = []
         with aaf2.open(new_file, 'w') as f:
-            audio_channel_count = 2
-            created_mastermob_ids = []
             for (pix_fmt, profile) in avc_profiles:
                 vcodec = ['-pix_fmt', pix_fmt, '-c:v', 'h264', '-profile:v', profile]
 
@@ -162,13 +164,13 @@ class AMATests(unittest.TestCase):
                              "Failed to create exactly three MOBs per avc_profile")
             self.assertEqual(len(list(f.content.mastermobs())), len(avc_profiles),
                              "Failed to create exactly one MasterMOB per avc_profile")
-          
+
             for mastermob_id in created_mastermob_ids:
                 mastermob = next((mob for mob in f.content.mobs if mob.mob_id == mastermob_id), None)
                 self.assert_mastermob_valid_edit_spec(mastermob, expected_picture_slots=1, expected_sound_slots=2)
                 self.assert_valid_multiple_descriptor(mastermob, audio_channel_count)
 
-   def test_prores(self):
+    def test_prores(self):
         new_file = os.path.join(common.sandbox(), 'prores_mov.aaf')
         created_mastermob_ids = []
         with aaf2.open(new_file, 'w') as f:
@@ -178,7 +180,7 @@ class AMATests(unittest.TestCase):
                 mov = common.generate_mov('ama_prores_%s.mov' % (name,), overwrite=False, vcodec=vcodec,
                                           audio_channels=2)
                 meta = common.probe(mov)
-                mobs = f.content.create_ama_link(mov, meta)
+                mobs = ama.create_media_link(f, mov, meta)
                 self.assertEqual(len(mobs), 3, "create_ama_link must return exactly three mobs")
                 created_mastermob_ids.append(mobs[0].mob_id)
 
