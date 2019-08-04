@@ -6,7 +6,7 @@ from __future__ import (
 )
 import os
 import unittest
-import common
+from . import common
 import aaf2
 from aaf2 import ama
 

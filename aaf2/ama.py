@@ -261,15 +261,24 @@ class FormatInfo:
     def first_picture_stream(self):
         return next((stream for stream in self.streams if stream.is_picture), None)
 
+    def create_descriptor(self, f, path):
+        if self.metadata['format']['format_name'] in ('wav',):
+            return self.create_wav_descriptor(f, path)
+
+        elif self.metadata['format']['format_long_name'] == 'QuickTime / MOV':
+            return self.create_multistream_descriptor(f, path)
+        else:
+            return None
+
     @property
     def container_guid(self):
         if self.metadata['format']['format_name'] in ('wav',):
-            return MediaContainerGUID['WaveAiff']
+            return MediaContainerGUID['WaveAiff'][0]
 
         if self.metadata['format']['format_name'] == 'QuickTime / MOV':
-            return MediaContainerGUID['QuickTime']
+            return MediaContainerGUID['QuickTime'][0]
 
-        return MediaContainerGUID['Generic']
+        return MediaContainerGUID['Generic'][0]
 
     @property
     def edit_rate(self):
@@ -292,16 +301,6 @@ class FormatInfo:
             return self.first_sound_stream.length
         else:
             return pix.length
-
-    def create_descriptor(self,f, path):
-        if self.container_guid == MediaContainerGUID['WaveAiff']:
-            return self.create_wav_descriptor(f, path)
-
-        elif self.container_guid == MediaContainerGUID['QuickTime']:
-            return self.create_multistream_descriptor(f, path)
-
-        elif self.container_guid == MediaContainerGUID['MXF']:
-            pass
 
     def create_wav_descriptor(self, f, path):
         d = f.create.WAVEDescriptor()
@@ -545,18 +544,18 @@ def tape_mob_for_format(f, name, format_info):
     if picture is not None:
         pix_slot = tape_mob.create_picture_slot(edit_rate= picture.edit_rate)
         pix_slot.segment.length = picture.length
-        tape_source_clip = f.create.SourceClip(edit_rate= picture.edit_rate)
+        tape_source_clip = f.create.SourceClip(media_kind='picture')
         tape_source_clip.length = picture.length
-        pix_slot.segment.append(tape_source_clip)
+        pix_slot.segment.components.append(tape_source_clip)
 
     sound = format_info.first_sound_stream
     if sound is not None:
         for channel in range(sound.physical_track_count):
             sound_slot = tape_mob.create_sound_slot(edit_rate=sound.edit_rate)
             sound_slot.segment.length = sound.length
-            tape_source_clip = f.create.SourceClip(edit_rate=sound.edit_rate)
+            tape_source_clip = f.create.SourceClip(media_kind='sound')
             tape_source_clip.length = sound.length
-            sound_slot.segment.append(tape_source_clip)
+            sound_slot.segment.components.append(tape_source_clip)
             # not setting PhysicalTrackNumber here because we didn't before
 
     f.content.mobs.append(tape_mob)
@@ -565,26 +564,24 @@ def tape_mob_for_format(f, name, format_info):
     return tape_mob
 
 def append_source_to_mob_as_new_slots(from_mob, to_mob):
-    for from_slot_id in from_mob.slots:
-        slot_kind = from_slot_id.media_kind
-        sound_physical_track = 1
-        if slot_kind in ("picture","sound"):
-            from_clip = from_mob.create_source_clip(slot_id=from_slot_id, media_kind=slot_kind)
-            to_slot = to_mob.create_empty_sequence_slot(edit_rate=from_clip.edit_rate,
-                                                  media_kink=from_clip.media_kind)
-            to_mob.segment.components.append(from_clip)
+    sound_physical_track = 1
+    for from_slot in from_mob.slots:
+        slot_kind = from_slot.media_kind
+        if slot_kind in ("Picture","Sound"):
+            from_clip = from_mob.create_source_clip(slot_id=from_slot.slot_id, media_kind=slot_kind)
+            to_slot = to_mob.create_empty_sequence_slot(edit_rate=from_slot.edit_rate,
+                                                  media_kind=from_clip.media_kind)
+            to_slot.segment.components.append(from_clip)
 
-            if slot_kind == 'sound':
-                to_slot['PhysicalTrackNumber'] = sound_physical_track
+            if slot_kind == 'Sound':
+                to_slot['PhysicalTrackNumber'].value = sound_physical_track
                 sound_physical_track += 1
-
 
 def source_mob_from_tape_mob(f, name, tape_mob):
     source_mob = f.create.SourceMob()
     source_mob.name = name
 
     append_source_to_mob_as_new_slots(from_mob=tape_mob, to_mob=source_mob)
-
     f.content.mobs.append(source_mob)
 
     return source_mob
@@ -601,8 +598,11 @@ def master_mob_from_source_mob(f, name, source_mob):
 
 def create_mobs(f, name, format_info):
     tape_mob = tape_mob_for_format(f, name + ' <TAPE MOB>', format_info)
-    source_mob = source_mob_from_tape_mob(f, name + '<SOURCE MOB>', tape_mob)
+    source_mob = source_mob_from_tape_mob(f, name + ' <SOURCE MOB>', tape_mob)
     master_mob = master_mob_from_source_mob(f, name, source_mob)
+
+    if format_info.first_picture_stream is not None:
+        source_mob.comments['Video'] = format_info.first_picture_stream.codec_type
 
     return master_mob, source_mob, tape_mob
 
@@ -626,22 +626,16 @@ def create_media_link(f, path, metadata):
     """
 
     format_info = FormatInfo(metadata)
-    container = format_info.container_guid
     basename = os.path.basename(path)
     name, ext = os.path.splitext(basename)
 
-    source_descriptor = None
-    if container == MediaContainerGUID['WaveAiff']:
-        source_descriptor = format_info.create_wav_descriptor(f, path)
-    elif container == MediaContainerGUID['QuickTime']:
-        source_descriptor = format_info.create_multistream_descriptor(f, path)
-    elif container == MediaContainerGUID['MXF']:
+    if ext == '.mxf' or ext == '.MXF':
         m = mxf.MXFFile(path)
         m.ama = True
         m.dump()
         return m.link(f)
-    else:
-        pass
+
+    source_descriptor = format_info.create_descriptor(f, path)
 
     if source_descriptor is not None:
         master_mob, source_mob, tape_mob = create_mobs(f, name, format_info)
