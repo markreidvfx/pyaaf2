@@ -303,17 +303,17 @@ class FormatInfo:
         elif self.container_guid == MediaContainerGUID['MXF']:
             pass
 
-    def create_wav_descriptor(f, path):
+    def create_wav_descriptor(self, f, path):
         d = f.create.WAVEDescriptor()
         stream = self.first_sound_stream
-        d['SampleRate'].value = stream.sample_rate
+        d['SampleRate'].value = stream.edit_rate
         d['Summary'].value = get_wave_fmt(path)
         d['Length'].value = stream.length
         d['ContainerFormat'].value = f.dictionary.lookup_containerdef("AAF")
         d['Locator'].append(create_network_locator(f, path))
         return d
 
-    def coalesce_descriptors(f, descriptors, path):
+    def coalesce_descriptors(self, f, descriptors, path):
         if len(descriptors) > 1:
             desc = f.create.MultipleDescriptor()
             desc['Length'].value = self.length
@@ -538,38 +538,75 @@ def wave_infochunk(path):
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
 
 
-def add_slots_for_descriptor_to_source(descriptor, to):
-    pass
-
-def add_slots_for_source_to_tape(source, to)
-    pass
-
-def add_slots_for_source_to_master(source, to):
-    pass
-
-def create_mobs_for_descriptor(f, name, descriptor):
-    source_mob = f.create.SourceMob()
+def tape_mob_for_format(f, name, format_info):
     tape_mob = f.create.SourceMob()
-    master_mob = f.create.MasterMob()
+    tape_mob.name = name
+    picture = format_info.first_picture_stream
+    if picture is not None:
+        pix_slot = tape_mob.create_picture_slot(edit_rate= picture.edit_rate)
+        pix_slot.segment.length = picture.length
+        tape_source_clip = f.create.SourceClip(edit_rate= picture.edit_rate)
+        tape_source_clip.length = picture.length
+        pix_slot.segment.append(tape_source_clip)
 
-    source_mob.descriptor = descriptor
+    sound = format_info.first_sound_stream
+    if sound is not None:
+        for channel in range(sound.physical_track_count):
+            sound_slot = tape_mob.create_sound_slot(edit_rate=sound.edit_rate)
+            sound_slot.segment.length = sound.length
+            tape_source_clip = f.create.SourceClip(edit_rate=sound.edit_rate)
+            tape_source_clip.length = sound.length
+            sound_slot.segment.append(tape_source_clip)
+            # not setting PhysicalTrackNumber here because we didn't before
+
+    f.content.mobs.append(tape_mob)
     tape_mob.descriptor = f.create.ImportDescriptor()
 
-    master_mob.name = name
-    source_mob.name = name + " <Source MOB>"
-    tape_mob.name = name + " <Tape MOB>"
+    return tape_mob
+
+def append_source_to_mob_as_new_slots(from_mob, to_mob):
+    for from_slot_id in from_mob.slots:
+        slot_kind = from_slot_id.media_kind
+        sound_physical_track = 1
+        if slot_kind in ("picture","sound"):
+            from_clip = from_mob.create_source_clip(slot_id=from_slot_id, media_kind=slot_kind)
+            to_slot = to_mob.create_empty_sequence_slot(edit_rate=from_clip.edit_rate,
+                                                  media_kink=from_clip.media_kind)
+            to_mob.segment.components.append(from_clip)
+
+            if slot_kind == 'sound':
+                to_slot['PhysicalTrackNumber'] = sound_physical_track
+                sound_physical_track += 1
+
+
+def source_mob_from_tape_mob(f, name, tape_mob):
+    source_mob = f.create.SourceMob()
+    source_mob.name = name
+
+    append_source_to_mob_as_new_slots(from_mob=tape_mob, to_mob=source_mob)
 
     f.content.mobs.append(source_mob)
-    f.content.mobs.append(tape_mob)
-    f.content.mobs.append(master_mob)
 
-    add_slots_for_descriptor_to_source(descriptor, to=source_mob)
-    add_slots_for_source_to_tape(source_mob, to=tape_mob)
-    add_slots_for_source_to_master(source_mob, to=master_mob)
+    return source_mob
+
+def master_mob_from_source_mob(f, name, source_mob):
+    master_mob = f.create.MasterMob()
+    master_mob.name = name
+
+    append_source_to_mob_as_new_slots(from_mob=source_mob, to_mob=master_mob)
+
+    f.content.mobs.append(master_mob)
 
     return master_mob
 
-def create_media_link(f, path, metadata, name=None):
+def create_mobs(f, name, format_info):
+    tape_mob = tape_mob_for_format(f, name + ' <TAPE MOB>', format_info)
+    source_mob = source_mob_from_tape_mob(f, name + '<SOURCE MOB>', tape_mob)
+    master_mob = master_mob_from_source_mob(f, name, source_mob)
+
+    return master_mob, source_mob, tape_mob
+
+def create_media_link(f, path, metadata):
     """
     Create an essence linked to external media and all obligatory mobs and data structures required by
     the edit spec.
@@ -593,19 +630,24 @@ def create_media_link(f, path, metadata, name=None):
     basename = os.path.basename(path)
     name, ext = os.path.splitext(basename)
 
+    source_descriptor = None
     if container == MediaContainerGUID['WaveAiff']:
-        wave_descriptor = create_wav_descriptor(f, path, format_info)
-        return create_mobs_for_descriptor(name, wave_descriptor)
-
+        source_descriptor = format_info.create_wav_descriptor(f, path)
     elif container == MediaContainerGUID['QuickTime']:
-        qt_descriptor = create_multistream_descriptor(f, path, format_info)
-        return create_mobs_for_descriptor(name, qt_descriptor)
-
+        source_descriptor = format_info.create_multistream_descriptor(f, path)
     elif container == MediaContainerGUID['MXF']:
         m = mxf.MXFFile(path)
         m.ama = True
         m.dump()
         return m.link(f)
-
     else:
         pass
+
+    if source_descriptor is not None:
+        master_mob, source_mob, tape_mob = create_mobs(f, name, format_info)
+        source_mob.descriptor = source_descriptor
+        return  master_mob, source_mob, tape_mob
+    else:
+        return None
+
+
