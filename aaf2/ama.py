@@ -362,33 +362,7 @@ def create_media_link(f, path, metadata):
     :return: A `aaf.mobs.MasterMob` linked to the file at link.
     """
 
-    def wave_infochunk(path):
-        """
-        Returns a bytearray of the WAVE RIFF header and fmt
-        chunk for a `WAVEDescriptor` `Summary`
-        """
-        with open(path, 'rb') as file:
-            if file.read(4) != b"RIFF":
-                return None
-            data_size = file.read(4)  # container size
-            if file.read(4) != b"WAVE":
-                return None
-            while True:
-                chunkid = file.read(4)
-                sizebuf = file.read(4)
-                if len(sizebuf) < 4 or len(chunkid) < 4:
-                    return None
-                size = struct.unpack(b'<L', sizebuf)[0]
-                if chunkid[0:3] != b"fmt":
-                    if size % 2 == 1:
-                        seek = size + 1
-                    else:
-                        seek = size
-                    file.seek(seek, 1)
-                else:
-                    return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
-
-    def tape_mob_for_format(f, name, format_info):
+    def tape_mob_for_format(name, format_info):
         tape_mob = f.create.SourceMob()
         tape_mob.name = name
         picture = format_info.first_picture_stream
@@ -428,7 +402,7 @@ def create_media_link(f, path, metadata):
                     to_slot['PhysicalTrackNumber'].value = sound_physical_track
                     sound_physical_track += 1
 
-    def source_mob_from_tape_mob(f, name, tape_mob):
+    def source_mob_from_tape_mob(name, tape_mob):
         source_mob = f.create.SourceMob()
         source_mob.name = name
 
@@ -437,7 +411,7 @@ def create_media_link(f, path, metadata):
 
         return source_mob
 
-    def master_mob_from_source_mob(f, name, source_mob):
+    def master_mob_from_source_mob(name, source_mob):
         master_mob = f.create.MasterMob()
         master_mob.name = name
 
@@ -447,15 +421,15 @@ def create_media_link(f, path, metadata):
 
         return master_mob
 
-    def create_mobs(f, name, format_info):
-        tape_mob = tape_mob_for_format(f, name + ' <TAPE MOB>', format_info)
-        source_mob = source_mob_from_tape_mob(f, name + ' <SOURCE MOB>', tape_mob)
-        master_mob = master_mob_from_source_mob(f, name, source_mob)
+    def create_mobs(name, format_info):
+        tmob = tape_mob_for_format(name + ' <TAPE MOB>', format_info)
+        smob = source_mob_from_tape_mob(name + ' <SOURCE MOB>', tmob)
+        mmob = master_mob_from_source_mob(name, smob)
 
         if format_info.first_picture_stream is not None:
-            source_mob.comments['Video'] = format_info.first_picture_stream.codec_type
+            smob.comments['Video'] = format_info.first_picture_stream.codec_type
 
-        return master_mob, source_mob, tape_mob
+        return mmob, smob, tmob
 
     format_info = FormatInfo(metadata)
     basename = os.path.basename(path)
@@ -469,9 +443,9 @@ def create_media_link(f, path, metadata):
 
     source_descriptor = format_info.create_descriptor(f, path)
 
-    if source_descriptor is not None:
-        master_mob, source_mob, tape_mob = create_mobs(f, name, format_info)
-        source_mob.descriptor = source_descriptor
-        return  master_mob, source_mob, tape_mob
-    else:
+    if source_descriptor is None:
         return None
+
+    master_mob, source_mob, tape_mob = create_mobs(name, format_info)
+    source_mob.descriptor = source_descriptor
+    return master_mob, source_mob, tape_mob
