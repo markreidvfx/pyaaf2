@@ -81,10 +81,11 @@ class ContentStorage(core.AAFObject):
         Returns a 3-tuple: a master mob, the source MOB whose essence is a WAVEDescriptor link,
         and a source MOB whose essence is a TapeDescriptor.
         """
-        return ama.create_wav_link(self.root, metadata)
+        path = metadata['format']['filename']
+        return self.create_ama_link(path, metadata)
 
     def create_ama_link(self, path, metadata):
-        return ama.create_ama_link(self.root, path, metadata)
+        return ama.create_media_link(self.root, path, metadata)
 
     @property
     def essencedata(self):
