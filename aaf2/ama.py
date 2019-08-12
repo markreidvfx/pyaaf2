@@ -8,7 +8,7 @@ from __future__ import (
 import os
 import sys
 from .rational import AAFRational
-from . import video, audio, mxf, content, essence
+from . import video, audio, mxf
 from .auid import AUID
 
 import struct
