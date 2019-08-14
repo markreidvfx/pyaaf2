@@ -137,6 +137,29 @@ class AMATests(unittest.TestCase):
             self.assertIsInstance(descriptor, aaf2.essence.WAVEDescriptor, "File SourceMob has no WAVEDescriptor")
             self.assertIsNotNone(descriptor['Summary'].value, "WAVEDescriptor missing required 'Summary' property")
 
+    def test_monoaural_aiff(self):
+        new_file = os.path.join(common.sandbox(), 'ama_aiff.aaf')
+        with aaf2.open(new_file, 'w') as f:
+            aiff_file = common.generate_pcm_audio_mono('test_ama_aiff', fmt='aiff')
+            meta = common.probe(aiff_file)
+            mobs = ama.create_media_link(f, aiff_file, meta)
+            self.assertTrue( len(mobs), 3)
+
+        with aaf2.open(new_file, 'r') as f:
+            common.walk_aaf(f.root)
+            self.assertTrue(len(f.content.mobs) == 3)
+            self.assertTrue(len(list(f.content.mastermobs())) == 1)
+            master_mob = next(f.content.mastermobs())
+            self.assert_mastermob_valid_edit_spec(master_mob=master_mob, expected_sound_slots=1,
+                                                  expected_picture_slots=0)
+            self.assertEqual(len(master_mob.slots), 1, "MasterMob should only have one slot")
+            self.assertEqual(master_mob.slots[0].media_kind, 'Sound', "MasterMob slot has incorrect media_kind")
+            source_clip = master_mob.slots[0].segment.components[0]
+            descriptor = source_clip.mob.descriptor
+            self.assertIsNotNone(descriptor, "File SourceMob has no WAVEDescriptor")
+            self.assertIsInstance(descriptor, aaf2.essence.AIFCDescriptor, "File SourceMob has no AIFCDescriptor")
+            self.assertIsNotNone(descriptor['Summary'].value, "AIFCDescriptor missing required 'Summary' property")
+
     def test_avc_mov(self):
         new_file = os.path.join(common.sandbox(), 'avc_mov.aaf')
 

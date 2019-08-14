@@ -63,6 +63,36 @@ def get_wave_fmt(path):
             else:
                 return bytearray(b"RIFF" + data_size + b"WAVE" + chunkid + sizebuf + file.read(size))
 
+def get_aifc_fmt(path):
+    """
+    Compute the AIFC header information for a `AIFCDescriptor` `Summary`
+
+    :param path: file to read chunk from
+    :return: a `bytearray`
+    """
+    with open(path, 'rb') as file:
+        if file.read(4) != b"FORM":
+            return None
+        data_size = file.read(4)
+        signature = file.read(4)
+        if signature not in (b"AIFF", b"AIFC"):
+            return None
+
+        while True:
+            chunkid = file.read(4)
+            sizebuf = file.read(4)
+            if len(sizebuf) < 4 or len(chunkid) < 4:
+                return None
+            size = struct.unpack(">L", sizebuf)[0]
+            if chunkid != b"COMM":
+                if size % 2 == 1:
+                    seek = size + 1
+                else:
+                    seek = size
+                file.seek(seek, 1)
+            else:
+                return bytearray(b"FORM" + data_size + signature + chunkid + sizebuf + file.read(size))
+
 
 def create_network_locator(f, absolute_path):
     n = f.create.NetworkLocator()
@@ -100,6 +130,9 @@ class FormatInfo:
     def create_descriptor(self, f, path):
         if self.metadata['format']['format_name'] in ('wav',):
             return self.create_wav_descriptor(f, path)
+
+        if self.metadata['format']['format_name'] in ('aiff',):
+            return self.create_aifc_descriptor(f,path)
 
         elif self.metadata['format']['format_long_name'] == 'QuickTime / MOV':
             return self.create_multistream_descriptor(f, path)
@@ -143,6 +176,16 @@ class FormatInfo:
         stream = self.first_sound_stream
         d['SampleRate'].value = stream.edit_rate
         d['Summary'].value = get_wave_fmt(path)
+        d['Length'].value = stream.length
+        d['ContainerFormat'].value = f.dictionary.lookup_containerdef("AAF")
+        d['Locator'].append(create_network_locator(f, path))
+        return d
+
+    def create_aifc_descriptor(self, f, path):
+        d = f.create.AIFCDescriptor()
+        stream = self.first_sound_stream
+        d['SampleRate'].value = stream.edit_rate
+        d['Summary'].value = get_aifc_fmt(path)
         d['Length'].value = stream.length
         d['ContainerFormat'].value = f.dictionary.lookup_containerdef("AAF")
         d['Locator'].append(create_network_locator(f, path))

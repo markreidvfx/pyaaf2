@@ -99,6 +99,11 @@ class WAVEDescriptor(FileDescriptor):
     __slots__ = ()
 
 @register_class
+class AIFCDescriptor(FileDescriptor):
+    class_id = AUID("0d010101-0101-2600-060e-2b3402060101")
+    __slots__ = ()
+
+@register_class
 class DataEssenceDescriptor(FileDescriptor):
     class_id = AUID("0d010101-0101-4300-060e-2b3402060101")
     __slots__ = ()
