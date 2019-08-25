@@ -210,10 +210,12 @@ class FormatInfo:
             if stream.is_picture:
                 desc = stream.create_video_descriptor(f)
                 descriptor_list.append(desc)
+                desc['Locator'].append(create_network_locator(f, path))
 
             elif stream.is_sound:
                 desc = stream.create_pcm_descriptor(f)
                 descriptor_list.append(desc)
+                desc['Locator'].append(create_network_locator(f, path))
 
         return self.coalesce_descriptors(f, descriptor_list, path)
 
