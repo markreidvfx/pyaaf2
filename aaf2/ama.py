@@ -144,9 +144,10 @@ class FormatInfo:
         if self.metadata['format']['format_name'] in ('wav',):
             return MediaContainerGUID['WaveAiff'][0]
 
-        if self.metadata['format']['format_long_name'] == 'QuickTime / MOV':
-            return MediaContainerGUID['QuickTime'][0]
+        # if self.metadata['format']['format_long_name'] == 'QuickTime / MOV':
+        #     return MediaContainerGUID['QuickTime'][0]
 
+        # just using the generic appears to work
         return MediaContainerGUID['Generic'][0]
 
     @property
@@ -227,6 +228,10 @@ class StreamInfo:
     @property
     def codec_type(self):
         return self.metadata['codec_type']
+
+    @property
+    def codec_name(self):
+        return self.metadata['codec_name']
 
     @property
     def is_sound(self):
@@ -472,7 +477,8 @@ def create_media_link(f, path, metadata):
         mmob = master_mob_from_source_mob(name, smob)
 
         if format_info.first_picture_stream is not None:
-            smob.comments['Video'] = format_info.first_picture_stream.codec_type
+            # MC Quicktime plugin will error if this is not set
+            smob.comments['Video'] = format_info.first_picture_stream.codec_name
 
         return mmob, smob, tmob
 
