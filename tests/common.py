@@ -90,7 +90,7 @@ def probe(path, show_packets=False):
 
     return json.loads(stdout.decode('utf8'))
 
-def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwrite=True, vcodec=None):
+def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwrite=True, vcodec=None, reel_name="TestTape", timecode='01:00:00:00'):
     frames = int(duration * float(frame_rate))
     audio_samples = []
     for i in range(audio_channels):
@@ -112,10 +112,15 @@ def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwri
         cmd.extend(['-c:v', 'h264'])
         # cmd.extend(['-profile:v', 'high'])
 
+    if timecode:
+        cmd.extend(['-timecode',  timecode])
+
+    if reel_name:
+        cmd.extend(['-metadata:s:v:0',  'reel_name=%s' % reel_name])
+
+
     video_file = os.path.join(sample_dir(), name + "_video.mov")
     cmd.extend([video_file])
-    # print(subprocess.list2cmdline(cmd))
-
 
     if overwrite or not os.path.exists(video_file):
         p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)
@@ -135,10 +140,14 @@ def generate_mov(name, duration=2.0, frame_rate=23.97, audio_channels=2, overwri
     cmd.extend(['-c:v', 'copy'])
     cmd.extend(['-frames:v', str(frames)])
 
+    if timecode:
+        cmd.extend(['-timecode',  timecode])
+
+    if reel_name:
+        cmd.extend(['-metadata:s:v:0',  'reel_name=%s' % reel_name])
+
     outfile = os.path.join(sample_dir(), name )
     cmd.extend([outfile])
-
-    # print(subprocess.list2cmdline(cmd))
 
     if overwrite or not os.path.exists(outfile):
         p = subprocess.Popen(cmd, stdout = subprocess.PIPE,stderr = subprocess.PIPE)

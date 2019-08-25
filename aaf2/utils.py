@@ -23,6 +23,10 @@ def read_u16be(f):
     (result, ) = unpack(b">H", f.read(2))
     return result
 
+def read_s16be(f):
+    (result, ) = unpack(b">h", f.read(2))
+    return result
+
 def write_u16le(f, value):
     f.write(pack(b"<H", value))
 
