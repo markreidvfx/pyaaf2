@@ -104,6 +104,10 @@ class AMATests(unittest.TestCase):
             for descriptor in source_clip.mob.descriptor['FileDescriptors'].value:
                 self.assertIsNotNone(descriptor['Locator'].value,
                                      "SourceClip descriptor not properly formatted")
+
+                locators = descriptor['Locator'].value
+                self.assertTrue(len(locators) >= 1)
+
                 if isinstance(descriptor, aaf2.essence.PCMDescriptor):
                     self.assertEqual(descriptor['Channels'].value, expected_audio_channel_count,
                                      "SourceClip descriptor not properly formatted")
