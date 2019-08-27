@@ -1,5 +1,7 @@
 *.py[cod]
 
+.idea/*
+
 # C extensions
 *.so
 
@@ -45,3 +47,8 @@ docs/source/api/*
 
 # vim
 *.swp
+.idea/inspectionProfiles/profiles_settings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/pyaaf2.iml
+.idea/vcs.xml
