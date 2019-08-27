@@ -482,7 +482,6 @@ def create_media_link(f, path, metadata):
 
         return mmob, smob, tmob
 
-    format_info = FormatInfo(metadata)
     basename = os.path.basename(path)
     name, ext = os.path.splitext(basename)
 
@@ -492,6 +491,7 @@ def create_media_link(f, path, metadata):
         m.dump()
         return m.link(f)
 
+    format_info = FormatInfo(metadata)
     source_descriptor = format_info.create_descriptor(f, path)
 
     if source_descriptor is None:
