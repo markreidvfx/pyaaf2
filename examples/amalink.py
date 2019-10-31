@@ -26,7 +26,7 @@ def probe(path):
 
     return json.loads(stdout.decode('utf8'))
 
-out_file = "mxf_link.aaf"
+out_file = "ama_link_external_mxf_0780GI0.aaf"
 with aaf2.open(out_file, 'w') as f:
     for path in sys.argv[1:]:
         name, ext = os.path.splitext(path)
