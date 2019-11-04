@@ -100,6 +100,11 @@ class Mob(core.AAFObject):
         return slot
 
     def create_empty_sequence_slot(self, edit_rate, slot_id=None,  media_kind=None):
+        """
+            Create an empty timeline slot and sets its segment to a new, empty 
+            `aaf2.components.Sequence` component. Timeline slots are for continuous, 
+            monotonically-changing media, like picture and sound.
+        """
         slot = self.create_timeline_slot(edit_rate, slot_id)
         sequence = self.root.create.Sequence(media_kind=media_kind)
         sequence['Components'].value = []
@@ -107,9 +112,17 @@ class Mob(core.AAFObject):
         return slot
 
     def create_picture_slot(self, edit_rate=25):
+        """
+            Create an empty timeline slot, with the 'picture' media kind, and sets 
+            its segment to a new, empty `aaf2.components.Sequence` component.
+        """
         return self.create_empty_sequence_slot(edit_rate, media_kind="picture")
 
     def create_sound_slot(self, edit_rate=25):
+        """
+            Create an empty timeline slot, with the 'sound' media kind, and sets 
+            its segment to a new, empty `aaf2.components.Sequence` component.
+        """
         return self.create_empty_sequence_slot(edit_rate, media_kind="sound")
 
     def create_source_clip(self, slot_id=None, start=None, length=None, media_kind=None):
