@@ -3,9 +3,9 @@ from setuptools import setup
 import setuptools.command.build_py
 
 PROJECT_METADATA = {
-    "version": "1.3.0",
-    "author": 'Nils Kretschmer',
-    "author_email": 'mail@nils-kretschmer.de',
+    "version": "1.2.0",
+    "author": 'Mark Reid',
+    "author_email": 'mindmark@gmail.com',
     "license": 'MIT',
 }
 
@@ -40,15 +40,15 @@ class AddMetadata(setuptools.command.build_py.build_py):
 
 setup(
     name='pyaaf2',
-    description='An automatic ingest workflow for Avid Interplay Services.',
-    url='https://github.com/NKnuelle/pyaaf2',
+    description='A python module for reading and writing advanced authoring format files',
+    url='https://github.com/markreidvfx/pyaaf2',
     project_urls={
         'Source':
-            'https://github.com/NKnuelle/pyaaf2',
+            'https://github.com/markreidvfx/pyaaf2',
         'Documentation':
             'http://pyaaf.readthedocs.io',
         'Issues':
-            'https://github.com/NKnuelle/pyaaf2/issues',
+            'https://github.com/markreidvfx/pyaaf2/issues',
     },
 
     classifiers=[
