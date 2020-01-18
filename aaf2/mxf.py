@@ -570,6 +570,11 @@ class MXFMultipleDescriptor(MXFDescriptor):
             #     continue
             d['FileDescriptors'].append(item.link())
         d['Length'].value = self.data.get('Length', 0)
+
+        n = self.root.aaf.create.NetworkLocator()
+        n['URLString'].value = ama_path(self.root.path)
+        d['Locator'].append(n)
+
         d['SampleRate'].value = self.data['SampleRate']
 
         if self.root.ama:
@@ -606,6 +611,9 @@ class MXFCDCIDescriptor(MXFDescriptor):
 
         for item in self.iter_strong_refs("Locator"):
             d['Locator'].append(item.link())
+            n = self.root.aaf.create.NetworkLocator()
+            n['URLString'].value = ama_path(self.root.path)
+            d['Locator'].append(n)
 
         d['ContainerFormat'].value = self.root.aaf.dictionary.lookup_containerdef("AAFKLV")
         if self.root.ama:
@@ -635,6 +643,9 @@ class MXFRGBADescriptor(MXFDescriptor):
                 d[key].value = self.data[key]
 
         d['ContainerFormat'].value = self.root.aaf.dictionary.lookup_containerdef("AAFKLV")
+        n = self.root.aaf.create.NetworkLocator()
+        n['URLString'].value = ama_path(self.root.path)
+        d['Locator'].append(n)
         if self.root.ama:
             n = self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
@@ -680,6 +691,9 @@ class MXFPCMDescriptor(MXFDescriptor):
         for key in ('BlockAlign', 'AverageBPS', 'Channels',
             'QuantizationBits', 'AudioSamplingRate', 'SampleRate', 'Length'):
             d[key].value = self.data[key]
+        n = self.root.aaf.create.NetworkLocator()
+        n['URLString'].value = ama_path(self.root.path)
+        d['Locator'].append(n)
         if self.root.ama:
             n =  self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
@@ -705,10 +719,9 @@ class MXFImportDescriptor(MXFDescriptor):
 
     def link(self):
         d = self.create_aaf_instance()
-        if self.root.ama:
-            n = self.root.aaf.create.NetworkLocator()
-            n['URLString'].value = ama_path(self.root.path)
-            d['Locator'].append(n)
+        n = self.root.aaf.create.NetworkLocator()
+        n['URLString'].value = ama_path(self.root.path)
+        d['Locator'].append(n)
 
         return d
 

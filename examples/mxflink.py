@@ -7,7 +7,8 @@ from __future__ import (
 import aaf2
 import sys
 
-out_file = "mxf_link.aaf"
+
+out_file = "link_external_mxf.aaf"
 with aaf2.open(out_file, 'w') as f:
     for path in sys.argv[1:]:
         for mob in f.content.link_external_mxf(path):
