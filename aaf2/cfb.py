@@ -34,6 +34,8 @@ from .import auid
 
 from io import BytesIO
 
+sentinel = object()
+
 dir_types = {0x00 : 'empty',
              0x01 : 'storage',
              0x02 : 'stream',
@@ -369,7 +371,7 @@ class Stream(object):
         pass
 
 class DirEntry(object):
-    __slots__ = ('storage', 'dir_id', 'parent', 'data', '__weakref__')
+    __slots__ = ('storage', 'dir_id', 'parent', 'data', '_name', '__weakref__')
 
     def __init__(self, storage, dir_id, data=None):
         self.storage = storage
@@ -388,12 +390,16 @@ class DirEntry(object):
 
         # mark modified will now work
         self.dir_id = dir_id
+        self._name = sentinel
 
     @property
     def name(self):
+        if self._name is not sentinel:
+            return self._name
         name_size = unpack_u16le_from(self.data, 64)
         assert name_size <= 64
         name =  decode_utf16le(self.data[:name_size])
+        self._name = name
         return name
 
     @name.setter
@@ -401,6 +407,7 @@ class DirEntry(object):
         name_data = value.encode("utf-16le")
         name_size = len(name_data)
         assert name_size <= 64
+        self._name = value
         self.data[:name_size] = name_data
         pad = 64 - name_size
         for i in range(pad):
@@ -623,10 +630,7 @@ class DirEntry(object):
             parent.child_id = None
         else:
             # find dir entry pointing to self
-            while True:
-                if count > max_dirs_entries:
-                    raise CompoundFileBinaryError("max dir entries limit reached")
-
+            while count < max_dirs_entries:
                 if entry < root:
                     if root.left_id == entry.dir_id:
                         root.left_id = None
@@ -641,6 +645,8 @@ class DirEntry(object):
 
                 count += 1
 
+            if count >= max_dirs_entries:
+                raise CompoundFileBinaryError("max dir entries limit reached")
 
         left = entry.left()
         right = entry.right()
@@ -674,10 +680,7 @@ class DirEntry(object):
         entry.color = 'black'
 
         # avoids recursion
-        while True:
-            if count > max_dirs_entries:
-                raise CompoundFileBinaryError("max dir entries limit reached")
-
+        while count < max_dirs_entries:
             if entry < root:
                 left = root.left()
                 if left:
@@ -695,6 +698,9 @@ class DirEntry(object):
                     entry.parent = self.parent
                     break
             count += 1
+
+        if count >= max_dirs_entries:
+            raise CompoundFileBinaryError("max dir entries limit reached")
 
         # resucive version
         # if entry < self:
