@@ -16,6 +16,7 @@ from array import array
 from struct import Struct
 import struct
 from collections import deque
+import random
 
 from .utils import (
     read_u8, read_u16le,
@@ -715,6 +716,17 @@ class DirEntry(object):
         #         right.insert(entry)
         #     else:
         #         self.right_id = entry.dir_id
+
+    def rebalance_children_tree(self):
+
+        children  = self.listdir()
+        self.child_id = None
+        random.shuffle(children)
+        for c in children:
+            c.left_id = None
+            c.right_id = None
+            self.add_child(c)
+
 
     def path(self):
         path = []
