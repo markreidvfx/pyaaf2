@@ -371,6 +371,65 @@ class Stream(object):
     def close(self):
         pass
 
+
+def is_red(entry):
+    if (entry is not None) and entry.red:
+        return True
+    return False
+
+def validate_rbtree(root):
+    if root is None:
+        return 1
+
+    left = root.left()
+    right = root.right()
+
+    if is_red(root):
+        if is_red(left) or is_red(right):
+            raise CompoundFileBinaryError("Red violation {}".format(root.path()))
+
+    lh = validate_rbtree(left)
+    rh = validate_rbtree(right)
+
+    if left is not None and left >= root:
+        raise CompoundFileBinaryError("Binary tree violation" )
+
+    if right is not None and right <= root:
+        raise CompoundFileBinaryError("Binary tree violation")
+
+    # Black height mismatch
+    # cannot gerentee all aaf Implementions use rbtree
+    # if lh != 0 and rh != 0 and lh != rh:
+    #     print(lh, rh)
+    #     raise CompoundFileBinaryError("Black violation {}".format(root.path()))
+
+    if lh != 0 and rh != 0:
+        return lh if is_red(root) else lh + 1
+    else:
+        return 0
+
+def jsw_single(root, direction):
+    # print("rotating", root.dir_id, direction)
+
+    other_side = 1 - direction
+
+    new_root = root[other_side]
+
+    root[other_side] = new_root[direction]
+    new_root[direction] = root
+
+    root.red = True
+    new_root.red = False
+
+    return new_root
+
+def jsw_double(root, direction):
+    # print("double rotating", root.dir_id, direction)
+
+    other_side = 1 - direction
+    root[other_side] = jsw_single(root[other_side], other_side)
+    return jsw_single(root, direction)
+
 class DirEntry(object):
     __slots__ = ('storage', 'dir_id', 'parent', 'data', '_name', '__weakref__')
 
@@ -449,6 +508,21 @@ class DirEntry(object):
             self.data[67] = 0x00
         else:
             raise ValueError("invalid dir type: %s" % str(value))
+
+        self.mark_modified()
+
+    @property
+    def red(self):
+        if self.data[67] == 0x01:
+            return False
+        return True
+
+    @red.setter
+    def red(self, value):
+        if value:
+            self.data[67] = 0x00
+        else:
+            self.data[67] = 0x01
 
         self.mark_modified()
 
@@ -593,6 +667,20 @@ class DirEntry(object):
             return self.name.upper() == other.upper()
         return False
 
+    def __getitem__(self, index):
+        return self.left() if index == 0 else self.right()
+
+    def __setitem__(self, index, value):
+        if value is None:
+            dir_id = None
+        else:
+            dir_id = value.dir_id
+
+        if index == 0:
+            self.left_id = dir_id
+        else:
+            self.right_id = dir_id
+
     def left(self):
         return self.storage.read_dir_entry(self.left_id, self.parent)
 
@@ -606,13 +694,110 @@ class DirEntry(object):
         entry.parent = self
         entry.color = 'black'
         child = self.child()
-        if child:
-            child.insert(entry)
-        else:
+        if child is None:
             self.child_id = entry.dir_id
+        else:
+            # child.insert_old(entry)
+
+            # make sure entry is part of cache
+            # or insert might now work correctly
+            self.storage.dir_cache[entry.dir_id] = entry
+            self.insert(entry)
 
         if self.dir_id in self.storage.children_cache:
             self.storage.children_cache[self.dir_id][entry.name] = entry
+
+    def insert(self, entry):
+
+        dir_per_sector = self.storage.sector_size // 128
+        max_dirs_entries = self.storage.dir_sector_count * dir_per_sector
+
+        head = DirEntry(self.storage, None) # False tree root
+        head.red = True
+        entry.red = True
+
+        grand_grand_parent = head
+        grand_parent = None
+        parent = None
+        direction = 0
+        last = 0
+
+        node = self.child()
+        self.child_id = None
+        grand_grand_parent.right_id = node.dir_id
+
+        assert node
+
+        count = 0
+        rebalance = False
+
+        while count < max_dirs_entries:
+            # print(node, count)
+            if node is None:
+                node = entry
+                parent[direction] = node
+
+            elif is_red(node.left()) and is_red(node.right()):
+                # Color flip
+                node.red = True
+                node.left().red = False
+                node.right().red = False
+                # print("flipping")
+
+            # Fix red violation if possible
+            if is_red(node) and is_red(parent):
+
+                malform = False
+                if grand_grand_parent.left() is grand_parent:
+                    direction2 = 0
+                elif grand_grand_parent.right() is grand_parent:
+                    direction2 = 1
+                else:
+                    malform = True
+
+                if not malform:
+                    if node is parent[last]:
+                        grand_grand_parent[direction2] = jsw_single(grand_parent, 1 - last)
+                    elif node is parent[1-last]:
+                        grand_grand_parent[direction2] = jsw_double(grand_parent, 1 - last)
+                    else:
+                        malform = True
+
+                if malform:
+                    parent.red = False
+                    if parent.left_id is not None:
+                        parent.left().red = False
+                    if parent.right_id is not None:
+                        parent.right().red = False
+
+                    rebalance = True
+
+            if node is entry:
+                break
+
+            last = direction
+            assert entry
+            assert node
+            direction = 0 if entry < node else 1
+
+            if grand_parent is not None:
+                grand_grand_parent = grand_parent
+
+            grand_parent = parent
+            parent = node
+            node = node[direction]
+
+            count += 1
+
+        if count >= max_dirs_entries:
+            raise CompoundFileBinaryError("max dir entries limit reached")
+
+        self.child_id = head.right_id
+        self.child().red = False
+
+        # if rebalance:
+        #     print("reblanceing")
+        #     self.rebalance_children_tree()
 
     def pop(self):
         """
@@ -643,7 +828,7 @@ class DirEntry(object):
                         root.right_id = None
                         break
                     root = root.right()
-
+                assert root
                 count += 1
 
             if count >= max_dirs_entries:
@@ -670,7 +855,7 @@ class DirEntry(object):
         self.right_id = None
         self.parent = None
 
-    def insert(self, entry):
+    def insert_old(self, entry):
 
         root = self
 
@@ -1270,6 +1455,8 @@ class CompoundFileBinary(object):
             pos = ((sid + 1) *  self.sector_size) + sid_offset
 
             f.seek(pos)
+            # force black everything
+            # entry.data[67] = 0x01
             f.write(entry.data)
 
             # invalidate  sector
@@ -1453,6 +1640,8 @@ class CompoundFileBinary(object):
         entry = self.dir_cache.get(dir_id, None)
         if entry is not None:
             return entry
+
+        # print("reading", dir_id)
 
         # assert not dir_id in self.dir_freelist
 
@@ -1805,6 +1994,10 @@ class CompoundFileBinary(object):
 
             for root_item, storage, stream in topdown_visit_node(root):
                 yield root_item, storage, stream
+
+    def validate_directory_structure(self):
+        for root, storage, stream in self.walk():
+            validate_rbtree(root.child())
 
 
     def exists(self, path):
