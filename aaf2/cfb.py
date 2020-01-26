@@ -731,6 +731,8 @@ class DirEntry(object):
         count = 0
         rebalance = False
 
+        use_rbtree = True
+
         while count < max_dirs_entries:
             # print(node, count)
             if node is None:
@@ -795,60 +797,57 @@ class DirEntry(object):
         self.child_id = head.right_id
         self.child().red = False
 
-        # if rebalance:
-        #     print("reblanceing")
-        #     self.rebalance_children_tree()
-
     def pop(self):
         """
-        remove self from binary search tree
+        remove self from binary search tree.
         """
         entry = self
-        parent = self.parent
-
-        root = parent.child()
 
         dir_per_sector = self.storage.sector_size // 128
         max_dirs_entries = self.storage.dir_sector_count * dir_per_sector
         count = 0
+        direction = None
 
-        if root.dir_id == entry.dir_id:
-            parent.child_id = None
-        else:
-            # find dir entry pointing to self
-            while count < max_dirs_entries:
-                if entry < root:
-                    if root.left_id == entry.dir_id:
-                        root.left_id = None
-                        break
-                    root = root.left()
-                else:
-                    if root.right_id == entry.dir_id:
-                        # root right is pointing to self
-                        root.right_id = None
-                        break
-                    root = root.right()
-                assert root
-                count += 1
+        head = DirEntry(self.storage, None) # False tree root
+        node = self.parent.child()
+        parent = head
+        parent[1] = node
+        direction = 1
+        found = None
 
-            if count >= max_dirs_entries:
-                raise CompoundFileBinaryError("max dir entries limit reached")
+        while count < max_dirs_entries and count < max_dirs_entries:
+            if node is entry:
+                found = node
+                break
+
+            direction = 0 if entry < node else 1
+            parent = node
+            node = node[direction]
+            count += 1
+
+        assert found
+        if count >= max_dirs_entries:
+            raise CompoundFileBinaryError("max dir entries limit reached")
 
         left = entry.left()
         right = entry.right()
 
-        # clear from cache
-        if parent.dir_id in self.storage.children_cache:
-            del self.storage.children_cache[parent.dir_id][entry.name]
-            if left:
-                del self.storage.children_cache[parent.dir_id][left.name]
-            if right:
-                del self.storage.children_cache[parent.dir_id][right.name]
+        # assert direction == int(parent[1] is entry)
+        entry_side = int(entry[0] is None)
+        parent[direction] = entry[entry_side]
 
-        if left is not None:
-            parent.add_child(left)
-        if right is not None:
-            parent.add_child(right)
+        self.parent.child_id = head.right_id
+        if self.parent.child_id:
+            self.parent.child().red = False
+
+        # re-insert other side instead of replacing entry
+        # with a right most leaf node.
+        if left and right:
+            self.parent.add_child(entry[1-entry_side])
+
+        # clear from cache
+        if self.parent.dir_id in self.storage.children_cache:
+            del self.storage.children_cache[self.parent.dir_id][entry.name]
 
         # clear parent and left and right
         self.left_id = None
