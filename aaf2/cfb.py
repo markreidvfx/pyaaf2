@@ -806,44 +806,65 @@ class DirEntry(object):
         dir_per_sector = self.storage.sector_size // 128
         max_dirs_entries = self.storage.dir_sector_count * dir_per_sector
         count = 0
-        direction = None
 
         head = DirEntry(self.storage, None) # False tree root
-        node = self.parent.child()
-        parent = head
-        parent[1] = node
+        node = head
+        node[1] = self.parent.child()
+        grand_parent = None
+        parent = None
+        entry_parent = None
+        entry_grand_parent = None
         direction = 1
         found = None
 
-        while count < max_dirs_entries and count < max_dirs_entries:
-            if node is entry:
-                found = node
-                break
+        # this keeps going until predecessor is found
+        while node[direction] is not None and count < max_dirs_entries:
 
-            direction = 0 if entry < node else 1
+            last = direction
+            grand_parent = parent
             parent = node
             node = node[direction]
+
+            direction = int(node < entry)
+
+            if node is entry:
+                entry_parent = parent
+                entry_grand_parent = grand_parent
+                found = node
+
             count += 1
 
         assert found
         if count >= max_dirs_entries:
             raise CompoundFileBinaryError("max dir entries limit reached")
 
-        left = entry.left()
-        right = entry.right()
+        if entry_parent[0] is entry:
+            entry_direction = 0
+        elif entry_parent[1] is entry:
+            entry_direction = 1
+        else:
+            raise CompoundFileBinaryError()
 
-        # assert direction == int(parent[1] is entry)
-        entry_side = int(entry[0] is None)
-        parent[direction] = entry[entry_side]
+        # node is the predecessor
+        if node is not entry:
+            # remove the predecessor
+            parent[parent[1] is node] = node[node[0] is None]
+
+            # replace entry with its predecessor
+            node[0] = entry[0]
+            node[1] = entry[1]
+            node.red = entry.red
+
+            # can entry parent change when reording introduced?
+            entry_parent[entry_direction] = node
+
+        else:
+            entry_side = int(entry[0] is None)
+            entry_parent[entry_direction] = entry[entry_side]
 
         self.parent.child_id = head.right_id
         if self.parent.child_id:
             self.parent.child().red = False
-
-        # re-insert other side instead of replacing entry
-        # with a right most leaf node.
-        if left and right:
-            self.parent.add_child(entry[1-entry_side])
 
         # clear from cache
         if self.parent.dir_id in self.storage.children_cache:
