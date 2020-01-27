@@ -23,40 +23,53 @@ class CopyTests(unittest.TestCase):
         src_path = os.path.join(test_files, "test_file_01.aaf")
         dst_path = os.path.join(test_dir, "test_copy.aaf")
 
-        file_a = io.open(src_path, 'rb')
-        file_b = io.open(dst_path, 'wb+')
+        with io.open(src_path, 'rb') as file_a:
+            ss_a = CompoundFileBinary(file_a, 'rb')
+            with io.open(dst_path, 'wb+') as file_b:
+                ss_b = CompoundFileBinary(file_b, 'wb+')
 
-        ss_a = CompoundFileBinary(file_a, 'rb')
-        ss_b = CompoundFileBinary(file_b, 'wb+')
+                # copy everything
+                for root, storage, streams in ss_a.walk():
+                    for item in storage:
+                        entry = ss_b.makedir(item.path(), class_id=item.class_id)
 
-        print(ss_a.class_id)
-        print(ss_a.root)
+                    for item in streams:
+                        s_a = ss_a.open(item.path(), 'r')
+                        s_b = ss_b.open(item.path(), 'w')
+                        s_b.write(s_a.read())
 
-        for root, storage, streams in ss_a.walk():
-            for item in storage:
-                entry = ss_b.makedir(item.path(), class_id=item.class_id)
+                # check everything exists while file live
+                for root, storage, streams in ss_a.walk():
 
-            for item in streams:
-                s_a = ss_a.open(item.path(), 'r')
-                s_b = ss_b.open(item.path(), 'w')
-                s_b.write(s_a.read())
+                    assert ss_b.exists(root.path())
+                    for item in storage:
+                        assert ss_b.exists(item.path())
+                        s_b = ss_b.find(item.path())
+                        assert s_b.class_id == item.class_id
 
-        ss_b.close()
-        file_b.close()
+                    for item in streams:
+                        s_a = ss_a.open(item.path(), 'r')
+                        s_b = ss_b.open(item.path(), 'r')
+                        assert s_a.read() == s_b.read()
 
-        with io.open(dst_path, 'rb') as f:
-            ss = CompoundFileBinary(f)
-            print(ss.root)
-            for root, storage, streams in ss.walk():
+                ss_b.close()
 
-                assert ss_a.exists(root.path())
-                for item in storage:
-                    assert ss_a.exists(item.path())
+            # reopen file and check everything exists
+            with io.open(dst_path, 'rb') as f:
+                ss_b = CompoundFileBinary(f, 'rb')
+                # check everything exists
+                for root, storage, streams in ss_a.walk():
 
-                for item in streams:
-                    s_a = ss_a.open(item.path(), 'r')
-                    s_b = ss.open(item.path(), 'r')
-                    assert s_a.read() == s_b.read()
+                    assert ss_b.exists(root.path())
+                    for item in storage:
+                        assert ss_b.exists(item.path())
+                        s_b = ss_b.find(item.path())
+                        assert s_b.class_id == item.class_id
+
+                    for item in streams:
+                        s_a = ss_a.open(item.path(), 'r')
+                        s_b = ss_b.open(item.path(), 'r')
+                        assert s_a.read() == s_b.read()
 
 
 if __name__ == '__main__':
