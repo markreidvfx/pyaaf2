@@ -786,38 +786,40 @@ class DirEntry(object):
 
             # Fix red violations
             if is_red(node) and is_red(parent):
-                malformed = False
                 if grand_grand_parent[0] is grand_parent:
                     direction2 = 0
                 elif grand_grand_parent[1] is grand_parent:
                     direction2 = 1
                 else:
-                    malformed = True
                     raise CompoundFileBinaryError()
 
-                if not malformed:
-                    if node is parent[last]:
-                        grand_grand_parent[direction2] = jsw_single(grand_parent, 1 - last)
-                        # NOTE: Example implemention doesn't do this
-                        grand_parent = grand_grand_parent
-                        grand_grand_parent = None
+                if node is parent[last]:
+                    grand_grand_parent[direction2] = jsw_single(grand_parent, 1 - last)
+                    # restore parent references
+                    # NOTE: Example implemention doesn't do this
+                    grand_parent = grand_grand_parent
+                    grand_grand_parent = grand_grand_grand_parent
 
-                        assert is_parent_of(parent, node)
-                        assert is_parent_of(grand_parent, parent)
+                    # assert is_parent_of(parent, node)
+                    # assert is_parent_of(grand_parent, parent)
 
-                    elif node is parent[1-last]:
-                        grand_grand_parent[direction2] = jsw_double(grand_parent, 1 - last)
-                        # NOTE: Example implemention doesn't do this
-                        parent = grand_grand_parent
-                        grand_parent = grand_grand_grand_parent
-                        grand_grand_parent = None
-
-                        assert is_parent_of(parent, node)
-                        assert is_parent_of(grand_parent, parent)
+                elif node is parent[1-last]:
+                    grand_grand_parent[direction2] = jsw_double(grand_parent, 1 - last)
+                    # restore parent references
+                    # NOTE: Example implemention doesn't do this
+                    parent = grand_grand_parent
+                    if parent is head:
+                        grand_parent = None
                     else:
-                        # can this happen?
-                        raise CompoundFileBinaryError()
+                        grand_parent = grand_grand_grand_parent
+                    grand_grand_parent = None
 
+                    # assert is_parent_of(parent, node)
+                    # if grand_parent is not None:
+                    #     assert is_parent_of(grand_parent, parent)
+                else:
+                    # can this happen?
+                    raise CompoundFileBinaryError()
 
             # node has been inserted
             if node is entry:
@@ -827,7 +829,7 @@ class DirEntry(object):
             direction = 0 if entry < node else 1
 
             if grand_grand_parent is not None:
-                grand_grand_grand_parent = grand_parent
+                grand_grand_grand_parent = grand_grand_parent
 
             if grand_parent is not None:
                 grand_grand_parent = grand_parent
@@ -835,6 +837,12 @@ class DirEntry(object):
             grand_parent = parent
             parent = node
             node = node[direction]
+
+            assert is_parent_of(parent, node)
+            if grand_parent:
+                assert is_parent_of(grand_parent, parent)
+            if grand_grand_parent:
+                assert is_parent_of(grand_grand_parent, grand_parent)
 
             count += 1
 
@@ -898,6 +906,7 @@ class DirEntry(object):
                 if is_red(node[1 - direction]):
                     parent[last] = jsw_single(node, direction)
                     parent = parent[last]
+                    assert is_parent_of(parent, node)
 
                 elif is_not_red(node[1 - direction]):
                     sibling = parent[1 - direction]
@@ -919,6 +928,7 @@ class DirEntry(object):
 
                             if is_red(sibling[last]):
                                 grand_parent[direction2] = jsw_double(parent, last)
+
                             elif is_red(sibling[1 - last]):
                                 grand_parent[direction2] = jsw_single(parent, last)
 
@@ -927,6 +937,8 @@ class DirEntry(object):
                             grand_parent[direction2].red = True;
                             grand_parent[direction2][0].red = False;
                             grand_parent[direction2][1].red = False;
+
+                            assert is_parent_of(parent, node)
 
             count += 1
 
