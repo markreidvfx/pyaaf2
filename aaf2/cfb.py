@@ -377,6 +377,12 @@ def is_red(entry):
         return True
     return False
 
+def is_not_red(entry):
+    return not is_red(entry)
+
+def is_parent_of(parent, entry):
+    return parent[0] is entry or parent[1] is entry
+
 def validate_rbtree(root):
     if root is None:
         return 1
@@ -752,6 +758,7 @@ class DirEntry(object):
         head.red = True
         entry.red = True
 
+        grand_grand_grand_parent = None
         grand_grand_parent = head
         grand_parent = None
         parent = None
@@ -795,12 +802,18 @@ class DirEntry(object):
                         grand_parent = grand_grand_parent
                         grand_grand_parent = None
 
+                        assert is_parent_of(parent, node)
+                        assert is_parent_of(grand_parent, parent)
+
                     elif node is parent[1-last]:
                         grand_grand_parent[direction2] = jsw_double(grand_parent, 1 - last)
                         # NOTE: Example implemention doesn't do this
                         parent = grand_grand_parent
-                        grand_parent = None
+                        grand_parent = grand_grand_grand_parent
                         grand_grand_parent = None
+
+                        assert is_parent_of(parent, node)
+                        assert is_parent_of(grand_parent, parent)
                     else:
                         # can this happen?
                         raise CompoundFileBinaryError()
@@ -812,6 +825,9 @@ class DirEntry(object):
 
             last = direction
             direction = 0 if entry < node else 1
+
+            if grand_grand_parent is not None:
+                grand_grand_grand_parent = grand_parent
 
             if grand_parent is not None:
                 grand_grand_parent = grand_parent
@@ -877,17 +893,17 @@ class DirEntry(object):
                 found = node
 
             # Push the red node down
-            if not is_red(node) and not is_red(node[direction]):
+            if is_not_red(node) and is_not_red(node[direction]):
 
                 if is_red(node[1 - direction]):
                     parent[last] = jsw_single(node, direction)
                     parent = parent[last]
 
-                elif not is_red(node[1 - direction]):
+                elif is_not_red(node[1 - direction]):
                     sibling = parent[1 - direction]
                     if sibling is not None:
 
-                        if not is_red(sibling[1 - last]) and not is_red(sibling[last]):
+                        if is_not_red(sibling[1 - last]) and is_not_red(sibling[last]):
                             # Color flip
                             parent.red = False
                             sibling.red = True
