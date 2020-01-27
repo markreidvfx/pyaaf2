@@ -410,8 +410,6 @@ def validate_rbtree(root):
         return 0
 
 def jsw_single(root, direction):
-    # print("rotating", root.dir_id, direction)
-
     other_side = 1 - direction
 
     new_root = root[other_side]
@@ -425,8 +423,6 @@ def jsw_single(root, direction):
     return new_root
 
 def jsw_double(root, direction):
-    # print("double rotating", root.dir_id, direction)
-
     other_side = 1 - direction
     root[other_side] = jsw_single(root[other_side], other_side)
     return jsw_single(root, direction)
@@ -961,53 +957,6 @@ class DirEntry(object):
         self.left_id = None
         self.right_id = None
         self.parent = None
-
-    def insert_old(self, entry):
-
-        root = self
-
-        dir_per_sector = self.storage.sector_size // 128
-        max_dirs_entries = self.storage.dir_sector_count * dir_per_sector
-
-        count = 0
-        entry.color = 'black'
-
-        # avoids recursion
-        while count < max_dirs_entries:
-            if entry < root:
-                left = root.left()
-                if left:
-                    root = left
-                else:
-                    root.left_id = entry.dir_id
-                    entry.parent = self.parent
-                    break
-            else:
-                right = root.right()
-                if right:
-                    root = right
-                else:
-                    root.right_id = entry.dir_id
-                    entry.parent = self.parent
-                    break
-            count += 1
-
-        if count >= max_dirs_entries:
-            raise CompoundFileBinaryError("max dir entries limit reached")
-
-        # resucive version
-        # if entry < self:
-        #     left = self.left()
-        #     if left:
-        #         left.insert(entry)
-        #     else:
-        #         self.left_id = entry.dir_id
-        # else:
-        #     right = self.right()
-        #     if right:
-        #         right.insert(entry)
-        #     else:
-        #         self.right_id = entry.dir_id
 
     def rebalance_children_tree(self):
 
