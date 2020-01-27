@@ -386,7 +386,8 @@ def validate_rbtree(root):
 
     if is_red(root):
         if is_red(left) or is_red(right):
-            raise CompoundFileBinaryError("Red violation {}".format(root.path()))
+            print("Red violation {}".format(root.path()))
+            # raise CompoundFileBinaryError()
 
     lh = validate_rbtree(left)
     rh = validate_rbtree(right)
@@ -429,6 +430,39 @@ def jsw_double(root, direction):
     other_side = 1 - direction
     root[other_side] = jsw_single(root[other_side], other_side)
     return jsw_single(root, direction)
+
+def find_entry_parent(root, entry, max_depth):
+    parent = None
+    node = root
+    count = 0
+    while node is not None and count < max_depth:
+        if node is entry:
+            return parent
+
+        direction = 0 if entry < node else 1
+        parent = node
+        node = node[direction]
+        count += 1
+
+    raise CompoundFileBinaryError("Max Depth Exceeded")
+
+def get_entry_path(root, entry, max_depth):
+    parent = None
+    node = root
+    count = 0
+    path = []
+    while node is not None and count < max_depth:
+
+        path.append(node)
+        if node is entry:
+            break
+        direction = 0 if entry < node else 1
+        parent = node
+        node = node[direction]
+        count += 1
+
+    return path
+
 
 class DirEntry(object):
     __slots__ = ('storage', 'dir_id', 'parent', 'data', '_name', '__weakref__')
@@ -708,6 +742,12 @@ class DirEntry(object):
             self.storage.children_cache[self.dir_id][entry.name] = entry
 
     def insert(self, entry):
+        """
+        inserts centry into child folder tree.
+        Trys to mantains a balanced red black tree.
+        Technique is base on topdown insert approach in described in
+        https://eternallyconfuzzled.com/red-black-trees-c-the-most-common-balanced-binary-search-tree
+        """
 
         dir_per_sector = self.storage.sector_size // 128
         max_dirs_entries = self.storage.dir_sector_count * dir_per_sector
@@ -727,59 +767,54 @@ class DirEntry(object):
         grand_grand_parent.right_id = node.dir_id
 
         assert node
-
         count = 0
-        rebalance = False
-
-        use_rbtree = True
 
         while count < max_dirs_entries:
-            # print(node, count)
+
             if node is None:
                 node = entry
                 parent[direction] = node
 
-            elif is_red(node.left()) and is_red(node.right()):
+            elif is_red(node[0]) and is_red(node[1]):
                 # Color flip
                 node.red = True
-                node.left().red = False
-                node.right().red = False
-                # print("flipping")
+                node[0].red = False
+                node[1].red = False
 
-            # Fix red violation if possible
+            # Fix red violations
             if is_red(node) and is_red(parent):
-
-                malform = False
-                if grand_grand_parent.left() is grand_parent:
+                malformed = False
+                if grand_grand_parent[0] is grand_parent:
                     direction2 = 0
-                elif grand_grand_parent.right() is grand_parent:
+                elif grand_grand_parent[1] is grand_parent:
                     direction2 = 1
                 else:
-                    malform = True
+                    malformed = True
+                    raise CompoundFileBinaryError()
 
-                if not malform:
+                if not malformed:
                     if node is parent[last]:
                         grand_grand_parent[direction2] = jsw_single(grand_parent, 1 - last)
+                        # NOTE: Example implemention doesn't do this
+                        grand_parent = grand_grand_parent
+                        grand_grand_parent = None
+
                     elif node is parent[1-last]:
                         grand_grand_parent[direction2] = jsw_double(grand_parent, 1 - last)
+                        # NOTE: Example implemention doesn't do this
+                        parent = grand_grand_parent
+                        grand_parent = None
+                        grand_grand_parent = None
                     else:
-                        malform = True
+                        # can this happen?
+                        raise CompoundFileBinaryError()
 
-                if malform:
-                    parent.red = False
-                    if parent.left_id is not None:
-                        parent.left().red = False
-                    if parent.right_id is not None:
-                        parent.right().red = False
 
-                    rebalance = True
-
+            # node has been inserted
             if node is entry:
                 break
 
             last = direction
-            assert entry
-            assert node
             direction = 0 if entry < node else 1
 
             if grand_parent is not None:
@@ -794,12 +829,16 @@ class DirEntry(object):
         if count >= max_dirs_entries:
             raise CompoundFileBinaryError("max dir entries limit reached")
 
+        # update root of tree as it could have changed
         self.child_id = head.right_id
         self.child().red = False
 
     def pop(self):
         """
-        remove self from binary search tree.
+        remove self from self.parent folder binary search tree.
+        Trys to mantains a balanced red black tree.
+        Technique is base on topdown remove approach in described in
+        https://eternallyconfuzzled.com/red-black-trees-c-the-most-common-balanced-binary-search-tree
         """
         entry = self
 
@@ -808,6 +847,8 @@ class DirEntry(object):
         count = 0
 
         head = DirEntry(self.storage, None) # False tree root
+        head.red = True
+        head.name = "" # NOTE: any name will be less then this
         node = head
         node[1] = self.parent.child()
         grand_parent = None
@@ -817,7 +858,7 @@ class DirEntry(object):
         direction = 1
         found = None
 
-        # this keeps going until predecessor is found
+        # This keeps going until predecessor is found, even if entry is found
         while node[direction] is not None and count < max_dirs_entries:
 
             last = direction
@@ -825,12 +866,55 @@ class DirEntry(object):
             parent = node
             node = node[direction]
 
+            # The trick here is after entry is found
+            # this will continue to be used to find the predecessor of entry.
+            # its quite clever!
             direction = int(node < entry)
 
             if node is entry:
-                entry_parent = parent
-                entry_grand_parent = grand_parent
+                # store the grand parent because the parent of entry
+                # can change during rebalance below
+                if grand_parent is None:
+                    entry_grand_parent = head
+                else:
+                    entry_grand_parent = grand_parent
                 found = node
+
+            # Push the red node down
+            if not is_red(node) and not is_red(node[direction]):
+
+                if is_red(node[1 - direction]):
+                    parent[last] = jsw_single(node, direction)
+                    parent = parent[last]
+
+                elif not is_red(node[1 - direction]):
+                    sibling = parent[1 - direction]
+                    if sibling is not None:
+
+                        if not is_red(sibling[1 - last]) and not is_red(sibling[last]):
+                            # Color flip
+                            parent.red = False
+                            sibling.red = True
+                            node.red = True
+                        else:
+                            if grand_parent[0] == parent:
+                                direction2 = 0
+                            elif  grand_parent[1] == parent:
+                                direction2 = 1
+                            else:
+                                # can this happen?
+                                raise CompoundFileBinaryError()
+
+                            if is_red(sibling[last]):
+                                grand_parent[direction2] = jsw_double(parent, last)
+                            elif is_red(sibling[1 - last]):
+                                grand_parent[direction2] = jsw_single(parent, last)
+
+                            # Ensure correct coloring
+                            node.red = True
+                            grand_parent[direction2].red = True;
+                            grand_parent[direction2][0].red = False;
+                            grand_parent[direction2][1].red = False;
 
             count += 1
 
@@ -838,14 +922,18 @@ class DirEntry(object):
         if count >= max_dirs_entries:
             raise CompoundFileBinaryError("max dir entries limit reached")
 
+        # entry parent could have changed during rebalance
+        max_search_depth = 4 # grand_parent -> parent -> node
+        entry_parent = find_entry_parent(entry_grand_parent, entry, max_search_depth)
+
         if entry_parent[0] is entry:
             entry_direction = 0
         elif entry_parent[1] is entry:
             entry_direction = 1
         else:
-            raise CompoundFileBinaryError()
+            raise CompoundFileBinaryError("Unable to find entry parent")
 
-        # node is the predecessor
+        # node is the predecessor. node will be removed and entry will be replaced
         if node is not entry:
             # remove the predecessor
             parent[parent[1] is node] = node[node[0] is None]
@@ -855,13 +943,12 @@ class DirEntry(object):
             node[1] = entry[1]
             node.red = entry.red
 
-            # can entry parent change when reording introduced?
             entry_parent[entry_direction] = node
-
         else:
             entry_side = int(entry[0] is None)
             entry_parent[entry_direction] = entry[entry_side]
 
+        # update root of tree as it could have changed
         self.parent.child_id = head.right_id
         if self.parent.child_id:
             self.parent.child().red = False
