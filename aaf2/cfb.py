@@ -745,7 +745,7 @@ class DirEntry(object):
 
     def insert(self, entry):
         """
-        inserts centry into child folder tree.
+        Inserts entry into child folder tree.
         Trys to mantains a balanced red black tree.
         Technique is base on topdown insert approach in described in
         https://eternallyconfuzzled.com/red-black-trees-c-the-most-common-balanced-binary-search-tree
@@ -1864,12 +1864,6 @@ class CompoundFileBinary(object):
         entry.name = basename
         entry.type = dir_type
         entry.class_id = class_id
-
-        # TODO: Implement a Red Black tree
-        # all new DirEntries are black, so there is no tree balancing.
-        # AAF Low-Level Container Specification says its alright to do this.
-
-        entry.color = 'black'
 
         root.add_child(entry)
         self.dir_cache[dir_id] = entry
