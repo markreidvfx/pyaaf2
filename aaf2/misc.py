@@ -203,7 +203,7 @@ def cubic_bezier_interpolate(p0, p1, p2, p3, t):
 
     guess_t = t_mix
 
-    # approxmate the correct t value,
+    # approximate the correct t value,
     # not sure if this correct
     # its slow but seems to work..
     for i in range(20):
@@ -230,15 +230,15 @@ def sign_no_zero(v):
         return -1
     return 1
 
-def calculate_tanget(p0, p1, p2, in_tanget=False):
+def calculate_tangent(p0, p1, p2, in_tangent=False):
 
     # Note:
     # This code was a lot of guess work
     # MC docs refer to spline as "Natural Spline" or "Cardinal Spline"
     # and AAF files export it with CubicInterpolator definition
-    # MC has some wacky way of calculating the y coord of tangets
+    # MC has some wacky way of calculating the y coord of tangents
 
-    # in_tanget <---- x ----> out_tanget
+    # in_tangent <---- x ----> out_tangent
 
     x = p1[0]
     y = p1[1]
@@ -249,7 +249,7 @@ def calculate_tanget(p0, p1, p2, in_tanget=False):
     py = p0[1]
     ny = p2[1]
 
-    if in_tanget:
+    if in_tangent:
         tan_x = 0.4 * (x - px)
     else:
         tan_x = 0.4 * (nx - x)
@@ -270,7 +270,7 @@ def calculate_tanget(p0, p1, p2, in_tanget=False):
         scale = min(h1, h2) / height * 2.0
         tan_y = scale * slope * tan_x
 
-    if in_tanget:
+    if in_tangent:
         tan_x *= -1.0
         tan_y *= -1.0
 
@@ -278,8 +278,8 @@ def calculate_tanget(p0, p1, p2, in_tanget=False):
 
 def cubic_interpolate(p0, p1, p2, p3, t):
 
-    tan_x0, tan_y0 = calculate_tanget(p0, p1, p2, False)
-    tan_x1, tan_y1 = calculate_tanget(p1, p2, p3, True)
+    tan_x0, tan_y0 = calculate_tangent(p0, p1, p2, False)
+    tan_x1, tan_y1 = calculate_tangent(p1, p2, p3, True)
 
     p0 = p1
     p3 = p2
@@ -347,7 +347,7 @@ def generate_offset_map(speed_map, start=0, end=None):
 
     center_offset = value[offset_index]
 
-    # not really sure what this base fream offset is about
+    # not really sure what this base frame offset is about
     # but appears to contain the how much calculation is off...
     center_offset -= first.base_frame
 
@@ -451,13 +451,13 @@ class VaryingValue(Parameter):
             t3 = float(p2.time)
             v3 = float(p2.value)
 
-            tangets = p1.tangets[1]
-            t1 = t0 + tangets[0]
-            v1 = v0 + tangets[1]
+            tangents = p1.tangents[1]
+            t1 = t0 + tangents[0]
+            v1 = v0 + tangents[1]
 
-            tangets = p2.tangets[0]
-            t2 = t3 + tangets[0]
-            v2 = v3 + tangets[1]
+            tangents = p2.tangents[0]
+            t2 = t3 + tangents[0]
+            v2 = v3 + tangents[1]
 
             return cubic_bezier_interpolate((t0, v0),
                                             (t1, v1),
@@ -552,7 +552,7 @@ class ControlPoint(core.AAFObject):
         return self.point_properties.get("PP_BASE_FRAME_U", 0)
 
     @property
-    def tangets(self):
+    def tangents(self):
         props = self.point_properties
         return [(float(props.get("PP_IN_TANGENT_POS_U", 0)),
                  float(props.get("PP_IN_TANGENT_VAL_U", 0))),
