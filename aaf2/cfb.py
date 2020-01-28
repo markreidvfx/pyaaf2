@@ -796,7 +796,7 @@ class DirEntry(object):
                 if node is parent[last]:
                     grand_grand_parent[direction2] = jsw_single(grand_parent, 1 - last)
                     # restore parent references
-                    # NOTE: Example implemention doesn't do this
+                    # NOTE: Example implementation doesn't do this
                     grand_parent = grand_grand_parent
                     grand_grand_parent = grand_grand_grand_parent
 
@@ -806,7 +806,7 @@ class DirEntry(object):
                 elif node is parent[1-last]:
                     grand_grand_parent[direction2] = jsw_double(grand_parent, 1 - last)
                     # restore parent references
-                    # NOTE: Example implemention doesn't do this
+                    # NOTE: Example implementation doesn't do this
                     parent = grand_grand_parent
                     if parent is head:
                         grand_parent = None
@@ -856,7 +856,7 @@ class DirEntry(object):
     def pop(self):
         """
         remove self from self.parent folder binary search tree.
-        Trys to mantains a balanced red black tree.
+        Tries to maintain a balanced red black tree.
         Technique is base on topdown remove approach in described in
         https://eternallyconfuzzled.com/red-black-trees-c-the-most-common-balanced-binary-search-tree
         """
@@ -1145,11 +1145,11 @@ class CompoundFileBinary(object):
         if self.mode in ("r", "rb"):
             return
 
-        # caculate mini stream size
+        # calculate mini stream size
         if self.root.sector_id is not None:
             # I cannot find this documented anywhere but the size of the mini stream
             # is the size up to the last mini sector is uses. Not the total Non FREESECT's.
-            # If self.root.byte_size is not set correctly the some appications will crash hard...
+            # If self.root.byte_size is not set correctly the some applications will crash hard...
 
             # find last non-free sect
             for i,v in enumerate(reversed(self.minifat)):
@@ -1246,10 +1246,10 @@ class CompoundFileBinary(object):
         f.write(self.class_id.bytes_le)
         write_u16le(f, self.minor_version)
         write_u16le(f, self.major_version)
-        write_u16le(f, 0xFFFE) #byte order le
+        write_u16le(f, 0xFFFE) # byte order le
         write_u16le(f, int(math.log(self.sector_size, 2)))
         write_u16le(f, int(math.log(self.mini_stream_sector_size, 2)))
-        f.write(b'\0' * 6) #skip reseverd
+        f.write(b'\0' * 6) # skip reserved
 
         write_u32le(f, self.dir_sector_count)
         write_u32le(f, self.fat_sector_count)
@@ -1311,7 +1311,7 @@ class CompoundFileBinary(object):
         if self.mini_stream_sector_size != 64:
             raise NotImplementedError("unsupported mini sector size: %d" % self.mini_stream_sector_size)
 
-        f.read(6) #skip reseverd
+        f.read(6) # skip reserved
 
         self.dir_sector_count = read_u32le(f)
         logging.debug("dir_sector_count: %d" % self.dir_sector_count)
@@ -1581,7 +1581,7 @@ class CompoundFileBinary(object):
                 self.mini_stream_grow()
             return i
 
-        # if we got here need to add aditional fat
+        # if we got here need to add additional fat
         sid = self.next_free_sect()
         # logging.warn("growing minifat to sid %d" % sid)
 
@@ -1617,7 +1617,7 @@ class CompoundFileBinary(object):
                 return self.next_free_sect()
             return i
 
-        # if we got here need to add aditional fat
+        # if we got here need to add additional fat
         # logging.debug("fat full, growing")
 
         difat_table = None
@@ -1696,8 +1696,8 @@ class CompoundFileBinary(object):
             pos = (sid + 1) *  self.sector_size
             self.f.seek(pos)
             sector_data = bytearray(self.sector_size)
-            #NOTE: if requested sector doesn't exsit or
-            # is truncated will padd with zeros, expected behavour
+            #NOTE: if requested sector doesn't exist or
+            # is truncated will pad with zeros, expected behaviour
             bytes_read = self.f.readinto(sector_data)
             self.sector_cache[sid] = sector_data
             return sector_data
