@@ -45,7 +45,7 @@ class AAFFactory(object):
             raise ValueError("no class found with name: %s" % name)
 
         if not classdef.concrete:
-            raise ValueError("cannnot initialize abstract class: %s" % name)
+            raise ValueError("cannot initialize abstract class: %s" % name)
 
         classobj = self.root.metadict.lookup_class(name)
 

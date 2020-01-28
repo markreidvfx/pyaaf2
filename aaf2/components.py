@@ -88,7 +88,7 @@ class Sequence(Segment):
                 if edit_unit >= position and edit_unit < position + component.length:
                     return index
 
-            # gone past return prevous
+            # gone past return previous
             if last_component and position >= edit_unit:
                 return last_index
 

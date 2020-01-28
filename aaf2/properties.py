@@ -361,7 +361,7 @@ class StrongRefProperty(Property):
             self.ref = mangle_name(propdef.property_name, self.pid, 32)
             self.data = self.encode(self.ref)
 
-        # before asigning new object detach old
+        # before assigning new object detach old
         if self.object:
             self.object.detach()
             self.object = None
@@ -751,7 +751,7 @@ class StrongRefSetProperty(Property):
             key       = index_data[index + 2]
 
             # not sure if ref count is actually used
-            # doesn't apear to be
+            # doesn't appear to be
             assert ref_count == 1
 
             if self.key_size == 16:
