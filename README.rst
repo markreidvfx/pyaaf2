@@ -48,7 +48,6 @@ TODO
 - Port more pyaaf1 examples
 - MXF linking improvements
 - AMA linking improvements
-- CFB red black tree
 - XML support
 
 .. |python-versions| image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6%2C%203.7-blue.svg
