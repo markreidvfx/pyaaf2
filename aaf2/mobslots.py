@@ -18,9 +18,10 @@ class MobSlot(core.AAFObject):
     def __init__(self, slot_id=None, name=None, segment=None):
         super(MobSlot, self).__init__()
         self.slot_id = slot_id
-        self.name = name
-        if slot_id is not None and name is None:
-            self.name = "Track-%03d" % slot_id
+        # NOTE: Current versions of Resolve don't seem to like AAFs without SlotName set.
+        # Even though its not a required property lets always set it to at least
+        # a empty str to avoid any incompatibilities,
+        self.name = name or ""
         self.segment = segment
 
     @property
