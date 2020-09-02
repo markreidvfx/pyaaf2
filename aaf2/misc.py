@@ -258,7 +258,7 @@ def calculate_tangent(p0, p1, p2, in_tangent=False):
     prev_slope = (y - py) / (x - px)
     next_slope = (ny - y) / (nx - x)
 
-    if sign_no_zero(prev_slope) != sign_no_zero(next_slope) or sign_no_zero(slope) != sign_no_zero(next_slope):
+    if sign_no_zero(prev_slope) != sign_no_zero(next_slope) or sign_no_zero(slope) != sign_no_zero(next_slope) or ny == py:
         tan_y = 0
     else:
         height = abs(ny - py)
