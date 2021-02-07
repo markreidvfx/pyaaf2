@@ -11,9 +11,9 @@ environment:
     - PYTHON: "C:\\Python37-x64"
 
 install:
-   - curl -kLO https://ffmpeg.zeranoe.com/builds/win32/static/ffmpeg-3.4-win32-static.zip
-   - 7z x ffmpeg-3.4-win32-static.zip
-   - set PATH=%CD%\ffmpeg-3.4-win32-static\bin;%PATH%
+   - curl -kLO https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z
+   - 7z -offmpeg\bin e ffmpeg-release-full.7z "*\bin\*exe"
+   - set PATH=%CD%\ffmpeg\bin;%PATH%
 
 build: off
 
