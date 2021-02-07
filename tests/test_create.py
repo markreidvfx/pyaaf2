@@ -129,7 +129,21 @@ class CreatAAFTests(unittest.TestCase):
             with self.assertRaises(KeyError):
                 del mob['AppCode']
 
+    def test_bad_timestamp(self):
+        result_file = common.get_test_file('bad_timestamp.aaf')
+        bad_timestamp = {u'date': {u'month': 0, u'day': 0, u'year': 0},
+                         u'time': datetime.time(0, 0)}
 
+        # NOTE: in versions 1.1.0 and 1.0.2 of the AAF SDK it is
+        # possible to have datetimes python cannot decode
+        # SourceForge Bug ID #1191791
+        # https://sourceforge.net/p/aaf/bugs/90/
+
+        with aaf2.open(result_file, 'w') as f:
+            f.header['LastModified'].value = bad_timestamp
+
+        with aaf2.open(result_file, 'r') as f:
+            assert f.header['LastModified'].value == bad_timestamp
 
 if __name__ == "__main__":
     import logging

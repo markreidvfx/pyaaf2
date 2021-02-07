@@ -16,6 +16,7 @@ from .exceptions import AAFPropertyError
 from .auid import AUID
 
 import datetime
+import logging
 
 from struct import (unpack, pack)
 from .utils import register_class, decode_utf16le, encode_utf16le, encode_utf16_array, encode_auid_array
@@ -605,24 +606,39 @@ class TypeDefRecord(TypeDef):
             result[key] = typedef.decode(data[start:end])
             start = end
 
+        # NOTE: If datetime helpers raise exception record is returned as a dict
 
         # TimeStruct
         if self.auid == TIMESTRUCT_AUID:
-            t = datetime.time(result['hour'],
-                              result['minute'],
-                              result['second'],
-                              result['fraction'])
-            return t
+            try:
+                t = datetime.time(result['hour'],
+                                result['minute'],
+                                result['second'],
+                                result['fraction'])
+                return t
+            except:
+                logging.warn("unable to decode time: {}".format(result))
 
         # DateStruct
         if self.auid == DATESTRUCT_AUID:
-            d = datetime.date(**result)
-            return d
+            # aaf sdk struct says:
+            # year   range -32,767 to +32767
+            # month  range: 1-12, inclusive
+            # day    range: 1-31, inclusive
+            try:
+                d = datetime.date(**result)
+                return d
+            except:
+                logging.warn("unable to decode date: {}".format(result))
 
         # TimeStamp
         if self.auid == TIMESTAMP_AUID:
-            d = datetime.datetime.combine(result['date'], result['time'])
-            return d
+            if isinstance(result.get('date', {}), datetime.date):
+                try:
+                    d = datetime.datetime.combine(result['date'], result['time'])
+                    return d
+                except:
+                    logging.warn("unable to decode timestamp: {}".format(result))
 
         # Rational
         if self.auid == RATIONAL_AUID:
@@ -642,8 +658,7 @@ class TypeDefRecord(TypeDef):
 
         result = b""
         # TimeStamp
-        if self.auid == TIMESTAMP_AUID:
-            assert isinstance(data, datetime.datetime)
+        if self.auid == TIMESTAMP_AUID and isinstance(data, datetime.datetime):
             f = [self.root.metadict.lookup_typedef(t) for k, t in self.fields]
             #date
             result += f[0].encode(data.date())
@@ -654,8 +669,7 @@ class TypeDefRecord(TypeDef):
 
 
         # DateStruct
-        if self.auid == DATESTRUCT_AUID:
-            assert isinstance(data, datetime.date)
+        if self.auid == DATESTRUCT_AUID and isinstance(data, datetime.date):
             d = {'year' : data.year,
                  'month' : data.month,
                  'day': data.day}
@@ -663,8 +677,7 @@ class TypeDefRecord(TypeDef):
             data = d
 
         # TimeStruct
-        if self.auid == TIMESTRUCT_AUID:
-            assert isinstance(data, datetime.time)
+        if self.auid == TIMESTRUCT_AUID and isinstance(data, datetime.time):
             t = {'hour' : data.hour,
                  'minute' : data.minute,
                  'second' : data.second,
