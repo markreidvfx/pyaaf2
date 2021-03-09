@@ -10,6 +10,7 @@ import datetime
 
 from io import BytesIO
 import io
+from urllib.parse import quote
 
 from .utils import (read_u8, read_u16be,
                    read_u32be, read_s32be,
@@ -146,7 +147,7 @@ def decode_mob_id(data):
 
 def ama_path(path):
     prefix ="file://"
-    return prefix + path
+    return prefix + quote(path.replace("\\", "/"))
 
 class MXFObject(object):
     def __init__(self):
@@ -611,9 +612,10 @@ class MXFCDCIDescriptor(MXFDescriptor):
 
         for item in self.iter_strong_refs("Locator"):
             d['Locator'].append(item.link())
-            n = self.root.aaf.create.NetworkLocator()
-            n['URLString'].value = ama_path(self.root.path)
-            d['Locator'].append(n)
+
+        n = self.root.aaf.create.NetworkLocator()
+        n['URLString'].value = ama_path(self.root.path)
+        d['Locator'].append(n)
 
         d['ContainerFormat'].value = self.root.aaf.dictionary.lookup_containerdef("AAFKLV")
         if self.root.ama:
@@ -695,7 +697,7 @@ class MXFPCMDescriptor(MXFDescriptor):
         n['URLString'].value = ama_path(self.root.path)
         d['Locator'].append(n)
         if self.root.ama:
-            n =  self.root.aaf.create.NetworkLocator()
+            n = self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
             d['Locator'].append(n)
             d['MediaContainerGUID'].value = AUID("60eb8921-2a02-4406-891c-d9b6a6ae0645")
