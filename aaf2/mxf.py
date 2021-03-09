@@ -10,6 +10,7 @@ import datetime
 
 from io import BytesIO
 import io
+from urllib.parse import quote
 
 from .utils import (read_u8, read_u16be,
                    read_u32be, read_s32be,
@@ -146,7 +147,7 @@ def decode_mob_id(data):
 
 def ama_path(path):
     prefix ="file://"
-    return prefix + path
+    return prefix + quote(path.replace("\\", "/"))
 
 class MXFObject(object):
     def __init__(self):
