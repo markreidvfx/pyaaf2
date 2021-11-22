@@ -617,7 +617,7 @@ class TypeDefRecord(TypeDef):
                                 result['fraction'])
                 return t
             except:
-                logging.warn("unable to decode time: {}".format(result))
+                logging.warning("unable to decode time: {}".format(result))
 
         # DateStruct
         if self.auid == DATESTRUCT_AUID:
@@ -629,7 +629,7 @@ class TypeDefRecord(TypeDef):
                 d = datetime.date(**result)
                 return d
             except:
-                logging.warn("unable to decode date: {}".format(result))
+                logging.warning("unable to decode date: {}".format(result))
 
         # TimeStamp
         if self.auid == TIMESTAMP_AUID:
@@ -638,7 +638,7 @@ class TypeDefRecord(TypeDef):
                     d = datetime.datetime.combine(result['date'], result['time'])
                     return d
                 except:
-                    logging.warn("unable to decode timestamp: {}".format(result))
+                    logging.warning("unable to decode timestamp: {}".format(result))
 
         # Rational
         if self.auid == RATIONAL_AUID:

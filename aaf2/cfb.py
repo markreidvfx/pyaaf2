@@ -1129,7 +1129,7 @@ class CompoundFileBinary(object):
 
             if self.root.sector_id is not None and mini_stream_byte_size != self.root.byte_size:
                 message = "mini stream size missmatch: %d != %d, using size from minifat"
-                logging.warn(message % (self.root.byte_size, mini_stream_byte_size))
+                logging.warning(message % (self.root.byte_size, mini_stream_byte_size))
         else:
             self.setup_empty(sector_size)
             self.write_header()
@@ -1429,7 +1429,7 @@ class CompoundFileBinary(object):
         #  len(fat_sectors),self.fat_sector_count
         # assert len(fat_sectors) == self.fat_sector_count
         if len(fat_sectors) != self.fat_sector_count:
-            logging.warn("fat sector count missmatch difat: %d header: %d" % (len(fat_sectors), self.fat_sector_count))
+            logging.warning("fat sector count missmatch difat: %d header: %d" % (len(fat_sectors), self.fat_sector_count))
             self.fat_sector_count = len(fat_sectors)
 
         for sid in fat_sectors:
@@ -1449,7 +1449,7 @@ class CompoundFileBinary(object):
 
         if self.sector_size == 4096 and len(self.fat) > RANGELOCKSECT:
             if self.fat[RANGELOCKSECT] != ENDOFCHAIN:
-                logging.warn("range lock sector has data")
+                logging.warning("range lock sector has data")
 
         # logging.debug("fat: %s" % str(pretty_sectors(self.fat)))
 
@@ -1583,7 +1583,7 @@ class CompoundFileBinary(object):
 
         # if we got here need to add additional fat
         sid = self.next_free_sect()
-        # logging.warn("growing minifat to sid %d" % sid)
+        # logging.warning("growing minifat to sid %d" % sid)
 
         idx_start = len(self.minifat)
         idx_end = idx_start + self.sector_size // 4
