@@ -22,7 +22,7 @@ class AUID(object):
         elif bytes_be is not None:
             self.bytes_be = bytes_be
         elif int is not None:
-            if int is 0:
+            if int == 0:
                 self.bytes_le = bytearray(16)
             else:
                 self.bytes_le = bytearray(uuid.UUID(int=int).bytes_le)
