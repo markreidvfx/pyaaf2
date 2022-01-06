@@ -689,8 +689,9 @@ class MXFPCMDescriptor(MXFDescriptor):
         d = self.create_aaf_instance()
         # required
         for key in ('BlockAlign', 'AverageBPS', 'Channels',
-            'QuantizationBits', 'AudioSamplingRate', 'SampleRate', 'Length'):
+            'QuantizationBits', 'AudioSamplingRate', 'SampleRate'):
             d[key].value = self.data[key]
+        d['Length'].value = self.data.get('Length', 0)
         n = self.root.aaf.create.NetworkLocator()
         n['URLString'].value = ama_path(self.root.path)
         d['Locator'].append(n)
