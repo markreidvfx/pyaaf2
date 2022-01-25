@@ -4,7 +4,7 @@ pyaaf2
 ======
 
 A python module for reading and writing Advanced Authoring Format (AAF) files.
-pyaaf2 rewrite of `pyaaf1 <https://github.com/markreidvfx/pyaaf>`_ in pure python.
+pyaaf2 is a rewrite of `pyaaf1 <https://github.com/markreidvfx/pyaaf>`_ in pure python.
 
 Features
 --------
