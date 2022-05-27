@@ -18,6 +18,7 @@ from . import audio
 from .rational import AAFRational
 from .auid import AUID
 
+
 @register_class
 class Mob(core.AAFObject):
     """
@@ -65,6 +66,7 @@ class Mob(core.AAFObject):
     @property
     def usage(self):
         return self['UsageCode'].value
+
     @usage.setter
     def usage(self, value):
         self['UsageCode'].value = value
@@ -151,6 +153,7 @@ class Mob(core.AAFObject):
 
         return '<%s at 0x%x>' % (s, id(self))
 
+
 @register_class
 class CompositionMob(Mob):
     class_id = AUID("0d010101-0101-3500-060e-2b3402060101")
@@ -208,6 +211,7 @@ class MasterMob(Mob):
         slot.segment.length = source_slot.segment.length
         return slot
 
+
 @register_class
 class SourceMob(Mob):
     class_id = AUID("0d010101-0101-3700-060e-2b3402060101")
@@ -219,6 +223,7 @@ class SourceMob(Mob):
     @property
     def descriptor(self):
         return self['EssenceDescription'].value
+
     @descriptor.setter
     def descriptor(self, value):
         self['EssenceDescription'].value = value

@@ -11,9 +11,11 @@ from . mobid import MobID
 from . dictionary import DataDef
 from .auid import AUID
 
+
 class Component(core.AAFObject):
     class_id = AUID("0d010101-0101-0200-060e-2b3402060101")
     __slots__ = ()
+
     def __init__(self, media_kind=None, length=None):
         super(Component, self).__init__()
         self.media_kind = media_kind or 'picture'
@@ -45,6 +47,7 @@ class Component(core.AAFObject):
     def media_kind(self, value):
         self.datadef = self.root.dictionary.lookup_datadef(value)
 
+
 class Segment(Component):
     class_id = AUID("0d010101-0101-0300-060e-2b3402060101")
     __slots__ = ()
@@ -69,6 +72,7 @@ class Transition(Component):
     def cutpoint(self, value):
         self['CutPoint'].value = value
 
+
 @register_class
 class Sequence(Segment):
     class_id = AUID("0d010101-0101-0f00-060e-2b3402060101")
@@ -85,7 +89,6 @@ class Sequence(Segment):
         return self.components[self.index_at_time(edit_unit)]
 
     def index_at_time(self, edit_unit):
-
         last_component = None
         last_index = None
 
@@ -96,7 +99,7 @@ class Sequence(Segment):
         for index, position, component in self.positions():
 
             if isinstance(component, Transition):
-                if edit_unit >= position and edit_unit < position + component.length:
+                if position <= edit_unit < position + component.length:
                     return index
 
             # gone past return previous
@@ -119,6 +122,7 @@ class Sequence(Segment):
                 yield (index, length, component)
                 length += component.length
 
+
 @register_class
 class NestedScope(Segment):
     class_id = AUID("0d010101-0101-0b00-060e-2b3402060101")
@@ -130,6 +134,7 @@ class NestedScope(Segment):
     @property
     def slots(self):
         return self['Slots']
+
 
 class SourceReference(Segment):
     class_id = AUID("0d010101-0101-1000-060e-2b3402060101")
@@ -176,6 +181,7 @@ class SourceReference(Segment):
     @slot.setter
     def slot(self, value):
         self.slot_id = value.slot_id
+
 
 @register_class
 class SourceClip(SourceReference):
@@ -234,6 +240,7 @@ class SourceClip(SourceReference):
         else:
             raise NotImplementedError("Walking {} not implemented".format(
                                       type(segment)))
+
 
 @register_class
 class Filler(Segment):
@@ -325,6 +332,7 @@ class Timecode(Segment):
     def drop(self, value):
         self['Drop'].value = value
 
+
 @register_class
 class OperationGroup(Segment):
     class_id = AUID("0d010101-0101-0a00-060e-2b3402060101")
@@ -357,12 +365,14 @@ class OperationGroup(Segment):
     def segments(self):
         return self['InputSegments']
 
+
 class Event(Segment):
     class_id = AUID("0d010101-0101-0600-060e-2b3402060101")
     __slots__ = ()
 
     def __init__(self):
         super(Event, self).__init__(media_kind='DescriptiveMetadata')
+
 
 @register_class
 class CommentMarker(Event):

@@ -362,10 +362,12 @@ def generate_offset_map(speed_map, start=0, end=None):
 
     return result
 
+
 @register_class
 class VaryingValue(Parameter):
     class_id = AUID("0d010101-0101-3e00-060e-2b3402060101")
     __slots__ = ()
+
     def __init__(self, parameterdef=None, interperlationdef=None):
         super(VaryingValue, self).__init__()
         if parameterdef:
@@ -377,6 +379,7 @@ class VaryingValue(Parameter):
     @property
     def interpolationdef(self):
         return self['Interpolation'].value
+
     @interpolationdef.setter
     def interpolationdef(self, value):
         self['Interpolation'].value = value
@@ -542,7 +545,7 @@ class ControlPoint(core.AAFObject):
 
     @value.setter
     def value(self, value):
-        self['Value'].value =  AAFRational(value)
+        self['Value'].value = AAFRational(value)
 
     @property
     def point_properties(self):

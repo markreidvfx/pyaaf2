@@ -30,6 +30,7 @@ P_HEADER_STRUCT = struct.Struct(str('<BBH'))
 
 OPERATIONGROUP_PARAMETERS_AUID = AUID("06010104-060a-0000-060e-2b3401010102")
 
+
 class AAFObject(object):
     __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
 
@@ -177,7 +178,6 @@ class AAFObject(object):
                 # print('writing index', self, p)
                 p.write_index()
 
-
     def detach(self, delete=False):
         items = []
         for item, streams in self.walk_references(topdown=True):
@@ -228,7 +228,6 @@ class AAFObject(object):
                 p.attach()
 
     def walk_references(self, topdown=False):
-
         refs = []
         streams = []
         for p in self.properties():
@@ -298,7 +297,7 @@ class AAFObject(object):
         for item in self.properties():
             if item.name == key:
                 return item
-        if allkeys == False:
+        if not allkeys:
             return default
 
         classdef = self.classdef
@@ -318,7 +317,7 @@ class AAFObject(object):
         return default
 
     def getvalue(self, key, default=None):
-        if not key in self.keys():
+        if key not in self.keys():
             return default
 
         p = self.get(key, None)
@@ -349,7 +348,7 @@ class AAFObject(object):
 
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+                       self.__class__.__name__)
         name = self.name
         if name:
             s += ' %s' % name
@@ -357,7 +356,6 @@ class AAFObject(object):
         return '<%s at 0x%x>' % (s, id(self))
 
     def dump(self, space=""):
-
         indent = "  "
 
         for p in self.properties():
