@@ -39,7 +39,6 @@ class AAFFactory(object):
         return self.create_instance
 
     def from_name(self, name, *args, **kwargs):
-
         classdef = self.root.metadict.lookup_classdef(name)
         if classdef is None:
             raise ValueError("no class found with name: %s" % name)

@@ -9,6 +9,7 @@ from __future__ import (
 from io import BytesIO
 import weakref
 import struct
+
 from .utils import (
     read_u8,
     read_u16le,
@@ -398,6 +399,7 @@ class StrongRefProperty(Property):
 
 class StrongRefVectorProperty(Property):
     __slots__ = ('references', 'next_free_key', 'last_free_key','objects', '_index_name')
+
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
         super(StrongRefVectorProperty, self).__init__(parent, pid, format, version)
         self.references = []
@@ -496,7 +498,6 @@ class StrongRefVectorProperty(Property):
         return "%s{%x}" % (self.index_name, self.references[index])
 
     def get(self, index, default=None):
-
         if index >= len(self.references):
             return default
 
@@ -854,7 +855,7 @@ class StrongRefSetProperty(Property):
         # check values are the correct type
         for item in values:
             if not classdef.isinstance(item.classdef):
-                raise TypeError("Invalid Value")
+                raise TypeError(f'Invalid Value, expected {classdef}, got {item.classdef}')
             if item.dir:
                 raise AAFAttachError("object already attached")
 
@@ -968,7 +969,7 @@ class StrongRefSetProperty(Property):
 
 def resolve_weakref(p, ref):
     ref_class_id = p.ref_classdef.auid
-    if ref_class_id   == CLASSDEF_AUID:
+    if ref_class_id == CLASSDEF_AUID:
         return p.parent.root.metadict.lookup_classdef(ref)
     elif ref_class_id == TYPEDEF_AUID:
         return p.parent.root.metadict.lookup_typedef(ref)
