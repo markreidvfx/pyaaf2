@@ -349,6 +349,10 @@ class OperationGroup(Segment):
     def parameters(self):
         return self['Parameters']
 
+    @parameters.setter
+    def parameters(self, value):
+        self['Parameters'] = value
+
     @property
     def segments(self):
         return self['InputSegments']

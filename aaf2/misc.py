@@ -385,9 +385,14 @@ class VaryingValue(Parameter):
     @property
     def interpolation(self):
         return self['Interpolation'].value
-    @interpolationdef.setter
+
+    @interpolation.setter
     def interpolation(self, value):
         self['Interpolation'].value = value
+
+    @property
+    def pointlist(self):
+        return self['PointList']
 
     @property
     def typedef(self):
