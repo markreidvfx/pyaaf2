@@ -68,7 +68,7 @@ class AAFObject(object):
 
     @property
     def unique_key(self):
-        self.unique_property.value
+        return self.unique_property.value
 
     def read_properties(self):
         stream = self.dir.get('properties')
