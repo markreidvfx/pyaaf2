@@ -15,6 +15,7 @@ class Component(core.AAFObject):
     class_id = AUID("0d010101-0101-0200-060e-2b3402060101")
     __slots__ = ()
     def __init__(self, media_kind=None, length=None):
+        super(Component, self).__init__()
         self.media_kind = media_kind or 'picture'
         self.length = length or 0
 
@@ -48,10 +49,17 @@ class Segment(Component):
     class_id = AUID("0d010101-0101-0300-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, media_kind=None, length=None):
+        super(Segment, self).__init__(media_kind=media_kind, length=length)
+
+
 @register_class
 class Transition(Component):
     class_id = AUID("0d010101-0101-1700-060e-2b3402060101")
     __slots__ = ()
+
+    def __init__(self, media_kind=None, length=None):
+        super(Transition, self).__init__(media_kind=media_kind, length=length)
 
     @property
     def cutpoint(self):
@@ -65,6 +73,9 @@ class Transition(Component):
 class Sequence(Segment):
     class_id = AUID("0d010101-0101-0f00-060e-2b3402060101")
     __slots__ = ()
+
+    def __init__(self, media_kind=None, length=None):
+        super(Sequence, self).__init__(media_kind=media_kind, length=length)
 
     @property
     def components(self):
@@ -113,6 +124,9 @@ class NestedScope(Segment):
     class_id = AUID("0d010101-0101-0b00-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, media_kind=None, length=None):
+        super(NestedScope, self).__init__(media_kind=media_kind, length=length)
+
     @property
     def slots(self):
         return self['Slots']
@@ -120,6 +134,9 @@ class NestedScope(Segment):
 class SourceReference(Segment):
     class_id = AUID("0d010101-0101-1000-060e-2b3402060101")
     __slots__ = ()
+
+    def __init__(self, media_kind=None, length=None):
+        super(SourceReference, self).__init__(media_kind=media_kind, length=length)
 
     @property
     def mob_id(self):
@@ -223,38 +240,62 @@ class Filler(Segment):
     class_id = AUID("0d010101-0101-0900-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, media_kind=None, length=None):
+        super(Filler, self).__init__(media_kind=media_kind, length=length)
+
+
 @register_class
 class EssenceGroup(Segment):
     class_id = AUID("0d010101-0101-0500-060e-2b3402060101")
     __slots__ = ()
+
+    def __init__(self, media_kind=None, length=None):
+        super(EssenceGroup, self).__init__(media_kind=media_kind, length=length)
+
 
 @register_class
 class EdgeCode(Segment):
     class_id = AUID("0d010101-0101-0400-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, media_kind=None, length=None):
+        super(EdgeCode, self).__init__(media_kind=media_kind, length=length)
+
+
 @register_class
 class Pulldown(Segment):
     class_id = AUID("0d010101-0101-0c00-060e-2b3402060101")
     __slots__ = ()
+
+    def __init__(self, media_kind=None, length=None):
+        super(Pulldown, self).__init__(media_kind=media_kind, length=length)
+
 
 @register_class
 class ScopeReference(Segment):
     class_id = AUID("0d010101-0101-0d00-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, media_kind=None, length=None):
+        super(ScopeReference, self).__init__(media_kind=media_kind, length=length)
+
+
 @register_class
 class Selector(Segment):
     class_id = AUID("0d010101-0101-0e00-060e-2b3402060101")
     __slots__ = ()
+
+    def __init__(self, media_kind=None, length=None):
+        super(Selector, self).__init__(media_kind=media_kind, length=length)
+
 
 @register_class
 class Timecode(Segment):
     class_id = AUID("0d010101-0101-1400-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, fps=25, drop=False):
-        length = fps * 60 * 60 * 12 # 12 hours
+    def __init__(self, fps=25, drop=False, length=None):
+        length = length or fps * 60 * 60 * 12  # 12 hours
         super(Timecode, self).__init__(length=length, media_kind='Timecode')
         self.start = 0
         self.fps = fps
@@ -289,10 +330,12 @@ class OperationGroup(Segment):
     class_id = AUID("0d010101-0101-0a00-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, operationdef, length=None):
-        super(OperationGroup, self).__init__(length=length)
+    def __init__(self, operationdef, length=None, media_kind=None):
+        super(OperationGroup, self).__init__(media_kind=media_kind, length=length)
         self.operation = self.root.dictionary.lookup_operationdef(operationdef)
-        self.media_kind = self.operation.media_kind
+
+        if self.media_kind is None:
+            self.media_kind = self.operation.media_kind
 
     @property
     def operation(self):
@@ -322,7 +365,14 @@ class CommentMarker(Event):
     class_id = AUID("0d010101-0101-0800-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self):
+        super(CommentMarker, self).__init__()
+
+
 @register_class
 class DescriptiveMarker(CommentMarker):
     class_id = AUID("0d010101-0101-4100-060e-2b3402060101")
     __slots__ = ()
+
+    def __init__(self):
+        super(DescriptiveMarker, self).__init__()

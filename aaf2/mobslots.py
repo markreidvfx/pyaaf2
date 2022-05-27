@@ -82,6 +82,9 @@ class EventMobSlot(MobSlot):
     class_id = AUID( "0d010101-0101-3900-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, slot_id=None, name=None, segment=None):
+        super(EventMobSlot, self).__init__(slot_id=slot_id, name=name, segment=segment)
+
     @property
     def edit_rate(self):
         return self['EditRate'].value

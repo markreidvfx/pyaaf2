@@ -28,6 +28,8 @@ class Mob(core.AAFObject):
     __slots__ = ()
 
     def __init__(self, name=None):
+        super(Mob, self).__init__()
+
         self.name = name or "Mob"
         self.mob_id = MobID.new()
 
@@ -154,12 +156,19 @@ class CompositionMob(Mob):
     class_id = AUID("0d010101-0101-3500-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, name=None):
+        super(CompositionMob, self).__init__(name)
+
+
 @register_class
 class MasterMob(Mob):
     class_id = AUID("0d010101-0101-3600-060e-2b3402060101")
     __slots__ = ()
 
-    def import_dnxhd_essence(self, path, edit_rate, tape=None):
+    def __init__(self, name=None):
+        super(MasterMob, self).__init__(name)
+
+    def import_dnxhd_essence(self, path, edit_rate, tape=None, length=None, offline=False):
         """
         Import video essence from raw DNxHD/DNxHR stream
         """
@@ -169,7 +178,7 @@ class MasterMob(Mob):
         self.root.content.mobs.append(source_mob)
 
         # import the essencedata
-        source_slot = source_mob.import_dnxhd_essence(path, edit_rate, tape)
+        source_slot = source_mob.import_dnxhd_essence(path, edit_rate, tape, length, offline)
 
         # create slot and clip that references source_mob slot
         slot = self.create_timeline_slot(edit_rate=edit_rate)
@@ -204,6 +213,9 @@ class SourceMob(Mob):
     class_id = AUID("0d010101-0101-3700-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, name=None):
+        super(SourceMob, self).__init__(name)
+
     @property
     def descriptor(self):
         return self['EssenceDescription'].value
@@ -227,18 +239,18 @@ class SourceMob(Mob):
 
         return slot
 
-    def create_timecode_slot(self, edit_rate, timecode_fps, drop_frame=False):
+    def create_timecode_slot(self, edit_rate, timecode_fps, drop_frame=False, length=None):
         timecode_slot = self.create_timeline_slot(edit_rate)
-        timecode_slot.segment = self.root.create.Timecode(timecode_fps, drop=drop_frame)
+        timecode_slot.segment = self.root.create.Timecode(timecode_fps, drop=drop_frame, length=length)
         return timecode_slot
 
-    def create_tape_slots(self, tape_name, edit_rate, timecode_fps, drop_frame=False, media_kind=None):
+    def create_tape_slots(self, tape_name, edit_rate, timecode_fps, drop_frame=False, media_kind=None, length=None):
         self.name = tape_name
         self.descriptor = self.root.create.TapeDescriptor()
 
         slot = self.create_empty_slot(edit_rate, media_kind, slot_id=1)
-        slot.segment.length = int(float(AAFRational(edit_rate)) * 60 *60 * 12) # 12 hours
-        timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame)
+        slot.segment.length = int(float(AAFRational(edit_rate)) * 60 * 60 * 12)  # 12 hours
+        timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame, length)
 
         return slot, timecode_slot
 
@@ -296,7 +308,7 @@ class SourceMob(Mob):
 
         return slot
 
-    def import_dnxhd_essence(self, path, edit_rate, tape=None):
+    def import_dnxhd_essence(self, path, edit_rate, tape=None, length=None, offline=False):
         """
         Import video essence from raw DNxHD/DNxHR stream
         """
@@ -336,11 +348,11 @@ class SourceMob(Mob):
                     descriptor['Compression'].value = video.dnx_compression_auids[cid]
                     descriptor['HorizontalSubsampling'].value = 2
 
-                stream.write(packet)
-
-            # set descriptor and component lengths
-            descriptor.length = i
-            slot.segment.length = i
+                if not offline:
+                    stream.write(packet)
+        # set descriptor and component lengths
+        slot.segment.length = length or i
+        descriptor.length = i
 
         return slot
 
