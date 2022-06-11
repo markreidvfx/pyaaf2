@@ -1,4 +1,4 @@
-|python-versions| |travis-build| |appveyor-build| |docs|
+|python-versions| |github-build| |appveyor-build| |docs|
 
 pyaaf2
 ======
@@ -50,11 +50,11 @@ TODO
 - AMA linking improvements
 - XML support
 
-.. |python-versions| image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6%2C%203.7-blue.svg
+.. |python-versions| image:: https://img.shields.io/badge/python-%3E%3D%202.7-blue.svg
 
-.. |travis-build| image:: https://travis-ci.org/markreidvfx/pyaaf2.svg?branch=master
-    :alt: travis build status
-    :target: https://travis-ci.org/markreidvfx/pyaaf2
+.. |github-build| image:: https://github.com/markreidvfx/pyaaf2/actions/workflows/python-tests.yml/badge.svg
+    :alt: github actions
+    :target: https://github.com/markreidvfx/pyaaf2/actions
 
 .. |appveyor-build| image:: https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true
     :alt: appveyor build status
