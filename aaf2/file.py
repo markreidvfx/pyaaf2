@@ -240,7 +240,7 @@ class AAFFile(object):
         self.header['Content'].value = self.create.ContentStorage()
         self.header['OperationalPattern'].value = AUID("0d011201-0100-0000-060e-2b3404010105")
         self.header['ObjectModelVersion'].value = 1
-        self.header['Version'].value =  {u'major': 1, u'minor': 1}
+        self.header['Version'].value =  {u'major': 1, u'minor': 2}
 
         i = self.create.Identification()
         i['ProductName'].value = "PyAAF"

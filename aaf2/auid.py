@@ -108,6 +108,11 @@ class AUID(object):
             return self.bytes_le == other.bytes_le
         return NotImplemented
 
+    def __lt__(self, other):
+        if isinstance(other, (AUID,)):
+            return self.int < other.int
+        return NotImplemented
+
     def __repr__(self):
         hex = '%032x' % self.int
         return '%s-%s-%s-%s-%s' % (

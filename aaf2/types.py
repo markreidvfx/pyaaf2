@@ -871,6 +871,41 @@ class TypeDefCharacter(TypeDef):
     class_id = AUID("0d010101-0223-0000-060e-2b3402060101")
     __slots__ = ()
 
+@register_class
+class TypeDefGenericCharacter(TypeDef):
+    class_id = AUID("0e040101-0000-0000-060e-2b3402060101")
+    def __new__(cls, root=None, name=None, type_auid=None, size=None):
+        self = super(TypeDefGenericCharacter, cls).__new__(cls, root, name, type_auid)
+        if root:
+            # lookup pid
+            classdef = root.metadict.lookup_classdef(AUID("0e040101-0000-0000-060e-2b3402060101"))
+
+            dynamic_pid = None
+            for pdef in classdef.all_propertydefs():
+                if pdef.auid == AUID("0e040101-0101-0111-060e-2b3401010101"):
+                    dynamic_pid = pdef.pid
+
+            assert dynamic_pid
+            # classdef
+            properties.add_u8_property(self, dynamic_pid, size)
+
+        return self
+
+    @property
+    def size(self):
+        classdef = self.root.metadict.lookup_classdef(self.class_id)
+        dynamic_pid = None
+        for pdef in classdef.all_propertydefs():
+            if pdef.auid == AUID("0e040101-0101-0111-060e-2b3401010101"):
+                dynamic_pid = pdef.pid
+
+        assert dynamic_pid
+        data = self.property_entries[dynamic_pid].data
+        if data is not None:
+            return unpack(b'B', data)[0]
+
+        raise ValueError("%s No Size" % str(self.type_name))
+
 
 categories = {
 "ints"         : TypeDefInt,
@@ -884,6 +919,7 @@ categories = {
 "opaques"      : TypeDefOpaque,
 "extenums"     : TypeDefExtEnum,
 "chars"        : TypeDefCharacter,
+"generic_chars": TypeDefGenericCharacter,
 "indirects"    : TypeDefIndirect,
 "sets"         : TypeDefSet,
 "strongrefs"   : TypeDefStrongRef,
