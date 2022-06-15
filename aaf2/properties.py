@@ -855,7 +855,7 @@ class StrongRefSetProperty(Property):
         # check values are the correct type
         for item in values:
             if not classdef.isinstance(item.classdef):
-                raise TypeError(f'Invalid Value, expected {classdef}, got {item.classdef}')
+                raise TypeError("Invalid Value, expected {}, got {}".format(classdef, item.classdef))
             if item.dir:
                 raise AAFAttachError("object already attached")
 
