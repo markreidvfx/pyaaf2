@@ -159,17 +159,10 @@ class CompositionMob(Mob):
     class_id = AUID("0d010101-0101-3500-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, name=None):
-        super(CompositionMob, self).__init__(name)
-
-
 @register_class
 class MasterMob(Mob):
     class_id = AUID("0d010101-0101-3600-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, name=None):
-        super(MasterMob, self).__init__(name)
 
     def import_dnxhd_essence(self, path, edit_rate, tape=None, length=None, offline=False):
         """
@@ -216,9 +209,6 @@ class MasterMob(Mob):
 class SourceMob(Mob):
     class_id = AUID("0d010101-0101-3700-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, name=None):
-        super(SourceMob, self).__init__(name)
 
     @property
     def descriptor(self):
