@@ -52,17 +52,10 @@ class Segment(Component):
     class_id = AUID("0d010101-0101-0300-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, media_kind=None, length=None):
-        super(Segment, self).__init__(media_kind=media_kind, length=length)
-
-
 @register_class
 class Transition(Component):
     class_id = AUID("0d010101-0101-1700-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, media_kind=None, length=None):
-        super(Transition, self).__init__(media_kind=media_kind, length=length)
 
     @property
     def cutpoint(self):
@@ -77,9 +70,6 @@ class Transition(Component):
 class Sequence(Segment):
     class_id = AUID("0d010101-0101-0f00-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, media_kind=None, length=None):
-        super(Sequence, self).__init__(media_kind=media_kind, length=length)
 
     @property
     def components(self):
@@ -128,9 +118,6 @@ class NestedScope(Segment):
     class_id = AUID("0d010101-0101-0b00-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, media_kind=None, length=None):
-        super(NestedScope, self).__init__(media_kind=media_kind, length=length)
-
     @property
     def slots(self):
         return self['Slots']
@@ -139,9 +126,6 @@ class NestedScope(Segment):
 class SourceReference(Segment):
     class_id = AUID("0d010101-0101-1000-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, media_kind=None, length=None):
-        super(SourceReference, self).__init__(media_kind=media_kind, length=length)
 
     @property
     def mob_id(self):
@@ -247,54 +231,30 @@ class Filler(Segment):
     class_id = AUID("0d010101-0101-0900-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, media_kind=None, length=None):
-        super(Filler, self).__init__(media_kind=media_kind, length=length)
-
-
 @register_class
 class EssenceGroup(Segment):
     class_id = AUID("0d010101-0101-0500-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, media_kind=None, length=None):
-        super(EssenceGroup, self).__init__(media_kind=media_kind, length=length)
-
 
 @register_class
 class EdgeCode(Segment):
     class_id = AUID("0d010101-0101-0400-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, media_kind=None, length=None):
-        super(EdgeCode, self).__init__(media_kind=media_kind, length=length)
-
-
 @register_class
 class Pulldown(Segment):
     class_id = AUID("0d010101-0101-0c00-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, media_kind=None, length=None):
-        super(Pulldown, self).__init__(media_kind=media_kind, length=length)
-
 
 @register_class
 class ScopeReference(Segment):
     class_id = AUID("0d010101-0101-0d00-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self, media_kind=None, length=None):
-        super(ScopeReference, self).__init__(media_kind=media_kind, length=length)
-
-
 @register_class
 class Selector(Segment):
     class_id = AUID("0d010101-0101-0e00-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self, media_kind=None, length=None):
-        super(Selector, self).__init__(media_kind=media_kind, length=length)
-
 
 @register_class
 class Timecode(Segment):
@@ -379,14 +339,7 @@ class CommentMarker(Event):
     class_id = AUID("0d010101-0101-0800-060e-2b3402060101")
     __slots__ = ()
 
-    def __init__(self):
-        super(CommentMarker, self).__init__()
-
-
 @register_class
 class DescriptiveMarker(CommentMarker):
     class_id = AUID("0d010101-0101-4100-060e-2b3402060101")
     __slots__ = ()
-
-    def __init__(self):
-        super(DescriptiveMarker, self).__init__()
