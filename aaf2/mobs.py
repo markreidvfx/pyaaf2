@@ -184,7 +184,7 @@ class MasterMob(Mob):
         slot.segment.length = source_slot.segment.length
         return slot
 
-    def import_audio_essence(self, path, edit_rate=None, tape=None):
+    def import_audio_essence(self, path, edit_rate=None, tape=None, length=None, offline=False):
         """
         Import audio essence from wav file
         """
@@ -193,7 +193,7 @@ class MasterMob(Mob):
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
 
-        source_slot = source_mob.import_audio_essence(path, edit_rate, tape)
+        source_slot = source_mob.import_audio_essence(path, edit_rate, tape, length, offline)
 
         # create slot and clip that references source_mob slot
         edit_rate = edit_rate or source_slot.edit_rate
@@ -354,7 +354,7 @@ class SourceMob(Mob):
 
         return slot
 
-    def import_audio_essence(self, path, edit_rate=None, tape=None):
+    def import_audio_essence(self, path, edit_rate=None, tape=None, length=None, offline=False):
         """
         Import audio essence from wav file
         """
@@ -365,12 +365,12 @@ class SourceMob(Mob):
         channels = a.getnchannels()
         sample_width = a.getsampwidth()
         block_align = a.getblockalign()
-        length = a.getnframes()
+        frames = a.getnframes()
 
         edit_rate = edit_rate or sample_rate
 
         # create essencedata
-        essencedata, slot = self.create_essence(edit_rate, 'sound')
+        essencedata, slot = self.create_essence(edit_rate, 'sound', offline=offline)
         if tape:
             slot.segment = tape
 
@@ -385,16 +385,17 @@ class SourceMob(Mob):
         descriptor['AudioSamplingRate'].value = sample_rate
 
         # set lengths
-        descriptor.length = length
-        slot.segment.length = int(rescale(length, sample_rate, edit_rate))
+        descriptor.length = frames
+        slot.segment.length = length or int(rescale(frames, sample_rate, edit_rate))
 
-        stream = essencedata.open('w')
+        if essencedata is not None:
+            stream = essencedata.open('w')
 
-        while True:
-            data = a.readframes(sample_rate)
-            if not data:
-                break
-            stream.write(data)
+            while True:
+                data = a.readframes(sample_rate)
+                if not data:
+                    break
+                stream.write(data)
 
         return slot
 
