@@ -4,6 +4,8 @@ from __future__ import (
     print_function,
     division,
     )
+
+import itertools
 import os
 import io
 import subprocess
@@ -54,7 +56,10 @@ class ImportTests(unittest.TestCase):
 
     def test_dnxhd(self):
         frames = 3
-        for profile_name in ['dnx_1080p_36_23.97', 'dnx_720p_90x_25', 'dnx_1080i_120_25', 'dnx_1080p_175x_23.97']:
+        for profile_name, offline in itertools.product(
+                ['dnx_1080p_36_23.97', 'dnx_720p_90x_25', 'dnx_1080i_120_25', 'dnx_1080p_175x_23.97'],
+                [True, False]
+        ):
             new_file = os.path.join(common.sandbox(), '%s_import_essence.aaf' % profile_name)
             sample = common.generate_dnxhd(profile_name, '%s-import.dnxhd' % profile_name, frames=frames)
 
@@ -63,16 +68,18 @@ class ImportTests(unittest.TestCase):
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.import_dnxhd_essence(sample, profile['frame_rate'])
+                mob.import_dnxhd_essence(sample, profile['frame_rate'], offline=offline)
 
             with aaf2.open(new_file, 'r') as f:
                 mob = next(f.content.sourcemobs())
-                stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sample_dir(),'%s-import-dump.dnxhd' % profile_name)
-                with io.open(dump_path, 'wb', buffering=io.DEFAULT_BUFFER_SIZE) as out:
-                    out.write(stream.read())
-
-                assert common.compare_files(dump_path, sample)
+                if offline:
+                    assert mob.essence is None
+                else:
+                    stream = mob.essence.open('r')
+                    dump_path = os.path.join(common.sample_dir(),'%s-import-dump.dnxhd' % profile_name)
+                    with io.open(dump_path, 'wb', buffering=io.DEFAULT_BUFFER_SIZE) as out:
+                        out.write(stream.read())
+                    assert common.compare_files(dump_path, sample)
                 assert mob.slots[0].segment.length == frames
                 assert mob.descriptor.length == frames
 
@@ -134,7 +141,7 @@ class ImportTests(unittest.TestCase):
         start_time = int(timecode_fps * 60 * 60) * 2
 
         duration = 1.5
-        for profile_name in sorted(audio.pcm_profiles):
+        for profile_name, offline in itertools.product(sorted(audio.pcm_profiles), [True, False]):
             sample_format = audio.pcm_profiles[profile_name]['sample_format']
             sample_rate = audio.pcm_profiles[profile_name]['sample_rate']
 
@@ -150,7 +157,7 @@ class ImportTests(unittest.TestCase):
 
                 mob = f.create.MasterMob(profile_name)
                 f.content.mobs.append(mob)
-                mob.import_audio_essence(sample, frame_rate, tape)
+                mob.import_audio_essence(sample, frame_rate, tape, offline=offline)
 
             with aaf2.open(new_file, 'r') as f:
                 source_mobs = []
@@ -162,10 +169,13 @@ class ImportTests(unittest.TestCase):
                         source_mobs.append(mob)
                 mob = source_mobs[0]
                 tape_mob = tape_mobs[0]
-                stream = mob.essence.open('r')
-                dump_path = os.path.join(common.sample_dir(),'%s-import-dump.wav' % profile_name)
-                mob.export_audio(dump_path)
-                assert common.compare_files(dump_path, sample)
+                if offline:
+                    assert mob.essence is None
+                else:
+                    stream = mob.essence.open('r')
+                    dump_path = os.path.join(common.sample_dir(),'%s-import-dump.wav' % profile_name)
+                    mob.export_audio(dump_path)
+                    assert common.compare_files(dump_path, sample)
                 audio_samples = mob.descriptor['Length'].value
                 assert audio_samples == sample_rate * duration
                 edit_length = duration * frame_rate
