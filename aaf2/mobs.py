@@ -218,16 +218,17 @@ class SourceMob(Mob):
     def descriptor(self, value):
         self['EssenceDescription'].value = value
 
-    def create_essence(self, edit_rate=None, media_kind='picture', slot_id=None):
+    def create_essence(self, edit_rate=None, media_kind='picture', slot_id=None, offline=False):
         # NOTE: appears like a SourceMob can only link to 1 essence and it must be slot 1
         slot = self.create_empty_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=1)
+        if offline:
+            return None, slot
         essencedata = self.root.create.EssenceData()
         essencedata.mob_id = self.mob_id
         self.root.content.essencedata.append(essencedata)
         return essencedata, slot
 
     def create_empty_slot(self, edit_rate=None, media_kind='picture', slot_id=None):
-
         slot = self.create_timeline_slot(edit_rate, slot_id)
         clip = self.root.create.SourceClip(media_kind=media_kind)
         slot.segment = clip
@@ -308,7 +309,7 @@ class SourceMob(Mob):
         Import video essence from raw DNxHD/DNxHR stream
         """
 
-        essencedata, slot = self.create_essence(edit_rate, 'picture')
+        essencedata, slot = self.create_essence(edit_rate, 'picture', offline=offline)
 
         if tape:
             slot.segment = tape
@@ -324,8 +325,10 @@ class SourceMob(Mob):
         dnxhd_codec_auid = AUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
         descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_auid)
 
-        # open essence stream
-        stream = essencedata.open('w')
+        stream = None
+        if essencedata is not None:
+            # open essence stream
+            stream = essencedata.open('w')
 
         # open input file
         with io.open(path, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
@@ -343,7 +346,7 @@ class SourceMob(Mob):
                     descriptor['Compression'].value = video.dnx_compression_auids[cid]
                     descriptor['HorizontalSubsampling'].value = 2
 
-                if not offline:
+                if stream is not None:
                     stream.write(packet)
         # set descriptor and component lengths
         slot.segment.length = length or i
