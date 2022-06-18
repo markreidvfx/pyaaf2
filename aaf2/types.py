@@ -565,6 +565,14 @@ class TypeDefRecord(TypeDef):
         return self
 
     @property
+    def member_names(self):
+        return list(iter_utf16_array(self['MemberNames'].data))
+
+    @property
+    def member_types(self):
+        return self['MemberTypes']
+
+    @property
     def fields(self):
         if self._fields:
             return self._fields
