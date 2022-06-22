@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python Tests
+name: Python CI
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
     branches: [ "master", "dev" ]
 
 jobs:
-  build:
+  build-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -31,3 +31,34 @@ jobs:
     - name: Run Unit Tests
       run: |
         python -m unittest discover tests -v
+
+  latest-release:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Create sdist
+        run: |
+          python setup.py sdist
+
+      - name: Create Artifact sdist
+        uses: actions/upload-artifact@v3
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: ${{ github.ref == 'refs/heads/master' }}
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            dist/*.tar.gz
