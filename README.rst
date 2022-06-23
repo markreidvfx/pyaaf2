@@ -1,4 +1,4 @@
-|python-versions| |github-build| |appveyor-build| |docs|
+|python-versions| |github-build| |docs|
 
 pyaaf2
 ======
@@ -52,13 +52,9 @@ TODO
 
 .. |python-versions| image:: https://img.shields.io/badge/python-%3E%3D%202.7-blue.svg
 
-.. |github-build| image:: https://github.com/markreidvfx/pyaaf2/actions/workflows/python-tests.yml/badge.svg
+.. |github-build| image:: https://github.com/markreidvfx/pyaaf2/actions/workflows/workflow.yml/badge.svg
     :alt: github actions
     :target: https://github.com/markreidvfx/pyaaf2/actions
-
-.. |appveyor-build| image:: https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true
-    :alt: appveyor build status
-    :target: https://ci.appveyor.com/project/markreidvfx/pyaaf2
 
 .. |docs| image:: https://readthedocs.org/projects/pyaaf/badge/?version=latest
     :alt: Documentation Status
