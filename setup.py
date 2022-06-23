@@ -3,7 +3,7 @@ from setuptools import setup
 import setuptools.command.build_py
 
 PROJECT_METADATA = {
-    "version": "1.5.0",
+    "version": "1.6.0.dev",
     "author": 'Mark Reid',
     "author_email": 'mindmark@gmail.com',
     "license": 'MIT',
