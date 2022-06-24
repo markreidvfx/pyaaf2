@@ -288,25 +288,25 @@ class AAFFile(object):
 
     def read_reference_properties(self):
         s = self.cfb.open("/referenced properties")
-        f = io.BytesIO(s.read())
+        with io.BytesIO(s.read()) as f:
 
-        byte_order = read_u8(f)
-        if byte_order != 0x4c:
-            raise NotImplementedError("be byteorder")
+            byte_order = read_u8(f)
+            if byte_order != 0x4c:
+                raise NotImplementedError("be byteorder")
 
-        path_count = read_u16le(f)
-        pid_count = read_u32le(f)
+            path_count = read_u16le(f)
+            pid_count = read_u32le(f)
 
-        self.weakref_table = []
-        path = []
-        for i in range(pid_count):
-            pid = read_u16le(f)
-            if pid != 0:
-                path.append(pid)
-            else:
-                self.weakref_table.append(path)
-                path = []
-        assert len(self.weakref_table) == path_count
+            self.weakref_table = []
+            path = []
+            for i in range(pid_count):
+                pid = read_u16le(f)
+                if pid != 0:
+                    path.append(pid)
+                else:
+                    self.weakref_table.append(path)
+                    path = []
+            assert len(self.weakref_table) == path_count
 
     def write_reference_properties(self):
         f = self.cfb.open("/referenced properties", 'w')

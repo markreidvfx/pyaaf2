@@ -79,39 +79,38 @@ class AAFObject(object):
         s = stream.open()
 
         # read the whole stream
-        f = BytesIO(s.read())
+        with BytesIO(s.read()) as f:
+            (byte_order, version, entry_count) = P_HEADER_STRUCT.unpack(f.read(4))
 
-        (byte_order, version, entry_count) = P_HEADER_STRUCT.unpack(f.read(4))
+            if byte_order != 0x4c:
+                raise NotImplementedError("be byteorder")
 
-        if byte_order != 0x4c:
-            raise NotImplementedError("be byteorder")
+            props = array.array(str('H'))
+            if hasattr(props, 'frombytes'):
+                props.frombytes(f.read(6 * entry_count))
+            else:
+                props.fromstring(f.read(6 * entry_count))
 
-        props = array.array(str('H'))
-        if hasattr(props, 'frombytes'):
-            props.frombytes(f.read(6 * entry_count))
-        else:
-            props.fromstring(f.read(6 * entry_count))
+            if sys.byteorder == 'big':
+                props.byteswap()
 
-        if sys.byteorder == 'big':
-            props.byteswap()
+            for i in range(entry_count):
+                index = i * 3
+                pid = props[index + 0]
+                format = props[index + 1]
+                byte_size = props[index + 2]
 
-        for i in range(entry_count):
-            index = i * 3
-            pid = props[index + 0]
-            format = props[index + 1]
-            byte_size = props[index + 2]
+                data = f.read(byte_size)
+                p = property_formats[format](self, pid, format, version)
+                p.data = data
+                self.property_entries[pid] = p
 
-            data = f.read(byte_size)
-            p = property_formats[format](self, pid, format, version)
-            p.data = data
-            self.property_entries[pid] = p
-
-        for p in self.property_entries.values():
-            p.decode()
-            if isinstance(p, (properties.StrongRefSetProperty,
-                              properties.StrongRefVectorProperty,
-                              properties.WeakRefArrayProperty)):
-                p.read_index()
+            for p in self.property_entries.values():
+                p.decode()
+                if isinstance(p, (properties.StrongRefSetProperty,
+                                properties.StrongRefVectorProperty,
+                                properties.WeakRefArrayProperty)):
+                    p.read_index()
 
     def validate(self):
         missing = []
@@ -143,40 +142,40 @@ class AAFObject(object):
 
         s = self.dir.touch("properties").open(mode='rw')
 
-        f = BytesIO()
-        # print("writing", f.dir.path())
-        byte_order = 0x4c
-        entry_count = len(self.property_entries)
-        version = properties.PROPERTY_VERSION
+        with BytesIO() as f:
+            # print("writing", f.dir.path())
+            byte_order = 0x4c
+            entry_count = len(self.property_entries)
+            version = properties.PROPERTY_VERSION
 
-        write_u8(f, byte_order)
-        write_u8(f, version)
-        write_u16le(f, entry_count)
+            write_u8(f, byte_order)
+            write_u8(f, version)
+            write_u16le(f, entry_count)
 
-        for p in self.property_entries.values():
-            write_u16le(f, p.pid)
-            write_u16le(f, p.format)
-            if p.data is None:
-                print("??", p)
-                print("!!", p.data)
-                print(p.value)
-                raise Exception()
+            for p in self.property_entries.values():
+                write_u16le(f, p.pid)
+                write_u16le(f, p.format)
+                if p.data is None:
+                    print("??", p)
+                    print("!!", p.data)
+                    print(p.value)
+                    raise Exception()
 
-            write_u16le(f, len(p.data))
+                write_u16le(f, len(p.data))
 
-        # write the data
-        for p in self.property_entries.values():
-            f.write(p.data)
+            # write the data
+            for p in self.property_entries.values():
+                f.write(p.data)
 
-        s.write(f.getvalue())
-        s.truncate()
-        # write index's
-        for p in self.property_entries.values():
-            if isinstance(p, (properties.StrongRefSetProperty,
-                              properties.StrongRefVectorProperty,
-                              properties.WeakRefArrayProperty)):
-                # print('writing index', self, p)
-                p.write_index()
+            s.write(f.getvalue())
+            s.truncate()
+            # write index's
+            for p in self.property_entries.values():
+                if isinstance(p, (properties.StrongRefSetProperty,
+                                properties.StrongRefVectorProperty,
+                                properties.WeakRefArrayProperty)):
+                    # print('writing index', self, p)
+                    p.write_index()
 
     def detach(self, delete=False):
         items = []

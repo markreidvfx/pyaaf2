@@ -731,17 +731,17 @@ class TypeDefRename(TypeDef):
         return self.renamed_typedef.encode(data)
 
 def iter_auid_array(data):
-    f = BytesIO(data)
-    result = []
-    while True:
-        d = f.read(16)
-        if not d:
-            break
+    with BytesIO(data) as f:
+        result = []
+        while True:
+            d = f.read(16)
+            if not d:
+                break
 
-        if len(d) == 16:
-            yield AUID(bytes_le=d)
-        else:
-            raise Exception("auid length wrong: %d" % len(d))
+            if len(d) == 16:
+                yield AUID(bytes_le=d)
+            else:
+                raise Exception("auid length wrong: %d" % len(d))
 
 PID_EXTENUM_NAMES  = 0x001f
 PID_EXTENUM_VALUES = 0x0020

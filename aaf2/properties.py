@@ -466,29 +466,29 @@ class StrongRefVectorProperty(Property):
 
         s = index_dir.open('r')
         # read the whole index
-        f = BytesIO(s.read())
+        with BytesIO(s.read()) as f:
 
-        count = read_u32le(f)
-        self.next_free_key = read_u32le(f)
-        self.last_free_key = read_u32le(f)
+            count = read_u32le(f)
+            self.next_free_key = read_u32le(f)
+            self.last_free_key = read_u32le(f)
 
-        pack_fmt = str("<%dI" % count)
-        self.references = list(struct.unpack(pack_fmt, f.read(4 * count)))
+            pack_fmt = str("<%dI" % count)
+            self.references = list(struct.unpack(pack_fmt, f.read(4 * count)))
 
     @writeonly
     def write_index(self):
         s = self.parent.dir.touch(self.index_name + " index").open(mode='rw')
-        f = BytesIO()
-        count = len(self.references)
-        write_u32le(f, count)
-        write_u32le(f, self.next_free_key)
-        write_u32le(f, self.last_free_key)
+        with BytesIO() as f:
+            count = len(self.references)
+            write_u32le(f, count)
+            write_u32le(f, self.next_free_key)
+            write_u32le(f, self.last_free_key)
 
-        for local_key in self.references:
-            write_u32le(f, local_key)
+            for local_key in self.references:
+                write_u32le(f, local_key)
 
-        s.write(f.getvalue())
-        s.truncate()
+            s.write(f.getvalue())
+            s.truncate()
 
     @property
     def ref_classdef(self):
@@ -727,60 +727,60 @@ class StrongRefSetProperty(Property):
 
         s = index_dir.open('r')
         # read the whole of the index
-        f = BytesIO(s.read())
+        with BytesIO(s.read()) as f:
 
-        count = read_u32le(f)
-        self.next_free_key = read_u32le(f)
-        self.last_free_key = read_u32le(f)
-        self.key_pid = read_u16le(f)
-        self.key_size = read_u8(f)
-        assert self.key_size in (16, 32)
+            count = read_u32le(f)
+            self.next_free_key = read_u32le(f)
+            self.last_free_key = read_u32le(f)
+            self.key_pid = read_u16le(f)
+            self.key_size = read_u8(f)
+            assert self.key_size in (16, 32)
 
-        fmt = ''.join((
-            'I', # local_key
-            'I', # ref_count
-            '%ds' % self.key_size))
+            fmt = ''.join((
+                'I', # local_key
+                'I', # ref_count
+                '%ds' % self.key_size))
 
-        index_fmt  = struct.Struct(str('<' + fmt * count))
-        index_data = index_fmt.unpack(f.read())
+            index_fmt  = struct.Struct(str('<' + fmt * count))
+            index_data = index_fmt.unpack(f.read())
 
-        for i in range(count):
-            index = i * 3
+            for i in range(count):
+                index = i * 3
 
-            local_key = index_data[index + 0]
-            ref_count = index_data[index + 1]
-            key       = index_data[index + 2]
+                local_key = index_data[index + 0]
+                ref_count = index_data[index + 1]
+                key       = index_data[index + 2]
 
-            # not sure if ref count is actually used
-            # doesn't appear to be
-            assert ref_count == 1
+                # not sure if ref count is actually used
+                # doesn't appear to be
+                assert ref_count == 1
 
-            if self.key_size == 16:
-                key = AUID(bytes_le=key)
-            else:
-                key = MobID(bytes_le=key)
+                if self.key_size == 16:
+                    key = AUID(bytes_le=key)
+                else:
+                    key = MobID(bytes_le=key)
 
-            self.references[key] = local_key
+                self.references[key] = local_key
 
     @writeonly
     def write_index(self):
         s = self.parent.dir.touch(self.index_name + " index").open(mode='rw')
-        f = BytesIO()
-        count = len(self.references)
-        write_u32le(f, count)
-        write_u32le(f, self.next_free_key)
-        write_u32le(f, self.last_free_key)
+        with BytesIO() as f:
+            count = len(self.references)
+            write_u32le(f, count)
+            write_u32le(f, self.next_free_key)
+            write_u32le(f, self.last_free_key)
 
-        write_u16le(f, self.key_pid)
-        write_u8(f, self.key_size)
+            write_u16le(f, self.key_pid)
+            write_u8(f, self.key_size)
 
-        for key, local_key in self.references.items():
-            write_u32le(f, local_key)
-            write_u32le(f, 1)
-            f.write(key.bytes_le)
+            for key, local_key in self.references.items():
+                write_u32le(f, local_key)
+                write_u32le(f, 1)
+                f.write(key.bytes_le)
 
-        s.write(f.getvalue())
-        s.truncate()
+            s.write(f.getvalue())
+            s.truncate()
 
     def index_ref_name(self, key):
         return "%s{%x}" % (self.index_name, self.references[key])
@@ -994,27 +994,27 @@ class WeakRefProperty(Property):
         return p
 
     def decode(self):
-        f = BytesIO(self.data)
-        self.weakref_index = read_u16le(f)
-        self.key_pid = read_u16le(f)
-        self.key_size = read_u8(f)
-        assert self.key_size in (16, 32)
-        if self.key_size == 16:
-            self.ref = AUID(bytes_le=f.read(self.key_size))
-        else:
-            self.ref = key = MobID(bytes_le=f.read(self.key_size))
+        with BytesIO(self.data) as f:
+            self.weakref_index = read_u16le(f)
+            self.key_pid = read_u16le(f)
+            self.key_size = read_u8(f)
+            assert self.key_size in (16, 32)
+            if self.key_size == 16:
+                self.ref = AUID(bytes_le=f.read(self.key_size))
+            else:
+                self.ref = key = MobID(bytes_le=f.read(self.key_size))
 
     def encode(self):
-        f = BytesIO()
-        ref = self.ref.bytes_le
-        key_size = len(ref)
-        assert key_size in (16, 32)
+        with BytesIO() as f:
+            ref = self.ref.bytes_le
+            key_size = len(ref)
+            assert key_size in (16, 32)
 
-        write_u16le(f, self.weakref_index)
-        write_u16le(f, self.key_pid)
-        write_u8(f, key_size)
-        f.write(ref)
-        return f.getvalue()
+            write_u16le(f, self.weakref_index)
+            write_u16le(f, self.key_pid)
+            write_u8(f, key_size)
+            f.write(ref)
+            return f.getvalue()
 
     def __repr__(self):
         return "<%s %s index %s %s>" % (self.name, self.__class__.__name__, self.weakref_index, self.ref)
@@ -1085,36 +1085,36 @@ class WeakRefArrayProperty(Property):
 
         s = index_dir.open('r')
         # read the whole index
-        f = BytesIO(s.read())
+        with BytesIO(s.read()) as f:
 
-        count = read_u32le(f)
-        self.weakref_index = read_u16le(f)
-        self.key_pid = read_u16le(f)
-        self.key_size = read_u8(f)
-        assert self.key_size in (16, 32)
+            count = read_u32le(f)
+            self.weakref_index = read_u16le(f)
+            self.key_pid = read_u16le(f)
+            self.key_size = read_u8(f)
+            assert self.key_size in (16, 32)
 
-        for i in range(count):
-            if self.key_size == 16:
-                key = AUID(bytes_le=f.read(self.key_size))
-            else:
-                key = key = MobID(bytes_le=f.read(self.key_size))
-            self.references.append(key)
+            for i in range(count):
+                if self.key_size == 16:
+                    key = AUID(bytes_le=f.read(self.key_size))
+                else:
+                    key = key = MobID(bytes_le=f.read(self.key_size))
+                self.references.append(key)
 
     @writeonly
     def write_index(self):
         s = self.parent.dir.touch(self.index_name + " index").open(mode='rw')
-        f = BytesIO()
-        count = len(self.references)
-        write_u32le(f, count)
-        write_u16le(f, self.weakref_index)
-        write_u16le(f, self.key_pid)
-        write_u8(f, self.key_size)
+        with BytesIO() as f:
+            count = len(self.references)
+            write_u32le(f, count)
+            write_u16le(f, self.weakref_index)
+            write_u16le(f, self.key_pid)
+            write_u8(f, self.key_size)
 
-        for item in self.references:
-            f.write(item.bytes_le)
+            for item in self.references:
+                f.write(item.bytes_le)
 
-        s.write(f.getvalue())
-        s.truncate()
+            s.write(f.getvalue())
+            s.truncate()
 
     def __repr__(self):
         return "<%s %s to %d items>" % (self.name, self.__class__.__name__, len(self.references) )

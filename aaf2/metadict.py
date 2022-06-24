@@ -81,7 +81,8 @@ class PropertyDef(core.AAFObject):
 
     @property
     def pid(self):
-        return read_u16le(BytesIO(self.property_entries[PID_PID].data))
+        with BytesIO(self.property_entries[PID_PID].data) as f:
+            return read_u16le(f)
 
     @pid.setter
     def pid(self, value):
