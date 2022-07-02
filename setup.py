@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 import setuptools.command.build_py
 
 PROJECT_METADATA = {
@@ -27,7 +27,7 @@ class AddMetadata(setuptools.command.build_py.build_py):
             return
 
         target_file = os.path.join(self.build_lib, 'aaf2', "__init__.py")
-        source_file = os.path.join(os.path.dirname(__file__), 'aaf2', "__init__.py")
+        source_file = os.path.join(os.path.dirname(__file__), 'src', 'aaf2', "__init__.py")
 
         # get the base data from the original file
         with open(source_file, 'r') as fi:
@@ -72,11 +72,8 @@ setup(
 
     platforms='any',
 
-    packages=[
-        'aaf2',
-        'aaf2.model',
-        'aaf2.model.ext',
-    ],
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
 
     cmdclass={'build_py': AddMetadata},
 
