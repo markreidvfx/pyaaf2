@@ -7,7 +7,9 @@ python-version:
 	@python --version
 
 clean:
-	rm */*.pyc */*/*.pyc
+	-rm -f */*/*.pyc */*/*/*.pyc
+	-rm -rf build
+	-rm -rf dist
 
 doc:
 	@make -C docs html
