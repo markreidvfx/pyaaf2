@@ -18,5 +18,5 @@ cl /nologo /Zi /MD typedefs_gen.cpp
 classdefs_gen.exe > classdefs.py
 typedefs_gen.exe  > typedefs.py
 
-xcopy /y ".\classdefs.py" "..\..\aaf2\model\classdefs.py"
-xcopy /y ".\typedefs.py"  "..\..\aaf2\model\typedefs.py"
+xcopy /y ".\classdefs.py" "..\..\src\aaf2\model\classdefs.py"
+xcopy /y ".\typedefs.py"  "..\..\src\aaf2\model\typedefs.py"
