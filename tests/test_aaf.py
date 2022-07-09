@@ -37,7 +37,7 @@ class AAFTests(unittest.TestCase):
             common.walk_aaf(f.root)
 
     def test_exit_with_exception_no_save(self):
-        new_file = os.path.join(common.sandbox(), 'save_with_exception_no_save.aaf')
+        new_file = os.path.join(common.sandbox(), 'test_exit_with_exception_no_save.aaf')
         test_file = common.test_file_01()
         shutil.copy(test_file, new_file)
 
@@ -64,7 +64,7 @@ class AAFTests(unittest.TestCase):
 
     def test_exit_with_exception_with_save(self):
 
-        new_file = os.path.join(common.sandbox(), 'save_with_exception_with_save.aaf')
+        new_file = os.path.join(common.sandbox(), 'test_exit_with_exception_with_save.aaf')
         test_file = common.test_file_01()
         shutil.copy(test_file, new_file)
 
@@ -97,7 +97,7 @@ class AAFTests(unittest.TestCase):
         an exception occurs during the exit phase of the context manager.
         """
 
-        new_file = os.path.join(common.sandbox(), 'save_with_exception_with_save.aaf')
+        new_file = os.path.join(common.sandbox(), 'test_exit_with_internal_exception.aaf')
         test_file = common.test_file_01()
         shutil.copy(test_file, new_file)
 
@@ -132,7 +132,7 @@ class AAFTests(unittest.TestCase):
         # Exception occurs in with block and also in the except clause
         # while closing file descriptors.
 
-        new_file = os.path.join(common.sandbox(), 'save_with_exception_with_save.aaf')
+        new_file = os.path.join(common.sandbox(), 'test_exit_with_internal_and_external_exception.aaf')
         test_file = common.test_file_01()
         shutil.copy(test_file, new_file)
 
@@ -166,6 +166,20 @@ class AAFTests(unittest.TestCase):
             # new_file is now corrupted.
             with aaf2.open(new_file, 'r') as f:
                 pass
+
+    def test_raise_on_close_in_except(self):
+        # Test that AAFFile.f.close exceptions are propagated to
+        # the user's code.
+        with self.assertRaises(RuntimeError):
+            with aaf2.open() as fd:
+                def mock(*args, **kwargs):
+                    raise RuntimeError('asd')
+
+                originalClose = fd.f.close
+                fd.f.close = mock
+                raise ValueError('asd')
+
+        originalClose()
 
     def test_save_after_close(self):
         aaf_file = aaf2.open()
