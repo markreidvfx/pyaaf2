@@ -150,6 +150,23 @@ class AAFFile(object):
     It is recommended to create this object with the `aaf.open` alias.
     It is also highly recommended to use the with statement.
 
+    .. warning::
+       If an exception is raised inside the with block and the file was opened
+       as writable, the final file should be considered bad or corrupted.
+
+       Take this snippet as an example:
+
+       .. code-block:: python
+
+           try:
+               with aaf.open('/path/to/aaf_file.aaf', 'r+') as f:
+                   raise ValueError('asd')
+           except:
+               pass
+
+       in this case, even if the exception is properly handled, the content
+       of ``/path/to/aaf_file.aaf`` shouldn't be trusted anymore.
+
     For example. Opening existing AAF file readonly::
 
         with aaf.open('/path/to/aaf_file.aaf', 'r') as f:
@@ -328,6 +345,12 @@ class AAFFile(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if (exc_type is None and exc_value is None and traceback is None):
             self.close()
+        else:
+            self.is_open = False
+            try:
+                self.cfb.close()
+            finally:
+                self.f.close()
 
     def __enter__(self):
         return self
