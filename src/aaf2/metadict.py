@@ -521,7 +521,7 @@ class MetaDictionary(core.AAFObject):
                                 prop = typedef.property_entries.pop(old_pid)
                                 prop.pid = new_pid
                                 typedef.property_entries[new_pid] = prop
-                                # print("conflcit", typedef, pdef.name, old_pid, "->", new_pid)
+                                # print("conflict", typedef, pdef.name, old_pid, "->", new_pid)
 
                     self['TypeDefinitions'].append(typedef)
                     if classdef.auid not in self['ClassDefinitions']:

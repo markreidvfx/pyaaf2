@@ -133,7 +133,7 @@ def dnx_frame_size(cid, width=None, height=None):
     if size:
         return size
 
-    # DNxHR frame size caclulation
+    # DNxHR frame size calculation
     ratio = dnxhr_compression_ratio[cid]
     size = ((height + 15) // 16) * ((width + 15) // 16) * ratio[0] // ratio[1]
     size = (size + 2048) // 4096 * 4096;

@@ -43,7 +43,7 @@ Excerpt from SMPTE ST 330 (Focus on Basic UMID)::
     material numbers and instance numbers is given in SMPTE RP 205.
 
 
-    UMID univeral label (SMPTELabel)
+    UMID universal label (SMPTELabel)
 
     Byte No.   Description            Value (hex)                 Meaning
     ----------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ Excerpt from SMPTE ST 330 (Focus on Basic UMID)::
     11         Material type          XXh                         See Section 6.1.2.1
     12         Number creation method YYh                         See Section 6.1.2.2
 
-    6.1.2.1 - Meterial type identification
+    6.1.2.1 - Material type identification
 
     Byte 11 of the UL shall define the material type being identified using one of the values defined in Table 2.
     The use of material types '01h', '02h', '03h' and '04h' shall be deprecated for use in implementations using

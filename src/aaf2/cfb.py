@@ -164,7 +164,7 @@ class Stream(object):
 
         while bytes_to_read > 0:
 
-            # inlined on purpose this loop runs alot
+            # inlined on purpose this loop runs a lot
             if is_mini_stream:
                 mini_stream_sid = self.fat_chain[mini_fat_index]
                 mini_stream_pos = (mini_stream_sid * mini_sector_size) + mini_sector_offset
@@ -267,7 +267,7 @@ class Stream(object):
 
         while data_size > 0:
 
-            # inlined on purpose this method can get called alot
+            # inlined on purpose this method can get called a lot
             if is_mini_stream:
                 mini_stream_sid = self.fat_chain[mini_fat_index]
                 mini_stream_pos  = (mini_stream_sid * mini_sector_size) + mini_sector_offset
@@ -405,7 +405,7 @@ def validate_rbtree(root):
         raise CompoundFileBinaryError("Binary tree violation")
 
     # Black height mismatch
-    # cannot gerentee all aaf Implementions use rbtree
+    # cannot guarantee all aaf Implementations use rbtree
     # if lh != 0 and rh != 0 and lh != rh:
     #     print(lh, rh)
     #     raise CompoundFileBinaryError("Black violation {}".format(root.path()))

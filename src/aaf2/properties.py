@@ -205,7 +205,7 @@ class StreamProperty(Property):
         return p
 
     def decode(self):
-        # first byte is endianess
+        # first byte is endianness
         assert self.data[0:1] == b'\x55' # unspecified
         self.stream_name = decode_utf16le(self.data[1:])
 

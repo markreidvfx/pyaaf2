@@ -4,7 +4,7 @@ import traceback
 
 class AUID(object):
     """
-    A higher performance UUID class that is more specialised for AAF.
+    A higher performance UUID class that is more specialized for AAF.
     """
     __slots__ = ('bytes_le')
     def __init__(self, hex=None, bytes_le=None, bytes_be=None, int=None):

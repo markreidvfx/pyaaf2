@@ -166,7 +166,7 @@ def int_from_bytes(data, byte_order='big'):
             num += byte << ((length-i) * 8)
         return num
     else:
-        raise ValueError('endianess must be "little" or "big"')
+        raise ValueError('endianness must be "little" or "big"')
 
 def bytes_from_int(num, length, byte_order='big'):
     if byte_order == 'little':
@@ -176,7 +176,7 @@ def bytes_from_int(num, length, byte_order='big'):
         v = bytearray((num >> (length - 1 - i) * 8) & 0xff for i in range(length))
         return bytes(v)
     else:
-        raise ValueError('endianess must be "little" or "big"')
+        raise ValueError('endianness must be "little" or "big"')
 
 
 def squeeze_name(name, size):

@@ -43,7 +43,7 @@ class LRUCacheDict(object):
         node.prev = self.head.prev
         node.next = self.head.prev.next
 
-        # update neighbours to point to new node
+        # update neighbors to point to new node
         node.next.prev = node
         node.prev.next = node
 

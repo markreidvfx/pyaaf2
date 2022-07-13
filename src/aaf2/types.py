@@ -475,7 +475,7 @@ class TypeDefSet(TypeDef):
         elif self.element_typedef.store_format == properties.SF_DATA:
             return properties.SF_DATA
         else:
-            raise AAFPropertyError("unkown store format: 0x%x" % self.element_typedef.store_format)
+            raise AAFPropertyError("unknown store format: 0x%x" % self.element_typedef.store_format)
 
     def decode(self, data):
 

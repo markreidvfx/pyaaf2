@@ -105,8 +105,8 @@ class Mob(core.AAFObject):
 
     def create_empty_sequence_slot(self, edit_rate, slot_id=None,  media_kind=None):
         """
-            Create an empty timeline slot and sets its segment to a new, empty 
-            `aaf2.components.Sequence` component. Timeline slots are for continuous, 
+            Create an empty timeline slot and sets its segment to a new, empty
+            `aaf2.components.Sequence` component. Timeline slots are for continuous,
             monotonically-changing media, like picture and sound.
         """
         slot = self.create_timeline_slot(edit_rate, slot_id)
@@ -117,14 +117,14 @@ class Mob(core.AAFObject):
 
     def create_picture_slot(self, edit_rate=25):
         """
-            Create an empty timeline slot, with the 'picture' media kind, and sets 
+            Create an empty timeline slot, with the 'picture' media kind, and sets
             its segment to a new, empty `aaf2.components.Sequence` component.
         """
         return self.create_empty_sequence_slot(edit_rate, media_kind="picture")
 
     def create_sound_slot(self, edit_rate=25):
         """
-            Create an empty timeline slot, with the 'sound' media kind, and sets 
+            Create an empty timeline slot, with the 'sound' media kind, and sets
             its segment to a new, empty `aaf2.components.Sequence` component.
         """
         return self.create_empty_sequence_slot(edit_rate, media_kind="sound")
@@ -132,7 +132,7 @@ class Mob(core.AAFObject):
     def create_source_clip(self, slot_id=None, start=None, length=None, media_kind=None):
         """
             Create a SourceClip of Mobs slot with `slot_id`. If no length given the default
-            length will be the full length of slots segment minius `start`.
+            length will be the full length of slots segment minus `start`.
             Returns :class:`aaf2.components.SourceClip` Object
         """
         source_slot = self.slot_at(slot_id)
