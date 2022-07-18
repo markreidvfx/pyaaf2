@@ -1278,6 +1278,9 @@ class CompoundFileBinary(object):
         self.magic = f.read(8)
         logging.debug("magic: %s" % str([self.magic]))
 
+        if self.magic != b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1':
+            raise CompoundFileBinaryError("invalid file magic signature: {}".format([self.magic]))
+
         self.class_id = auid.AUID(bytes_le=f.read(16))
         logging.debug("clsid: %s" % str(self.class_id))
 
