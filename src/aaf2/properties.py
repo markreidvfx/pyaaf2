@@ -39,11 +39,11 @@ SF_STRONG_OBJECT_REFERENCE_SET            = 0x3A
 SF_WEAK_OBJECT_REFERENCE                  = 0x02
 SF_WEAK_OBJECT_REFERENCE_VECTOR           = 0x12
 SF_WEAK_OBJECT_REFERENCE_SET              = 0x1A
+
+# these formats are defined by spec but not used
 SF_WEAK_OBJECT_REFERENCE_STORED_OBJECT_ID = 0x03
 SF_UNIQUE_OBJECT_ID                       = 0x86
 SF_OPAQUE_STREAM                          = 0x40
-
-# not sure about these
 SF_DATA_VECTOR                            = 0xD2
 SF_DATA_SET                               = 0xDA
 
