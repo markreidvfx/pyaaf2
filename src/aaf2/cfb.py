@@ -154,9 +154,9 @@ class Stream(object):
         prev_sid = -1
 
         if is_mini_stream:
-             mini_fat_index     = self.pos // mini_sector_size
-             mini_sector_offset = self.pos  % mini_sector_size
-             sector_size = mini_sector_size
+            mini_fat_index     = self.pos // mini_sector_size
+            mini_sector_offset = self.pos  % mini_sector_size
+            sector_size = mini_sector_size
         else:
             index      = self.pos // full_sector_size
             start_offset = self.pos  % full_sector_size
@@ -746,7 +746,7 @@ class DirEntry(object):
     def insert(self, entry):
         """
         Inserts entry into child folder tree.
-        Trys to mantains a balanced red black tree.
+        Tries to maintain a balanced red black tree.
         Technique is base on topdown insert approach in described in
         https://eternallyconfuzzled.com/red-black-trees-c-the-most-common-balanced-binary-search-tree
         """
@@ -1275,12 +1275,9 @@ class CompoundFileBinary(object):
         f = self.f
         f.seek(0)
 
-        magic = f.read(8)
-        # logging.debug("magic: %s" % magic.encode("hex"))
-        logging.debug("magic: %s" % str([magic]))
+        self.magic = f.read(8)
+        logging.debug("magic: %s" % str([self.magic]))
 
-        # clsid = f.read(16)
-        # logging.debug("clsid: %s" % clsid.encode("hex"))
         self.class_id = auid.AUID(bytes_le=f.read(16))
         logging.debug("clsid: %s" % str(self.class_id))
 
@@ -1345,7 +1342,6 @@ class CompoundFileBinary(object):
         logging.debug("reading header difat at %d" % f.tell())
         for i in range(109):
             item = read_u32le(f)
-            # item = fat_sector_types.get(item, item)
             self.difat[0].append(item)
 
         sectors_left = self.difat_sector_count
@@ -1451,8 +1447,6 @@ class CompoundFileBinary(object):
             if self.fat[RANGELOCKSECT] != ENDOFCHAIN:
                 logging.warning("range lock sector has data")
 
-        # logging.debug("fat: %s" % str(pretty_sectors(self.fat)))
-
     def write_fat(self):
         logging.debug("writing fat")
         f = self.f
@@ -1495,19 +1489,14 @@ class CompoundFileBinary(object):
         if sys.byteorder == 'big':
              self.minifat.byteswap()
 
-        # mini_stream_byte_size = 0
         last_used_sector = 0
         for i,v in enumerate(self.minifat):
             if v == FREESECT:
                 self.minifat_freelist.append(i)
             else:
                 last_used_sector = i
-                # mini_stream_byte_size += self.mini_stream_sector_size
 
         mini_stream_byte_size = ((last_used_sector+1) * self.mini_stream_sector_size)
-
-        # for i, sect in enumerate(pretty_sectors(self.minifat)):
-        #     print(i, sect)
 
         logging.debug("read %d mini fat sectors", sector_count)
         return mini_stream_byte_size
@@ -1696,8 +1685,8 @@ class CompoundFileBinary(object):
             pos = (sid + 1) *  self.sector_size
             self.f.seek(pos)
             sector_data = bytearray(self.sector_size)
-            #NOTE: if requested sector doesn't exist or
-            # is truncated will pad with zeros, expected behaviour
+            # NOTE: if requested sector doesn't exist or
+            # is truncated will pad with zeros, expected behavior
             bytes_read = self.f.readinto(sector_data)
             self.sector_cache[sid] = sector_data
             return sector_data
@@ -1725,8 +1714,6 @@ class CompoundFileBinary(object):
         if entry is not None:
             return entry
 
-        # print("reading", dir_id)
-
         # assert not dir_id in self.dir_freelist
 
         stream_pos = dir_id * 128
@@ -1746,7 +1733,6 @@ class CompoundFileBinary(object):
     def clear_sector(self, sid):
         sector_pos = (sid + 1) * self.sector_size
         self.f.seek(sector_pos)
-        # for i in range(self.sector_size):
         self.f.write(bytearray(self.sector_size))
 
     def next_free_dir_id(self):
