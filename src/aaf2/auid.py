@@ -22,7 +22,7 @@ class AUID(object):
         elif bytes_be is not None:
             self.bytes_be = bytes_be
         elif int is not None:
-            if int is 0:
+            if int == 0:
                 self.bytes_le = bytearray(16)
             else:
                 self.bytes_le = bytearray(uuid.UUID(int=int).bytes_le)
@@ -106,6 +106,11 @@ class AUID(object):
     def __eq__(self, other):
         if isinstance(other, (AUID, uuid.UUID)):
             return self.bytes_le == other.bytes_le
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, (AUID,)):
+            return self.int < other.int
         return NotImplemented
 
     def __repr__(self):

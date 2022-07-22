@@ -34,7 +34,7 @@ class CreatAAFTests(unittest.TestCase):
             assert f.metadict
             assert f.content
             assert f.header['ObjectModelVersion'].value == 1
-            assert f.header['Version'].value == {u'major': 1, u'minor': 1}
+            assert f.header['Version'].value == {u'major': 1, u'minor': 2}
 
 
     def test_empty_512(self):
@@ -48,7 +48,7 @@ class CreatAAFTests(unittest.TestCase):
             assert f.metadict
             assert f.content
             assert f.header['ObjectModelVersion'].value == 1
-            assert f.header['Version'].value == {u'major': 1, u'minor': 1}
+            assert f.header['Version'].value == {u'major': 1, u'minor': 2}
 
         # self.dump(result_file)
 

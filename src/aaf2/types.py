@@ -392,6 +392,7 @@ class TypeDefVarArray(TypeDef):
     def element_typedef(self):
         if PID_VAR_TYPE in self.property_entries:
             return self.root.metadict.lookup_typedef(self.property_entries[PID_VAR_TYPE].ref)
+
     @property
     def ref_classdef(self):
         typedef = self.element_typedef
@@ -564,6 +565,14 @@ class TypeDefRecord(TypeDef):
         return self
 
     @property
+    def member_names(self):
+        return list(iter_utf16_array(self['MemberNames'].data))
+
+    @property
+    def member_types(self):
+        return self['MemberTypes']
+
+    @property
     def fields(self):
         if self._fields:
             return self._fields
@@ -617,7 +626,7 @@ class TypeDefRecord(TypeDef):
                                 result['fraction'])
                 return t
             except:
-                logging.warn("unable to decode time: {}".format(result))
+                logging.warning("unable to decode time: {}".format(result))
 
         # DateStruct
         if self.auid == DATESTRUCT_AUID:
@@ -629,7 +638,7 @@ class TypeDefRecord(TypeDef):
                 d = datetime.date(**result)
                 return d
             except:
-                logging.warn("unable to decode date: {}".format(result))
+                logging.warning("unable to decode date: {}".format(result))
 
         # TimeStamp
         if self.auid == TIMESTAMP_AUID:
@@ -638,7 +647,7 @@ class TypeDefRecord(TypeDef):
                     d = datetime.datetime.combine(result['date'], result['time'])
                     return d
                 except:
-                    logging.warn("unable to decode timestamp: {}".format(result))
+                    logging.warning("unable to decode timestamp: {}".format(result))
 
         # Rational
         if self.auid == RATIONAL_AUID:
@@ -722,17 +731,17 @@ class TypeDefRename(TypeDef):
         return self.renamed_typedef.encode(data)
 
 def iter_auid_array(data):
-    f = BytesIO(data)
-    result = []
-    while True:
-        d = f.read(16)
-        if not d:
-            break
+    with BytesIO(data) as f:
+        result = []
+        while True:
+            d = f.read(16)
+            if not d:
+                break
 
-        if len(d) == 16:
-            yield AUID(bytes_le=d)
-        else:
-            raise Exception("auid length wrong: %d" % len(d))
+            if len(d) == 16:
+                yield AUID(bytes_le=d)
+            else:
+                raise Exception("auid length wrong: %d" % len(d))
 
 PID_EXTENUM_NAMES  = 0x001f
 PID_EXTENUM_VALUES = 0x0020
@@ -862,6 +871,41 @@ class TypeDefCharacter(TypeDef):
     class_id = AUID("0d010101-0223-0000-060e-2b3402060101")
     __slots__ = ()
 
+@register_class
+class TypeDefGenericCharacter(TypeDef):
+    class_id = AUID("0e040101-0000-0000-060e-2b3402060101")
+    def __new__(cls, root=None, name=None, type_auid=None, size=None):
+        self = super(TypeDefGenericCharacter, cls).__new__(cls, root, name, type_auid)
+        if root:
+            # lookup pid
+            classdef = root.metadict.lookup_classdef(AUID("0e040101-0000-0000-060e-2b3402060101"))
+
+            dynamic_pid = None
+            for pdef in classdef.all_propertydefs():
+                if pdef.auid == AUID("0e040101-0101-0111-060e-2b3401010101"):
+                    dynamic_pid = pdef.pid
+
+            assert dynamic_pid
+            # classdef
+            properties.add_u8_property(self, dynamic_pid, size)
+
+        return self
+
+    @property
+    def size(self):
+        classdef = self.root.metadict.lookup_classdef(self.class_id)
+        dynamic_pid = None
+        for pdef in classdef.all_propertydefs():
+            if pdef.auid == AUID("0e040101-0101-0111-060e-2b3401010101"):
+                dynamic_pid = pdef.pid
+
+        assert dynamic_pid
+        data = self.property_entries[dynamic_pid].data
+        if data is not None:
+            return unpack(b'B', data)[0]
+
+        raise ValueError("%s No Size" % str(self.type_name))
+
 
 categories = {
 "ints"         : TypeDefInt,
@@ -875,6 +919,7 @@ categories = {
 "opaques"      : TypeDefOpaque,
 "extenums"     : TypeDefExtEnum,
 "chars"        : TypeDefCharacter,
+"generic_chars": TypeDefGenericCharacter,
 "indirects"    : TypeDefIndirect,
 "sets"         : TypeDefSet,
 "strongrefs"   : TypeDefStrongRef,

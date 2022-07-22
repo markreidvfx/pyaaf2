@@ -11,6 +11,7 @@ from . import core
 from . utils import register_class
 from .auid import AUID
 from .rational import AAFRational
+from .interpolation import integrate_iter, lerp, cubic_interpolate, bezier_interpolate
 
 
 ConstantInterp     = AUID("5b6c85a5-0ede-11d3-80a9-006008143e6f")
@@ -184,188 +185,12 @@ class ConstantValue(Parameter):
         self['Value'].data = indirect_typedef.encode(value, parameter_typdef)
         self['Value'].mark_modified()
 
-def lerp(p0, p1, t):
-    value = ((1.0 - t) * p0) + (t * p1)
-    return value
-
-def cubic_bezier(p0, p1, p2, p3, t):
-    value = pow(1.0 - t, 3.0) * p0 + \
-            pow(1.0 - t, 2.0) * 3.0 * t * p1 + \
-            (1.0 - t) * 3.0 * t * t * p2 + \
-            t * t * t * p3
-    return value
-
-def cubic_bezier_interpolate(p0, p1, p2, p3, t):
-
-    t_len = p3[0] - p0[0]
-    t_diff = t - p0[0]
-    t_mix = t_diff/t_len
-
-    guess_t = t_mix
-
-    # approximate the correct t value,
-    # not sure if this correct
-    # its slow but seems to work..
-    for i in range(20):
-        x = cubic_bezier(p0[0], p1[0], p2[0], p3[0], guess_t)
-        if x == t:
-            break
-        offset = x - t
-        guess_t -= offset/t_len
-
-        if guess_t < 0:
-            guess_t = 0
-        if guess_t > 1.0:
-            guess_t = 1.0
-
-        # print("  ", offset)
-
-    y = cubic_bezier(p0[1], p1[1], p2[1], p3[1], guess_t)
-    # print(t, x, y)
-
-    return y
-
-def sign_no_zero(v):
-    if 0 < v:
-        return -1
-    return 1
-
-def calculate_tangent(p0, p1, p2, in_tangent=False):
-
-    # Note:
-    # This code was a lot of guess work
-    # MC docs refer to spline as "Natural Spline" or "Cardinal Spline"
-    # and AAF files export it with CubicInterpolator definition
-    # MC has some wacky way of calculating the y coord of tangents
-
-    # in_tangent <---- x ----> out_tangent
-
-    x = p1[0]
-    y = p1[1]
-
-    px = p0[0]
-    nx = p2[0]
-
-    py = p0[1]
-    ny = p2[1]
-
-    if in_tangent:
-        tan_x = 0.4 * (x - px)
-    else:
-        tan_x = 0.4 * (nx - x)
-
-    slope = (ny - py) / (nx - px)
-    prev_slope = (y - py) / (x - px)
-    next_slope = (ny - y) / (nx - x)
-
-    if sign_no_zero(prev_slope) != sign_no_zero(next_slope) or sign_no_zero(slope) != sign_no_zero(next_slope) or ny == py:
-        tan_y = 0
-    else:
-        height = abs(ny - py)
-
-        h1 = abs(ny - y)
-        h2 = abs(y - py)
-
-        # took me ages to figure this out
-        scale = min(h1, h2) / height * 2.0
-        tan_y = scale * slope * tan_x
-
-    if in_tangent:
-        tan_x *= -1.0
-        tan_y *= -1.0
-
-    return (tan_x, tan_y)
-
-def cubic_interpolate(p0, p1, p2, p3, t):
-
-    tan_x0, tan_y0 = calculate_tangent(p0, p1, p2, False)
-    tan_x1, tan_y1 = calculate_tangent(p1, p2, p3, True)
-
-    p0 = p1
-    p3 = p2
-
-    p1 = (p0[0] + tan_x0, p0[1] + tan_y0)
-    p2 = (p3[0] + tan_x1, p3[1] + tan_y1)
-
-    return cubic_bezier_interpolate(p0, p1, p2, p3, t)
-
-
-def mc_trapezoidal_integrate(f, a, b, n=5):
-    # this attempts to integrate a function the same way MC does.
-    # for most correct results abs(a-b) == 0.5 and n = 5
-
-    h = float(b - a) / n
-    pv = f(a-h)
-    result = 0
-    for i in range(n):
-        v =  f(a + (i * h))
-        result += (v + pv) * h * 0.5
-        pv = v
-    return result
-
-def integrate_iter(speed_map, start, end):
-    pos = 0
-    for i in range(start, end-1):
-        t = float(i)
-        pos += mc_trapezoidal_integrate(speed_map.value_at, t-0.5, t)
-        yield t, pos
-        t += 0.5
-        pos += mc_trapezoidal_integrate(speed_map.value_at, t-0.5, t)
-        yield t, pos
-
-    t += 0.5
-    pos += mc_trapezoidal_integrate(speed_map.value_at, t-0.5, t)
-    yield t, pos
-
-def generate_offset_map(speed_map, start=0, end=None):
-    pointlist = speed_map['PointList']
-
-    # first speed map key frame is the zero point
-    # of the offset map curve
-    first = pointlist.value[0]
-    center = int(first.time)
-    if end is None:
-        last = pointlist.value[-1]
-        end = int(last.time)
-
-    if start > end:
-        raise ValueError("start needs to be less then end")
-
-    time = []
-    value = []
-    offset_index = None
-
-    inter_start = min(start, center)
-    inter_end = max(center,  end+1)
-
-    for i, (t,v) in enumerate(integrate_iter(speed_map, inter_start, inter_end)):
-        time.append(t)
-        value.append(v)
-
-        if t == center:
-            offset_index = i
-
-    center_offset = value[offset_index]
-
-    # not really sure what this base frame offset is about
-    # but appears to contain the how much calculation is off...
-    center_offset -= first.base_frame
-
-    result = []
-    for i, t in enumerate(time):
-        if t > end:
-            break
-
-        if t >= start:
-            v = value[i] - center_offset
-            result.append((t, v))
-
-    return result
 
 @register_class
 class VaryingValue(Parameter):
     class_id = AUID("0d010101-0101-3e00-060e-2b3402060101")
     __slots__ = ()
+
     def __init__(self, parameterdef=None, interperlationdef=None):
         super(VaryingValue, self).__init__()
         if parameterdef:
@@ -377,6 +202,7 @@ class VaryingValue(Parameter):
     @property
     def interpolationdef(self):
         return self['Interpolation'].value
+
     @interpolationdef.setter
     def interpolationdef(self, value):
         self['Interpolation'].value = value
@@ -385,9 +211,14 @@ class VaryingValue(Parameter):
     @property
     def interpolation(self):
         return self['Interpolation'].value
-    @interpolationdef.setter
+
+    @interpolation.setter
     def interpolation(self, value):
         self['Interpolation'].value = value
+
+    @property
+    def pointlist(self):
+        return self['PointList']
 
     @property
     def typedef(self):
@@ -444,7 +275,7 @@ class VaryingValue(Parameter):
             v1 = float(p2.value)
             return lerp(v0, v1, t_mix)
 
-        elif self.interpolationdef.auid  == BezierInterpolator:
+        elif self.interpolationdef.auid == BezierInterpolator:
             t0 = float(p1.time)
             v0 = float(p1.value)
 
@@ -459,12 +290,12 @@ class VaryingValue(Parameter):
             t2 = t3 + tangents[0]
             v2 = v3 + tangents[1]
 
-            return cubic_bezier_interpolate((t0, v0),
-                                            (t1, v1),
-                                            (t2, v2),
-                                            (t3, v3), t)
+            return bezier_interpolate((t0, v0),
+                                      (t1, v1),
+                                      (t2, v2),
+                                      (t3, v3), t)
 
-        elif self.interpolationdef.auid  == CubicInterpolator:
+        elif self.interpolationdef.auid == CubicInterpolator:
 
             t1 = float(p1.time)
             v1 = float(p1.value)
@@ -537,7 +368,7 @@ class ControlPoint(core.AAFObject):
 
     @value.setter
     def value(self, value):
-        self['Value'].value =  AAFRational(value)
+        self['Value'].value = AAFRational(value)
 
     @property
     def point_properties(self):
@@ -558,3 +389,48 @@ class ControlPoint(core.AAFObject):
                  float(props.get("PP_IN_TANGENT_VAL_U", 0))),
                 (float(props.get("PP_OUT_TANGENT_POS_U", 0)),
                  float(props.get("PP_OUT_TANGENT_VAL_U", 0)))]
+
+def generate_offset_map(speed_map, start=0, end=None):
+    pointlist = speed_map['PointList']
+
+    # first speed map key frame is the zero point
+    # of the offset map curve
+    first = pointlist.value[0]
+    center = int(first.time)
+    if end is None:
+        last = pointlist.value[-1]
+        end = int(last.time)
+
+    if start > end:
+        raise ValueError("start needs to be less then end")
+
+    time = []
+    value = []
+    offset_index = None
+
+    inter_start = min(start, center)
+    inter_end = max(center,  end+1)
+
+    for i, (t,v) in enumerate(integrate_iter(speed_map.value_at, inter_start, inter_end)):
+        time.append(t)
+        value.append(v)
+
+        if t == center:
+            offset_index = i
+
+    center_offset = value[offset_index]
+
+    # not really sure what this base frame offset is about
+    # but appears to contain the how much calculation is off...
+    center_offset -= first.base_frame
+
+    result = []
+    for i, t in enumerate(time):
+        if t > end:
+            break
+
+        if t >= start:
+            v = value[i] - center_offset
+            result.append((t, v))
+
+    return result

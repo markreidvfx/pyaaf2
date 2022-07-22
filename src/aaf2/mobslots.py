@@ -10,6 +10,7 @@ from .utils import register_class
 from .auid import AUID
 from . import components
 
+
 @register_class
 class MobSlot(core.AAFObject):
     class_id = AUID("0d010101-0101-3800-060e-2b3402060101")
@@ -77,6 +78,7 @@ class MobSlot(core.AAFObject):
     def length(self):
         return 0
 
+
 @register_class
 class EventMobSlot(MobSlot):
     class_id = AUID( "0d010101-0101-3900-060e-2b3402060101")
@@ -90,10 +92,12 @@ class EventMobSlot(MobSlot):
     def edit_rate(self, value):
         self['EditRate'].value = value
 
+
 @register_class
 class TimelineMobSlot(MobSlot):
     class_id = AUID("0d010101-0101-3b00-060e-2b3402060101")
     __slots__ = ()
+
     def __init__(self, slot_id=None, name=None, segment=None, origin=None, edit_rate=None):
         super(TimelineMobSlot, self).__init__(slot_id, name, segment)
         self.origin = origin or 0
@@ -102,6 +106,7 @@ class TimelineMobSlot(MobSlot):
     @property
     def origin(self):
         return self['Origin'].value
+
     @origin.setter
     def origin(self, value):
         self['Origin'].value = value
@@ -134,6 +139,7 @@ class TimelineMobSlot(MobSlot):
             return length
         else:
             return segment.length
+
 
 @register_class
 class StaticMobSlot(MobSlot):

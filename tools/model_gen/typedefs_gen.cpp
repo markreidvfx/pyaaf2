@@ -247,20 +247,31 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
 #include "AAFMetaDictionary.h"
 
+/* this is pretty broken in the new header ugh */
 // TypeDefCharacter      = UUID("0d010101-0223-0000-060e-2b3402060101")
-#define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
-auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
+// #define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \
+// auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
 
-#define AAF_TYPE_TABLE_BEGIN() \
-    cout << "chars = {" << endl;
+// #define AAF_TYPE_TABLE_BEGIN() \
+//     cout << "chars = {" << endl;
 
-#define AAF_TYPE_DEFINITION_CHARACTER(name, id) \
-    std::cout << QUOTE(aaf##name) << " : " << id << "," << endl;
+// #define AAF_TYPE_DEFINITION_CHARACTER(name, id) \
+//     std::cout << QUOTE(aaf##name) << " : " << id << "," << endl;
 
-#define AAF_TYPE_TABLE_END() \
-    cout << "}" << endl << endl;
+// #define AAF_TYPE_TABLE_END() \
+//     cout << "}" << endl << endl;
 
-#include "AAFMetaDictionary.h"
+// #include "AAFMetaDictionary.h"
+
+cout << "chars = {" << endl;
+cout << "\"aafCharacter\" : \"01100100-0000-0000-060e-2b3401040101\"," << endl;
+
+cout << "}" << endl << endl;
+
+
+cout << "generic_chars = {" << endl;
+cout << "\"aafChar\" : (\"01100300-0000-0000-060e-2b3401040101\", 1),"   << endl;
+cout << "}" << endl << endl;
 
 // TypeDefIndirect       = UUID("0d010101-0221-0000-060e-2b3402060101")
 #define AAF_LITERAL_AUID(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8) \

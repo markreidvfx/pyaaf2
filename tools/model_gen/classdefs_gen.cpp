@@ -18,6 +18,7 @@ string process_tag(int tag)
     if (tag == 0x0000) {
         tag = DYNAMIC_PID;
         DYNAMIC_PID--;
+        return "None";
     }
 
     sprintf(buffer, "0x%04x", tag);
@@ -66,9 +67,12 @@ auid_to_str(l, w1, w2,  b1, b2, b3, b4, b5, b6, b7, b8)
     cout << "aliases = {" << endl;
 
 #define AAF_CLASS_ALIAS(name, alias) \
-    cout << QUOTE(alias) << PAD(25, #alias) << " : "  << QUOTE(name) << "," <<endl;
+    cout << QUOTE(alias) << PAD(25, #alias) << " : "  << QUOTE(name) << "," << endl;
+
 
 #define AAF_ALIAS_TABLE_END() \
+    cout << "\"TaggedValueDef\"         : \"TaggedValueDefinition\"," << endl; \
+    cout << "\"TypeDefGenericCharacter\": \"TypeDefinitionGenericCharacter\"," << endl; \
     cout << "}" << endl;
 
 #include "AAFMetaDictionary.h"

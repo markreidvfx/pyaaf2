@@ -44,8 +44,8 @@ def read_strongref(f):
         return MXFRef(bytes_be=data)
 
 
-def decode_strong_ref_array(data):
-    f = BytesIO(data)
+def decode_strong_ref_array(f):
+
     count = read_u32be(f)
     f.read(4)
     refs = MXFRefArray()
@@ -89,15 +89,13 @@ def decode_indirect_value(data):
         # unhandled indirect type
         return
 
-def decode_rational(data):
-    f = BytesIO(data)
+def decode_rational(f):
     num = read_u32be(f)
     den = read_u32be(f)
 
     return "%d/%d" % (num, den)
 
-def decode_video_line_map(data):
-    f = BytesIO(data)
+def decode_video_line_map(f):
     count = read_u32be(f)
     size = read_u32be(f)
     line_map = []
@@ -112,8 +110,7 @@ def decode_video_line_map(data):
             line_map.append(0)
     return line_map
 
-def decode_pixel_layout(data):
-    f = BytesIO(data)
+def decode_pixel_layout(f):
     layout = []
     for i in range(8):
         code = read_u8(f)
@@ -123,8 +120,8 @@ def decode_pixel_layout(data):
         layout.append({'Code':code, 'Size':depth})
     return layout
 
-def decode_timestamp(data):
-    t = read_u64be(BytesIO(data))
+def decode_timestamp(f):
+    t = read_u64be(f)
 
     year = t >> 48
     month = t >> 40 & 0xFF
@@ -166,19 +163,20 @@ class MXFObject(object):
         for tag, data in iter_tags(f, length):
             self.read_tag(tag, data)
             uid = local_tags.get(tag, None)
+            with BytesIO(data) as f:
 
-            if uid == AUID("a0240060-94eb-75cb-ce2a-ca5051ab11d3"):
-                self.data['FrameSampleSize'] = read_s32be(BytesIO(data))
-            elif uid == AUID("a0240060-94eb-75cb-ce2a-ca4d51ab11d3"):
-                self.data['ResolutionID'] = read_s32be(BytesIO(data))
-            elif uid == AUID("a0220060-94eb-75cb-96c4-69924f6211d3"):
-                self.data['AppCode'] = read_s32be(BytesIO(data))
-            elif uid == AUID("060e2b34-0101-0109-0601-010406100000"):
-                self.data['SubDescriptors'] = decode_strong_ref_array(data)
-            elif uid == AUID("a01c0004-ac96-9f50-6095-818347b111d4"):
-                self.data["MobAttributeList"] = decode_strong_ref_array(data)
-            elif uid == AUID("a01c0004-ac96-9f50-6095-818547b111d4"):
-                self.data["TaggedValueAttributeList"] = decode_strong_ref_array(data)
+                if uid == AUID("a0240060-94eb-75cb-ce2a-ca5051ab11d3"):
+                    self.data['FrameSampleSize'] = read_s32be(f)
+                elif uid == AUID("a0240060-94eb-75cb-ce2a-ca4d51ab11d3"):
+                    self.data['ResolutionID'] = read_s32be(f)
+                elif uid == AUID("a0220060-94eb-75cb-96c4-69924f6211d3"):
+                    self.data['AppCode'] = read_s32be(f)
+                elif uid == AUID("060e2b34-0101-0109-0601-010406100000"):
+                    self.data['SubDescriptors'] = decode_strong_ref_array(f)
+                elif uid == AUID("a01c0004-ac96-9f50-6095-818347b111d4"):
+                    self.data["MobAttributeList"] = decode_strong_ref_array(f)
+                elif uid == AUID("a01c0004-ac96-9f50-6095-818547b111d4"):
+                    self.data["TaggedValueAttributeList"] = decode_strong_ref_array(f)
 
     def resolve_ref(self, key):
         ref = self.data.get(key, None)
@@ -213,11 +211,11 @@ class MXFContentStorage(MXFObject):
     class_id = AUID("060e2b34-0253-0101-0d01-010101011800")
     def read_tag(self, tag, data):
         super(MXFContentStorage, self).read_tag(tag, data)
-
-        if tag == 0x1902:
-            self.data['EssenceContainerData'] = decode_strong_ref_array(data)
-        elif tag == 0x1901:
-            self.data['Packages'] = decode_strong_ref_array(data)
+        with BytesIO(data) as f:
+            if tag == 0x1902:
+                self.data['EssenceContainerData'] = decode_strong_ref_array(f)
+            elif tag == 0x1901:
+                self.data['Packages'] = decode_strong_ref_array(f)
 
 
 class MXFPackage(MXFObject):
@@ -225,22 +223,24 @@ class MXFPackage(MXFObject):
     def read_tag(self, tag, data):
         super(MXFPackage, self).read_tag(tag, data)
 
-        if tag == 0x4403:
-            self.data['Slots'] = decode_strong_ref_array(data)
-        elif tag == 0x4401:
-            self.data['MobID'] = decode_mob_id(data)
-        elif tag == 0x4402:
-            self.data['Name'] = decode_utf16be(data)
-        elif tag == 0x4701:
-            self.data['Descriptor'] = decode_strongref(data)
-        elif tag == 0x4404:
-            self.data['LastModified'] = decode_timestamp(data)
-        elif tag == 0x4405:
-            self.data['CreationTime'] = decode_timestamp(data)
-        elif tag == 0x4408:
-            self.data['UsageCode'] = decode_auid(data) # doesn't appear reversed...
-        elif tag == 0x4406:
-            self.data['UserComments'] = decode_strong_ref_array(data)
+        with BytesIO(data) as f:
+
+            if tag == 0x4403:
+                self.data['Slots'] = decode_strong_ref_array(f)
+            elif tag == 0x4401:
+                self.data['MobID'] = decode_mob_id(data)
+            elif tag == 0x4402:
+                self.data['Name'] = decode_utf16be(data)
+            elif tag == 0x4701:
+                self.data['Descriptor'] = decode_strongref(data)
+            elif tag == 0x4404:
+                self.data['LastModified'] = decode_timestamp(f)
+            elif tag == 0x4405:
+                self.data['CreationTime'] = decode_timestamp(f)
+            elif tag == 0x4408:
+                self.data['UsageCode'] = decode_auid(data) # doesn't appear reversed...
+            elif tag == 0x4406:
+                self.data['UserComments'] = decode_strong_ref_array(f)
 
     @property
     def mob_id(self):
@@ -306,19 +306,19 @@ class MXFTrack(MXFObject):
 
     def read_tag(self, tag, data):
         super(MXFTrack, self).read_tag(tag, data)
-
-        if tag == 0x4b02:
-            self.data['Origin'] = read_s64be(BytesIO(data))
-        elif tag == 0x4b01:
-            self.data['EditRate'] = decode_rational(data)
-        elif tag == 0x4803:
-            self.data['Segment'] = decode_strongref(data)
-        elif tag == 0x4804:
-            self.data['PhysicalTrackNumber'] = read_u32be(BytesIO(data))
-        elif tag == 0x4801:
-            self.data['SlotID'] = read_u32be(BytesIO(data))
-        elif tag == 0x4802:
-            self.data['SlotName'] = decode_utf16be(data)
+        with BytesIO(data) as f:
+            if tag == 0x4b02:
+                self.data['Origin'] = read_s64be(f)
+            elif tag == 0x4b01:
+                self.data['EditRate'] = decode_rational(f)
+            elif tag == 0x4803:
+                self.data['Segment'] = decode_strongref(data)
+            elif tag == 0x4804:
+                self.data['PhysicalTrackNumber'] = read_u32be(f)
+            elif tag == 0x4801:
+                self.data['SlotID'] = read_u32be(f)
+            elif tag == 0x4802:
+                self.data['SlotName'] = decode_utf16be(data)
 
     def link(self):
         timeline = self.create_aaf_instance()
@@ -348,41 +348,41 @@ class MXFEventTrack(MXFTrack):
 class MXFComponent(MXFObject):
     def read_tag(self, tag, data):
         super(MXFComponent, self).read_tag(tag, data)
-
-        if tag == 0x1001:
-            self.data['Components'] = decode_strong_ref_array(data)
-        elif tag == 0x1201:
-            self.data['StartTime'] = read_u64be(BytesIO(data))
-        elif tag == 0x1102:
-            self.data['SourceMobSlotID'] = read_u32be(BytesIO(data))
-        elif tag == 0x1101:
-            self.data['SourceID'] = decode_mob_id(data)
-        elif tag == 0x0202:
-            self.data['Length'] = read_u64be(BytesIO(data))
-        elif tag == 0x0201:
-            self.data['DataDef'] = decode_datadef(data)
-        elif tag == 0x1503:
-            self.data['Drop'] = read_u8(BytesIO(data)) == 1
-        elif tag == 0x1502:
-            self.data['FPS'] = read_u16be(BytesIO(data))
-        elif tag == 0x1501:
-            self.data['Start'] = read_u64be(BytesIO(data))
-        elif tag == 0x0501:
-            self.data['Choices'] = decode_strong_ref_array(data)
-        elif tag == 0x0502:
-            self.data['StillFrame'] = decode_strongref(data)
-        elif tag == 0x0d01:
-            self.data['InputSegment'] = decode_strongref(data)
-        elif tag == 0x0d02:
-            self.data['PulldownKind'] = read_u8(BytesIO(data))
-        elif tag == 0x0d03:
-            self.data['PulldownDirection'] = read_u8(BytesIO(data))
-        elif tag == 0x0d04:
-            self.data['PhaseFrame'] = read_s32be(BytesIO(data))
-        elif tag == 0x0e01:
-            self.data['RelativeScope'] = read_s32be(BytesIO(data))
-        elif tag == 0x0e02:
-            self.data['RelativeSlot'] = read_s32be(BytesIO(data))
+        with BytesIO(data) as f:
+            if tag == 0x1001:
+                self.data['Components'] = decode_strong_ref_array(f)
+            elif tag == 0x1201:
+                self.data['StartTime'] = read_u64be(f)
+            elif tag == 0x1102:
+                self.data['SourceMobSlotID'] = read_u32be(f)
+            elif tag == 0x1101:
+                self.data['SourceID'] = decode_mob_id(data)
+            elif tag == 0x0202:
+                self.data['Length'] = read_u64be(f)
+            elif tag == 0x0201:
+                self.data['DataDef'] = decode_datadef(data)
+            elif tag == 0x1503:
+                self.data['Drop'] = read_u8(f) == 1
+            elif tag == 0x1502:
+                self.data['FPS'] = read_u16be(f)
+            elif tag == 0x1501:
+                self.data['Start'] = read_u64be(f)
+            elif tag == 0x0501:
+                self.data['Choices'] = decode_strong_ref_array(f)
+            elif tag == 0x0502:
+                self.data['StillFrame'] = decode_strongref(data)
+            elif tag == 0x0d01:
+                self.data['InputSegment'] = decode_strongref(data)
+            elif tag == 0x0d02:
+                self.data['PulldownKind'] = read_u8(f)
+            elif tag == 0x0d03:
+                self.data['PulldownDirection'] = read_u8(f)
+            elif tag == 0x0d04:
+                self.data['PhaseFrame'] = read_s32be(f)
+            elif tag == 0x0e01:
+                self.data['RelativeScope'] = read_s32be(f)
+            elif tag == 0x0e02:
+                self.data['RelativeSlot'] = read_s32be(f)
 
 @register_mxf_class
 class MXFSequence(MXFComponent):
@@ -502,60 +502,61 @@ class MXFDescriptor(MXFObject):
 
     def read_tag(self, tag, data):
         super(MXFDescriptor, self).read_tag(tag, data)
-        if tag == 0x3f01:
-            self.data['FileDescriptors'] = decode_strong_ref_array(data)
-        elif tag == 0x3004:
-            self.data['ContainerFormat'] = reverse_auid(decode_auid(data))
-        elif tag == 0x3005:
-            self.data['CodecDefinition'] = reverse_auid(decode_auid(data))
-        elif tag == 0x3006:
-            self.data['LinkedTrackID'] = read_u32be(BytesIO(data))
-        elif tag == 0x3203:
-            self.data['StoredWidth'] = read_u32be(BytesIO(data))
-        elif tag == 0x3202:
-            self.data['StoredHeight'] = read_u32be(BytesIO(data))
-        elif tag == 0x3208: #this is display
-            self.data['SampledHeight'] = read_u32be(BytesIO(data))
-        elif tag == 0x3209: #this is display
-            self.data['SampledWidth'] = read_u32be(BytesIO(data))
-        elif tag == 0x320d:
-            self.data['VideoLineMap'] = decode_video_line_map(data)
-        elif tag == 0x3211:
-            self.data['ImageAlignmentOffset'] = read_u32be(BytesIO(data))
-        elif tag == 0x3002:
-            self.data['Length'] = read_s64be(BytesIO(data))
-        elif tag == 0x3001:
-            self.data['SampleRate'] = decode_rational(data)
-        elif tag == 0x3d03:
-            self.data['AudioSamplingRate'] = decode_rational(data)
-        elif tag == 0x3d0a:
-            self.data['BlockAlign'] = read_u16be(BytesIO(data))
-        elif tag == 0x3d01:
-            self.data['QuantizationBits'] = read_u32be(BytesIO(data))
-        elif tag == 0x3d07:
-            self.data['Channels'] = read_u32be(BytesIO(data))
-        elif tag == 0x3d09:
-            self.data['AverageBPS'] = read_u32be(BytesIO(data))
-        elif tag == 0x3d02:
-            self.data['Locked'] = read_u8(BytesIO(data)) == 1
-        elif tag == 0x3301:
-            self.data['ComponentWidth'] = read_u32be(BytesIO(data))
-        elif tag == 0x320c:
-            self.data['FrameLayout'] = read_u8(BytesIO(data))
-        elif tag == 0x320e:
-            self.data['ImageAspectRatio'] = decode_rational(data)
-        elif tag == 0x3d06:
-            self.data['SoundCompression'] =  reverse_auid(decode_auid(data))
-        elif tag == 0x3201:
-            self.data['Compression'] = reverse_auid(decode_auid(data))
-        elif tag == 0x3302:
-            self.data['HorizontalSubsampling'] = read_u32be(BytesIO(data))
-        elif tag == 0x3308:
-            self.data['VerticalSubsampling'] = read_u32be(BytesIO(data))
-        elif tag == 0x2f01:
-            self.data['Locator'] = decode_strong_ref_array(data)
-        elif tag == 0x3401:
-            self.data['PixelLayout'] = decode_pixel_layout(data)
+        with BytesIO(data) as f:
+            if tag == 0x3f01:
+                self.data['FileDescriptors'] = decode_strong_ref_array(f)
+            elif tag == 0x3004:
+                self.data['ContainerFormat'] = reverse_auid(decode_auid(data))
+            elif tag == 0x3005:
+                self.data['CodecDefinition'] = reverse_auid(decode_auid(data))
+            elif tag == 0x3006:
+                self.data['LinkedTrackID'] = read_u32be(f)
+            elif tag == 0x3203:
+                self.data['StoredWidth'] = read_u32be(f)
+            elif tag == 0x3202:
+                self.data['StoredHeight'] = read_u32be(f)
+            elif tag == 0x3208: #this is display
+                self.data['SampledHeight'] = read_u32be(f)
+            elif tag == 0x3209: #this is display
+                self.data['SampledWidth'] = read_u32be(f)
+            elif tag == 0x320d:
+                self.data['VideoLineMap'] = decode_video_line_map(f)
+            elif tag == 0x3211:
+                self.data['ImageAlignmentOffset'] = read_u32be(f)
+            elif tag == 0x3002:
+                self.data['Length'] = read_s64be(f)
+            elif tag == 0x3001:
+                self.data['SampleRate'] = decode_rational(f)
+            elif tag == 0x3d03:
+                self.data['AudioSamplingRate'] = decode_rational(f)
+            elif tag == 0x3d0a:
+                self.data['BlockAlign'] = read_u16be(f)
+            elif tag == 0x3d01:
+                self.data['QuantizationBits'] = read_u32be(f)
+            elif tag == 0x3d07:
+                self.data['Channels'] = read_u32be(f)
+            elif tag == 0x3d09:
+                self.data['AverageBPS'] = read_u32be(f)
+            elif tag == 0x3d02:
+                self.data['Locked'] = read_u8(f) == 1
+            elif tag == 0x3301:
+                self.data['ComponentWidth'] = read_u32be(f)
+            elif tag == 0x320c:
+                self.data['FrameLayout'] = read_u8(f)
+            elif tag == 0x320e:
+                self.data['ImageAspectRatio'] = decode_rational(f)
+            elif tag == 0x3d06:
+                self.data['SoundCompression'] =  reverse_auid(decode_auid(data))
+            elif tag == 0x3201:
+                self.data['Compression'] = reverse_auid(decode_auid(data))
+            elif tag == 0x3302:
+                self.data['HorizontalSubsampling'] = read_u32be(f)
+            elif tag == 0x3308:
+                self.data['VerticalSubsampling'] = read_u32be(f)
+            elif tag == 0x2f01:
+                self.data['Locator'] = decode_strong_ref_array(f)
+            elif tag == 0x3401:
+                self.data['PixelLayout'] = decode_pixel_layout(f)
 
 @register_mxf_class
 class MXFMultipleDescriptor(MXFDescriptor):

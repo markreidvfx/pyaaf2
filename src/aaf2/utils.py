@@ -5,6 +5,7 @@ from __future__ import (
     division,
     )
 
+import sys
 from struct import unpack, pack
 from . import auid
 
@@ -78,7 +79,10 @@ def read_filetime(f):
     return read_u64le(f)
 
 def decode_utf16le(data):
-    return data.decode('utf-16le').split(u'\x00')[0]
+    if sys.version_info.major < 3:
+        return data.decode('utf-16le').split(u'\x00')[0]
+    else:
+        return data.decode('utf-16le', 'backslashreplace').split(u'\x00')[0]
 
 def encode_utf16le(data):
     return data.encode("utf-16le") + b"\x00\x00"

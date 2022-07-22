@@ -57,6 +57,8 @@ enums = {
    2  : "ThreeTap",
    3  : "Quincunx",
    4  : "Rec601",
+   5  : "LineAlternating",
+   6  : "VerticalMidpoint",
    255: "UnknownSiting",
    }
 ),
@@ -128,6 +130,25 @@ enums = {
    0x50: "CompPalette",
    0x52: "CompRed",
    0x00: "CompNull",
+   0x72: "CompRedLSBs",
+   0x67: "CompGreenLSBs",
+   0x62: "CompBlueLSBs",
+   0x61: "CompAlphaLSBs",
+   0x55: "CompColorDifferenceU",
+   0x56: "CompColorDifferenceV",
+   0x57: "CompComposite",
+   0x58: "CompNonCoSitedLuma",
+   0x59: "CompLuma",
+   0x5A: "CompDepth",
+   0x75: "CompColorDifferenceULSBs",
+   0x76: "CompColorDifferenceVLSBs",
+   0x77: "CompCompositeLSBs",
+   0x78: "CompNonCoSitedLumaLSBs",
+   0x79: "CompLumaLSBs",
+   0x7A: "CompDepthLSBs",
+   0xD8: "CompColorX",
+   0xD9: "CompColorY",
+   0xDA: "CompColorZ",
    }
 ),
 "ReferenceType"            : ("0201010f-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
@@ -219,6 +240,7 @@ enums = {
    4  : "SignalStandard_SMPTE274M",
    5  : "SignalStandard_SMPTE296M",
    6  : "SignalStandard_SMPTE349M",
+   7  : "SignalStandard_SMPTE428_1",
    }
 ),
 "ScanningDirectionType"    : ("02010128-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
@@ -243,6 +265,21 @@ enums = {
    0  : "TitleAlignment_Left",
    1  : "TitleAlignment_Center",
    2  : "TitleAlignment_Right",
+   }
+),
+"AVCContentScanningType"   : ("0201012c-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
+   0  : "AVCContentScanning_NotKnown",
+   1  : "AVCContentScanning_ProgressiveFramePicture",
+   2  : "AVCContentScanning_InterlaceFieldPicture",
+   3  : "AVCContentScanning_InterlaceFramePicture",
+   4  : "AVCContentScanning_Interlace_FrameFieldPicture",
+   }
+),
+"MPEG4VisualCodedContentType": ("0201012d-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", {
+   0  : "MPEG4VisualCodedContent_Unknown",
+   1  : "MPEG4VisualCodedContent_Progressive",
+   2  : "MPEG4VisualCodedContent_Interlaced",
+   3  : "MPEG4VisualCodedContent_Mixed",
    }
 ),
 }
@@ -308,12 +345,14 @@ records = {
 }
 
 fixed_arrays = {
+"aafUUID"         : ("01030300-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", 16),
 "aafUInt8Array12" : ("04010200-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", 12),
 "aafUInt8Array8"  : ("04010800-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101", 8),
 "aafRGBALayout"   : ("04020100-0000-0000-060e-2b3401040101", "03010400-0000-0000-060e-2b3401040101", 8),
 }
 
 var_arrays = {
+"aafUUIDArray"                : ("04011500-0000-0000-060e-2b3401040101", "01030300-0000-0000-060e-2b3401040101"),
 "aafUInt8Array"               : ("04010100-0000-0000-060e-2b3401040101", "01010100-0000-0000-060e-2b3401040101"),
 "aafInt32Array"               : ("04010300-0000-0000-060e-2b3401040101", "01010700-0000-0000-060e-2b3401040101"),
 "aafInt64Array"               : ("04010400-0000-0000-060e-2b3401040101", "01010800-0000-0000-060e-2b3401040101"),
@@ -337,6 +376,7 @@ var_arrays = {
 "kAAFTypeID_FileDescriptorStrongReferenceVector"         : ("05060b00-0000-0000-060e-2b3401040101", "05021d00-0000-0000-060e-2b3401040101" ),
 "kAAFTypeID_RIFFChunkStrongReferenceVector"              : ("05060c00-0000-0000-060e-2b3401040101", "05021e00-0000-0000-060e-2b3401040101" ),
 "kAAFTypeID_DescriptiveObjectStrongReferenceVector"      : ("05060d00-0000-0000-060e-2b3401040101", "05022200-0000-0000-060e-2b3401040101" ),
+"kAAFTypeID_SubDescriptorStrongReferenceVector"          : ("05060e00-0000-0000-060e-2b3401040101", "05022600-0000-0000-060e-2b3401040101" ),
 "kAAFTypeID_OperationDefinitionWeakReferenceVector" : ("05040100-0000-0000-060e-2b3401040101", "05010700-0000-0000-060e-2b3401040101" ),
 "kAAFTypeID_TypeDefinitionWeakReferenceVector"      : ("05040200-0000-0000-060e-2b3401040101", "05010900-0000-0000-060e-2b3401040101" ),
 "kAAFTypeID_DataDefinitionWeakReferenceVector"      : ("05040300-0000-0000-060e-2b3401040101", "05010300-0000-0000-060e-2b3401040101" ),
@@ -351,6 +391,7 @@ renames = {
 
 strings = {
 "aafString"           : ("01100200-0000-0000-060e-2b3401040101", "01100100-0000-0000-060e-2b3401040101"),
+"aafISO7"             : ("01100400-0000-0000-060e-2b3401040101", "01100300-0000-0000-060e-2b3401040101"),
 }
 
 streams = {
@@ -373,6 +414,11 @@ extenums = {
     "04010101-0104-0000-060e-2b3404010101" : "TransferCharacteristic_274M_296M",
     "04010101-0105-0000-060e-2b3404010101" : "TransferCharacteristic_ITU1361",
     "04010101-0106-0000-060e-2b3404010101" : "TransferCharacteristic_linear",
+    "04010101-0107-0000-060e-2b3404010108" : "TransferCharacteristic_SMPTE_DCDM",
+    "04010101-0108-0000-060e-2b340401010d" : "TransferCharacteristic_IEC6196624_xvYCC",
+    "04010101-0109-0000-060e-2b340401010e" : "TransferCharacteristic_ITU2020",
+    "04010101-010a-0000-060e-2b340401010d" : "TransferCharacteristic_SMPTEST2084",
+    "04010101-010b-0000-060e-2b340401010d" : "TransferCharacteristic_HLG_OETF",
     }
 ),
 "PluginCategoryType": ("02020103-0000-0000-060e-2b3401040101", {
@@ -393,18 +439,28 @@ extenums = {
     "04010101-0301-0000-060e-2b3404010106" : "ColorPrimaries_SMPTE170M",
     "04010101-0302-0000-060e-2b3404010106" : "ColorPrimaries_ITU470_PAL",
     "04010101-0303-0000-060e-2b3404010106" : "ColorPrimaries_ITU709",
+    "04010101-0304-0000-060e-2b340401010d" : "ColorPrimaries_ITU2020",
+    "04010101-0305-0000-060e-2b340401010d" : "ColorPrimaries_SMPTE_DCDM",
+    "04010101-0306-0000-060e-2b340401010d" : "ColorPrimaries_P3D65",
     }
 ),
 "CodingEquationsType": ("02020106-0000-0000-060e-2b3401040101", {
     "04010101-0201-0000-060e-2b3404010101" : "CodingEquations_ITU601",
     "04010101-0202-0000-060e-2b3404010101" : "CodingEquations_ITU709",
     "04010101-0203-0000-060e-2b3404010101" : "CodingEquations_SMPTE240M",
+    "04010101-0204-0000-060e-2b340401010d" : "CodingEquations_YCgCo",
+    "04010101-0205-0000-060e-2b340401010d" : "CodingEquations_GBR",
+    "04010101-0206-0000-060e-2b340401010d" : "CodingEquations_ITU2020_NCL",
     }
 ),
 }
 
 chars = {
 "aafCharacter" : "01100100-0000-0000-060e-2b3401040101",
+}
+
+generic_chars = {
+"aafChar" : ("01100300-0000-0000-060e-2b3401040101", 1),
 }
 
 indirects = {
@@ -470,6 +526,7 @@ strongrefs = {
 "kAAFTypeID_KLVDataDefinitionStrongReference"       : ("05022000-0000-0000-060e-2b3401040101", "0d010101-0101-4d00-060e-2b3402060101" ),
 "kAAFTypeID_TaggedValueDefinitionStrongReference"   : ("05022100-0000-0000-060e-2b3401040101", "0d010101-0101-4c00-060e-2b3402060101" ),
 "kAAFTypeID_DescriptiveObjectStrongReference"       : ("05022200-0000-0000-060e-2b3401040101", "0d010400-0000-0000-060e-2b3402060101" ),
+"kAAFTypeID_SubDescriptorStrongReference"           : ("05022600-0000-0000-060e-2b3401040101", "0d010101-0101-5900-060e-2b3402060101" ),
 }
 
 weakrefs = {

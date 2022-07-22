@@ -18,6 +18,7 @@ from . import audio
 from .rational import AAFRational
 from .auid import AUID
 
+
 @register_class
 class Mob(core.AAFObject):
     """
@@ -28,6 +29,8 @@ class Mob(core.AAFObject):
     __slots__ = ()
 
     def __init__(self, name=None):
+        super(Mob, self).__init__()
+
         self.name = name or "Mob"
         self.mob_id = MobID.new()
 
@@ -63,6 +66,7 @@ class Mob(core.AAFObject):
     @property
     def usage(self):
         return self['UsageCode'].value
+
     @usage.setter
     def usage(self, value):
         self['UsageCode'].value = value
@@ -149,6 +153,7 @@ class Mob(core.AAFObject):
 
         return '<%s at 0x%x>' % (s, id(self))
 
+
 @register_class
 class CompositionMob(Mob):
     class_id = AUID("0d010101-0101-3500-060e-2b3402060101")
@@ -159,7 +164,7 @@ class MasterMob(Mob):
     class_id = AUID("0d010101-0101-3600-060e-2b3402060101")
     __slots__ = ()
 
-    def import_dnxhd_essence(self, path, edit_rate, tape=None):
+    def import_dnxhd_essence(self, path, edit_rate, tape=None, length=None, offline=False):
         """
         Import video essence from raw DNxHD/DNxHR stream
         """
@@ -169,7 +174,7 @@ class MasterMob(Mob):
         self.root.content.mobs.append(source_mob)
 
         # import the essencedata
-        source_slot = source_mob.import_dnxhd_essence(path, edit_rate, tape)
+        source_slot = source_mob.import_dnxhd_essence(path, edit_rate, tape, length, offline)
 
         # create slot and clip that references source_mob slot
         slot = self.create_timeline_slot(edit_rate=edit_rate)
@@ -179,7 +184,7 @@ class MasterMob(Mob):
         slot.segment.length = source_slot.segment.length
         return slot
 
-    def import_audio_essence(self, path, edit_rate=None, tape=None):
+    def import_audio_essence(self, path, edit_rate=None, tape=None, length=None, offline=False):
         """
         Import audio essence from wav file
         """
@@ -188,7 +193,7 @@ class MasterMob(Mob):
         source_mob = self.root.create.SourceMob("%s.PHYS" % self.name)
         self.root.content.mobs.append(source_mob)
 
-        source_slot = source_mob.import_audio_essence(path, edit_rate, tape)
+        source_slot = source_mob.import_audio_essence(path, edit_rate, tape, length, offline)
 
         # create slot and clip that references source_mob slot
         edit_rate = edit_rate or source_slot.edit_rate
@@ -199,6 +204,7 @@ class MasterMob(Mob):
         slot.segment.length = source_slot.segment.length
         return slot
 
+
 @register_class
 class SourceMob(Mob):
     class_id = AUID("0d010101-0101-3700-060e-2b3402060101")
@@ -207,38 +213,40 @@ class SourceMob(Mob):
     @property
     def descriptor(self):
         return self['EssenceDescription'].value
+
     @descriptor.setter
     def descriptor(self, value):
         self['EssenceDescription'].value = value
 
-    def create_essence(self, edit_rate=None, media_kind='picture', slot_id=None):
+    def create_essence(self, edit_rate=None, media_kind='picture', slot_id=None, offline=False):
         # NOTE: appears like a SourceMob can only link to 1 essence and it must be slot 1
         slot = self.create_empty_slot(edit_rate=edit_rate, media_kind=media_kind, slot_id=1)
+        if offline:
+            return None, slot
         essencedata = self.root.create.EssenceData()
         essencedata.mob_id = self.mob_id
         self.root.content.essencedata.append(essencedata)
         return essencedata, slot
 
     def create_empty_slot(self, edit_rate=None, media_kind='picture', slot_id=None):
-
         slot = self.create_timeline_slot(edit_rate, slot_id)
         clip = self.root.create.SourceClip(media_kind=media_kind)
         slot.segment = clip
 
         return slot
 
-    def create_timecode_slot(self, edit_rate, timecode_fps, drop_frame=False):
+    def create_timecode_slot(self, edit_rate, timecode_fps, drop_frame=False, length=None):
         timecode_slot = self.create_timeline_slot(edit_rate)
-        timecode_slot.segment = self.root.create.Timecode(timecode_fps, drop=drop_frame)
+        timecode_slot.segment = self.root.create.Timecode(timecode_fps, drop=drop_frame, length=length)
         return timecode_slot
 
-    def create_tape_slots(self, tape_name, edit_rate, timecode_fps, drop_frame=False, media_kind=None):
+    def create_tape_slots(self, tape_name, edit_rate, timecode_fps, drop_frame=False, media_kind=None, length=None):
         self.name = tape_name
         self.descriptor = self.root.create.TapeDescriptor()
 
         slot = self.create_empty_slot(edit_rate, media_kind, slot_id=1)
-        slot.segment.length = int(float(AAFRational(edit_rate)) * 60 *60 * 12) # 12 hours
-        timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame)
+        slot.segment.length = int(float(AAFRational(edit_rate)) * 60 * 60 * 12)  # 12 hours
+        timecode_slot = self.create_timecode_slot(edit_rate, timecode_fps, drop_frame, length)
 
         return slot, timecode_slot
 
@@ -296,12 +304,12 @@ class SourceMob(Mob):
 
         return slot
 
-    def import_dnxhd_essence(self, path, edit_rate, tape=None):
+    def import_dnxhd_essence(self, path, edit_rate, tape=None, length=None, offline=False):
         """
         Import video essence from raw DNxHD/DNxHR stream
         """
 
-        essencedata, slot = self.create_essence(edit_rate, 'picture')
+        essencedata, slot = self.create_essence(edit_rate, 'picture', offline=offline)
 
         if tape:
             slot.segment = tape
@@ -317,8 +325,10 @@ class SourceMob(Mob):
         dnxhd_codec_auid = AUID("8ef593f6-9521-4344-9ede-b84e8cfdc7da")
         descriptor['CodecDefinition'].value = self.root.dictionary.lookup_codecdef(dnxhd_codec_auid)
 
-        # open essence stream
-        stream = essencedata.open('w')
+        stream = None
+        if essencedata is not None:
+            # open essence stream
+            stream = essencedata.open('w')
 
         # open input file
         with io.open(path, 'rb', buffering=io.DEFAULT_BUFFER_SIZE) as f:
@@ -336,15 +346,15 @@ class SourceMob(Mob):
                     descriptor['Compression'].value = video.dnx_compression_auids[cid]
                     descriptor['HorizontalSubsampling'].value = 2
 
-                stream.write(packet)
-
-            # set descriptor and component lengths
-            descriptor.length = i
-            slot.segment.length = i
+                if stream is not None:
+                    stream.write(packet)
+        # set descriptor and component lengths
+        slot.segment.length = length or i
+        descriptor.length = i
 
         return slot
 
-    def import_audio_essence(self, path, edit_rate=None, tape=None):
+    def import_audio_essence(self, path, edit_rate=None, tape=None, length=None, offline=False):
         """
         Import audio essence from wav file
         """
@@ -355,12 +365,12 @@ class SourceMob(Mob):
         channels = a.getnchannels()
         sample_width = a.getsampwidth()
         block_align = a.getblockalign()
-        length = a.getnframes()
+        frames = a.getnframes()
 
         edit_rate = edit_rate or sample_rate
 
         # create essencedata
-        essencedata, slot = self.create_essence(edit_rate, 'sound')
+        essencedata, slot = self.create_essence(edit_rate, 'sound', offline=offline)
         if tape:
             slot.segment = tape
 
@@ -375,16 +385,17 @@ class SourceMob(Mob):
         descriptor['AudioSamplingRate'].value = sample_rate
 
         # set lengths
-        descriptor.length = length
-        slot.segment.length = int(rescale(length, sample_rate, edit_rate))
+        descriptor.length = frames
+        slot.segment.length = length or int(rescale(frames, sample_rate, edit_rate))
 
-        stream = essencedata.open('w')
+        if essencedata is not None:
+            stream = essencedata.open('w')
 
-        while True:
-            data = a.readframes(sample_rate)
-            if not data:
-                break
-            stream.write(data)
+            while True:
+                data = a.readframes(sample_rate)
+                if not data:
+                    break
+                stream.write(data)
 
         return slot
 
