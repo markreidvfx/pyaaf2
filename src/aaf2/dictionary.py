@@ -132,6 +132,15 @@ class OperationDef(DefinitionObject):
     def parameters(self):
         return self['ParametersDefined']
 
+    @property
+    def number_inputs(self):
+        return self['NumberInputs'].value
+
+    @number_inputs.setter
+    def number_inputs(self, value):
+        self['NumberInputs'].value = value
+
+
 @register_class
 class ParameterDef(DefinitionObject):
     class_id = AUID("0d010101-0101-1d00-060e-2b3402060101")

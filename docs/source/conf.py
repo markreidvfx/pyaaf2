@@ -183,7 +183,7 @@ def run_apidoc(_):
     """This method is required by the setup method below."""
     import os
     dirname = os.path.dirname(__file__)
-    ignore_paths = [os.path.join(dirname, '../../aaf2/model'),]
+    ignore_paths = [os.path.join(dirname, '../../src/aaf2/model'),]
     # https://github.com/sphinx-doc/sphinx/blob/master/sphinx/ext/apidoc.py
     argv = [
         '--force',
@@ -192,7 +192,7 @@ def run_apidoc(_):
         '--module-first',
         '--output-dir',
         os.path.join(dirname, 'api'),
-        os.path.join(dirname, '../../aaf2'),
+        os.path.join(dirname, '../../src'),
      ] + ignore_paths
 
     from sphinx.ext import apidoc

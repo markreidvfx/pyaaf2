@@ -39,7 +39,6 @@ class AAFFactory(object):
         return self.create_instance
 
     def from_name(self, name, *args, **kwargs):
-
         classdef = self.root.metadict.lookup_classdef(name)
         if classdef is None:
             raise ValueError("no class found with name: %s" % name)
@@ -151,6 +150,23 @@ class AAFFile(object):
     It is recommended to create this object with the `aaf.open` alias.
     It is also highly recommended to use the with statement.
 
+    .. warning::
+       If an exception is raised inside the with block and the file was opened
+       as writable, the final file should be considered bad or corrupted.
+
+       Take this snippet as an example:
+
+       .. code-block:: python
+
+           try:
+               with aaf.open('/path/to/aaf_file.aaf', 'r+') as f:
+                   raise ValueError('asd')
+           except:
+               pass
+
+       in this case, even if the exception is properly handled, the content
+       of ``/path/to/aaf_file.aaf`` shouldn't be trusted anymore.
+
     For example. Opening existing AAF file readonly::
 
         with aaf.open('/path/to/aaf_file.aaf', 'r') as f:
@@ -241,7 +257,7 @@ class AAFFile(object):
         self.header['Content'].value = self.create.ContentStorage()
         self.header['OperationalPattern'].value = AUID("0d011201-0100-0000-060e-2b3404010105")
         self.header['ObjectModelVersion'].value = 1
-        self.header['Version'].value =  {u'major': 1, u'minor': 1}
+        self.header['Version'].value =  {u'major': 1, u'minor': 2}
 
         i = self.create.Identification()
         i['ProductName'].value = "PyAAF"
@@ -289,25 +305,25 @@ class AAFFile(object):
 
     def read_reference_properties(self):
         s = self.cfb.open("/referenced properties")
-        f = io.BytesIO(s.read())
+        with io.BytesIO(s.read()) as f:
 
-        byte_order = read_u8(f)
-        if byte_order != 0x4c:
-            raise NotImplementedError("be byteorder")
+            byte_order = read_u8(f)
+            if byte_order != 0x4c:
+                raise NotImplementedError("be byteorder")
 
-        path_count = read_u16le(f)
-        pid_count = read_u32le(f)
+            path_count = read_u16le(f)
+            pid_count = read_u32le(f)
 
-        self.weakref_table = []
-        path = []
-        for i in range(pid_count):
-            pid = read_u16le(f)
-            if pid != 0:
-                path.append(pid)
-            else:
-                self.weakref_table.append(path)
-                path = []
-        assert len(self.weakref_table) == path_count
+            self.weakref_table = []
+            path = []
+            for i in range(pid_count):
+                pid = read_u16le(f)
+                if pid != 0:
+                    path.append(pid)
+                else:
+                    self.weakref_table.append(path)
+                    path = []
+            assert len(self.weakref_table) == path_count
 
     def write_reference_properties(self):
         f = self.cfb.open("/referenced properties", 'w')
@@ -329,6 +345,12 @@ class AAFFile(object):
     def __exit__(self, exc_type, exc_value, traceback):
         if (exc_type is None and exc_value is None and traceback is None):
             self.close()
+        else:
+            self.is_open = False
+            try:
+                self.cfb.close()
+            finally:
+                self.f.close()
 
     def __enter__(self):
         return self

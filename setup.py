@@ -1,9 +1,9 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 import setuptools.command.build_py
 
 PROJECT_METADATA = {
-    "version": "1.4.0",
+    "version": "1.6.0.dev2",
     "author": 'Mark Reid',
     "author_email": 'mindmark@gmail.com',
     "license": 'MIT',
@@ -27,7 +27,7 @@ class AddMetadata(setuptools.command.build_py.build_py):
             return
 
         target_file = os.path.join(self.build_lib, 'aaf2', "__init__.py")
-        source_file = os.path.join(os.path.dirname(__file__), 'aaf2', "__init__.py")
+        source_file = os.path.join(os.path.dirname(__file__), 'src', 'aaf2', "__init__.py")
 
         # get the base data from the original file
         with open(source_file, 'r') as fi:
@@ -62,9 +62,10 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Operating System :: OS Independent',
         'Natural Language :: English',
     ],
@@ -72,11 +73,10 @@ setup(
 
     platforms='any',
 
-    packages=[
-        'aaf2',
-        'aaf2.model',
-        'aaf2.model.ext',
-    ],
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
+
+    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*',
 
     cmdclass={'build_py': AddMetadata},
 

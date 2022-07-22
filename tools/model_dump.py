@@ -74,6 +74,7 @@ TypeDefExtendibleEnum_ElementNames  = 0x001F
 TypeDefIndirect                 = UUID("0d010101-0221-0000-060e-2b3402060101")
 TypeDefOpaque                   = UUID("0d010101-0222-0000-060e-2b3402060101")
 TypeDefCharacter                = UUID("0d010101-0223-0000-060e-2b3402060101")
+TypeDefGenericCharacter         = UUID("0e040101-0000-0000-060e-2b3402060101")
 
 
 ClassDef                           = UUID("0d010101-0201-0000-060e-2b3402060101")
@@ -89,7 +90,7 @@ PropertyDef_IsUniqueIdentifier     = 0x000E
 
 typedef_cats= ("ints", "enums", "records", "fixed_arrays", "var_arrays",
                "renames", "strings", "streams", "opaques", "extenums",
-               "chars", "indirects", "sets", "strongrefs", "weakrefs")
+               "chars", "generic_chars", "indirects", "sets", "strongrefs", "weakrefs")
 
 root_class = (UUID('b3b398a5-1c90-11d4-8053-080036210804'), None, True, {
     "Header"              : (UUID('0d010301-0102-0100-060e-2b3401010102'), 0x0002, "HeaderStrongRefence", False, False),
@@ -326,6 +327,10 @@ def read_typedef(entry, types):
         types['opaques'][name] = data
     elif entry.class_id == TypeDefCharacter:
         types['chars'][name] = data
+    elif entry.class_id == TypeDefGenericCharacter:
+        print(p)
+        raise Exception
+        types['generic_chars'][name] = data
     else:
         raise ValueError("Unknown TypeDef: " + str(entry.class_id))
 
@@ -696,6 +701,16 @@ def write_typedefs(typedefs, path='typedefs.py'):
 
         f.write("chars = {\n")
         for name, data in sorted(typedefs['chars'].items()):
+            pad = PAD(20, name)
+            s = '"{}" {:>' + str(pad) + '} "{}",\n'
+            s = s.format(name, ':', data[0])
+            print(s, end="")
+            f.write(s)
+
+        f.write("}\n\n")
+
+        f.write("generic_chars = {\n")
+        for name, data in sorted(typedefs['generic_chars'].items()):
             pad = PAD(20, name)
             s = '"{}" {:>' + str(pad) + '} "{}",\n'
             s = s.format(name, ':', data[0])

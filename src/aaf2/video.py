@@ -196,7 +196,7 @@ def iter_dnx_stream(f):
         cid, width, height, bitdepth, interlaced = read_dnx_frame_header(dnx_header)
         frame_size = dnx_frame_size(cid, width, height)
 
-        data = BytesIO()
-        data.write(dnx_header)
-        data.write(f.read(frame_size - 640))
-        yield data.getvalue()
+        with BytesIO() as data:
+            data.write(dnx_header)
+            data.write(f.read(frame_size - 640))
+            yield data.getvalue()

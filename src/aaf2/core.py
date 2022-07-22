@@ -30,6 +30,7 @@ P_HEADER_STRUCT = struct.Struct(str('<BBH'))
 
 OPERATIONGROUP_PARAMETERS_AUID = AUID("06010104-060a-0000-060e-2b3401010102")
 
+
 class AAFObject(object):
     __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
 
@@ -68,7 +69,7 @@ class AAFObject(object):
 
     @property
     def unique_key(self):
-        self.unique_property.value
+        return self.unique_property.value
 
     def read_properties(self):
         stream = self.dir.get('properties')
@@ -78,39 +79,38 @@ class AAFObject(object):
         s = stream.open()
 
         # read the whole stream
-        f = BytesIO(s.read())
+        with BytesIO(s.read()) as f:
+            (byte_order, version, entry_count) = P_HEADER_STRUCT.unpack(f.read(4))
 
-        (byte_order, version, entry_count) = P_HEADER_STRUCT.unpack(f.read(4))
+            if byte_order != 0x4c:
+                raise NotImplementedError("be byteorder")
 
-        if byte_order != 0x4c:
-            raise NotImplementedError("be byteorder")
+            props = array.array(str('H'))
+            if hasattr(props, 'frombytes'):
+                props.frombytes(f.read(6 * entry_count))
+            else:
+                props.fromstring(f.read(6 * entry_count))
 
-        props = array.array(str('H'))
-        if hasattr(props, 'frombytes'):
-            props.frombytes(f.read(6 * entry_count))
-        else:
-            props.fromstring(f.read(6 * entry_count))
+            if sys.byteorder == 'big':
+                props.byteswap()
 
-        if sys.byteorder == 'big':
-            props.byteswap()
+            for i in range(entry_count):
+                index = i * 3
+                pid = props[index + 0]
+                format = props[index + 1]
+                byte_size = props[index + 2]
 
-        for i in range(entry_count):
-            index = i * 3
-            pid = props[index + 0]
-            format = props[index + 1]
-            byte_size = props[index + 2]
+                data = f.read(byte_size)
+                p = property_formats[format](self, pid, format, version)
+                p.data = data
+                self.property_entries[pid] = p
 
-            data = f.read(byte_size)
-            p = property_formats[format](self, pid, format, version)
-            p.data = data
-            self.property_entries[pid] = p
-
-        for p in self.property_entries.values():
-            p.decode()
-            if isinstance(p, (properties.StrongRefSetProperty,
-                              properties.StrongRefVectorProperty,
-                              properties.WeakRefArrayProperty)):
-                p.read_index()
+            for p in self.property_entries.values():
+                p.decode()
+                if isinstance(p, (properties.StrongRefSetProperty,
+                                properties.StrongRefVectorProperty,
+                                properties.WeakRefArrayProperty)):
+                    p.read_index()
 
     def validate(self):
         missing = []
@@ -142,41 +142,40 @@ class AAFObject(object):
 
         s = self.dir.touch("properties").open(mode='rw')
 
-        f = BytesIO()
-        # print("writing", f.dir.path())
-        byte_order = 0x4c
-        entry_count = len(self.property_entries)
-        version = properties.PROPERTY_VERSION
+        with BytesIO() as f:
+            # print("writing", f.dir.path())
+            byte_order = 0x4c
+            entry_count = len(self.property_entries)
+            version = properties.PROPERTY_VERSION
 
-        write_u8(f, byte_order)
-        write_u8(f, version)
-        write_u16le(f, entry_count)
+            write_u8(f, byte_order)
+            write_u8(f, version)
+            write_u16le(f, entry_count)
 
-        for p in self.property_entries.values():
-            write_u16le(f, p.pid)
-            write_u16le(f, p.format)
-            if p.data is None:
-                print("??", p)
-                print("!!", p.data)
-                print(p.value)
-                raise Exception()
+            for p in self.property_entries.values():
+                write_u16le(f, p.pid)
+                write_u16le(f, p.format)
+                if p.data is None:
+                    print("??", p)
+                    print("!!", p.data)
+                    print(p.value)
+                    raise Exception()
 
-            write_u16le(f, len(p.data))
+                write_u16le(f, len(p.data))
 
-        # write the data
-        for p in self.property_entries.values():
-            f.write(p.data)
+            # write the data
+            for p in self.property_entries.values():
+                f.write(p.data)
 
-        s.write(f.getvalue())
-        s.truncate()
-        # write index's
-        for p in self.property_entries.values():
-            if isinstance(p, (properties.StrongRefSetProperty,
-                              properties.StrongRefVectorProperty,
-                              properties.WeakRefArrayProperty)):
-                # print('writing index', self, p)
-                p.write_index()
-
+            s.write(f.getvalue())
+            s.truncate()
+            # write index's
+            for p in self.property_entries.values():
+                if isinstance(p, (properties.StrongRefSetProperty,
+                                properties.StrongRefVectorProperty,
+                                properties.WeakRefArrayProperty)):
+                    # print('writing index', self, p)
+                    p.write_index()
 
     def detach(self, delete=False):
         items = []
@@ -228,7 +227,6 @@ class AAFObject(object):
                 p.attach()
 
     def walk_references(self, topdown=False):
-
         refs = []
         streams = []
         for p in self.properties():
@@ -298,7 +296,7 @@ class AAFObject(object):
         for item in self.properties():
             if item.name == key:
                 return item
-        if allkeys == False:
+        if not allkeys:
             return default
 
         classdef = self.classdef
@@ -318,7 +316,7 @@ class AAFObject(object):
         return default
 
     def getvalue(self, key, default=None):
-        if not key in self.keys():
+        if key not in self.keys():
             return default
 
         p = self.get(key, None)
@@ -349,7 +347,7 @@ class AAFObject(object):
 
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,
-                                self.__class__.__name__)
+                       self.__class__.__name__)
         name = self.name
         if name:
             s += ' %s' % name
@@ -357,7 +355,6 @@ class AAFObject(object):
         return '<%s at 0x%x>' % (s, id(self))
 
     def dump(self, space=""):
-
         indent = "  "
 
         for p in self.properties():

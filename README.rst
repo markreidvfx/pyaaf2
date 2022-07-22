@@ -1,10 +1,10 @@
-|python-versions| |travis-build| |appveyor-build| |docs|
+|python-versions| |github-build| |docs|
 
 pyaaf2
 ======
 
 A python module for reading and writing Advanced Authoring Format (AAF) files.
-pyaaf2 rewrite of `pyaaf1 <https://github.com/markreidvfx/pyaaf>`_ in pure python.
+pyaaf2 is a rewrite of `pyaaf1 <https://github.com/markreidvfx/pyaaf>`_ in pure python.
 
 Features
 --------
@@ -50,15 +50,11 @@ TODO
 - AMA linking improvements
 - XML support
 
-.. |python-versions| image:: https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6%2C%203.7-blue.svg
+.. |python-versions| image:: https://img.shields.io/badge/python-%3E%3D%202.7-blue.svg
 
-.. |travis-build| image:: https://travis-ci.org/markreidvfx/pyaaf2.svg?branch=master
-    :alt: travis build status
-    :target: https://travis-ci.org/markreidvfx/pyaaf2
-
-.. |appveyor-build| image:: https://ci.appveyor.com/api/projects/status/32r7s2skrgm9ubva?svg=true
-    :alt: appveyor build status
-    :target: https://ci.appveyor.com/project/markreidvfx/pyaaf2
+.. |github-build| image:: https://github.com/markreidvfx/pyaaf2/actions/workflows/workflow.yml/badge.svg
+    :alt: github actions
+    :target: https://github.com/markreidvfx/pyaaf2/actions
 
 .. |docs| image:: https://readthedocs.org/projects/pyaaf/badge/?version=latest
     :alt: Documentation Status

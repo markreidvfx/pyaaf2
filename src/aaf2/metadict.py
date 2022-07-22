@@ -50,6 +50,9 @@ class PropertyDef(core.AAFObject):
             properties.add_auid_property(self, PID_AUID, auid)
             properties.add_auid_property(self, PID_TYPE, typedef)
 
+        # if auid == AUID("0e040101-0101-0111-060e-2b3401010101"):
+        #     print(name, pid)
+
         return self
 
     @property
@@ -78,7 +81,8 @@ class PropertyDef(core.AAFObject):
 
     @property
     def pid(self):
-        return read_u16le(BytesIO(self.property_entries[PID_PID].data))
+        with BytesIO(self.property_entries[PID_PID].data) as f:
+            return read_u16le(f)
 
     @pid.setter
     def pid(self, value):
@@ -244,6 +248,7 @@ class ClassDef(core.AAFObject):
         # I think this is similar to MXF where pids > 0x8000 < 0xFFFF
         # are extensions pids
         if pid is None:
+            assert False
             pid = self.root.metadict.next_free_pid()
 
         p = PropertyDef(self.root, name, property_auid, pid, typedef_auid, optional, unique)
@@ -306,6 +311,8 @@ class MetaDictionary(core.AAFObject):
         super(MetaDictionary, self).__init__(root)
 
         self.root = root
+        root.metadict = self
+
         properties.add_strongref_set_property(self, PID_CLASSDEFS, "ClassDefinitions", PID_AUID)
         properties.add_strongref_set_property(self, PID_TYPEDEFS, "TypeDefinitions", PID_AUID)
 
@@ -400,11 +407,16 @@ class MetaDictionary(core.AAFObject):
 
         if propertydefs:
             for prop_name, prop_args in propertydefs.items():
+                property_auid = prop_args[0]
                 pid = prop_args[1]
-                if pid and pid >= 0x8000:
+
+                if pid is None:
+                    pid = self.next_free_pid()
+                elif pid and pid >= 0x8000:
                     assert pid not in self.local_pids
                     self.local_pids.add(pid)
-                c.register_propertydef(prop_name, *prop_args)
+
+                c.register_propertydef(prop_name, property_auid, pid, *prop_args[2:])
 
         self.classdefs_by_name[name]   = c
         self.classdefs_by_auid[c.auid] = c
@@ -495,7 +507,25 @@ class MetaDictionary(core.AAFObject):
                     continue
 
                 if key not in self['TypeDefinitions']:
+                    # this is super annoying, handle typedefs that have dynamic pids
+                    classdef = self.classdefs_by_auid.get(typedef.class_id)
+                    assert classdef
+                    for pdef in classdef['Properties'].values():
+                        if pdef.pid >= 0x8000:
+                            # if typedef has a dynamic pid might need to change it
+                            if pdef.pid in self.local_pids:
+                                old_pid = pdef.pid
+                                new_pid = self.next_free_pid()
+                                pdef.pid = new_pid
+
+                                prop = typedef.property_entries.pop(old_pid)
+                                prop.pid = new_pid
+                                typedef.property_entries[new_pid] = prop
+                                # print("conflcit", typedef, pdef.name, old_pid, "->", new_pid)
+
                     self['TypeDefinitions'].append(typedef)
+                    if classdef.auid not in self['ClassDefinitions']:
+                        self['ClassDefinitions'].append(classdef)
 
         # add classdefs not defined by file data model
         if self.root.writeable:
