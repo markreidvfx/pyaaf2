@@ -105,7 +105,21 @@ class TreeItem(object):
             self.references.sort()
 
         elif isinstance(item, (aaf2.properties.Property)):
-            self.properties['Value'] = str(item.value)
+            try:
+                v = str(item.value)
+            except:
+                v = "Error"
+
+            self.properties['Value'] = v
+
+        # add slot and mob references as children for convenience
+        if isinstance(item, aaf2.components.SourceClip):
+            mob = item.mob
+            if mob:
+                self.extend([mob])
+            slot = item.slot
+            if slot:
+                self.extend([slot])
 
 
         self.properties['Name'] = self.name()
