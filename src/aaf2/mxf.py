@@ -509,7 +509,7 @@ class MXFDescriptor(MXFObject):
             elif tag == 0x3005:
                 self.data['CodecDefinition'] = reverse_auid(decode_auid(data))
             elif tag == 0x3006:
-                self.data['LinkedTrackID'] = read_u32be(f)
+                self.data['LinkedSlotID'] = read_u32be(f)
             elif tag == 0x3203:
                 self.data['StoredWidth'] = read_u32be(f)
             elif tag == 0x3202:
@@ -603,10 +603,9 @@ class MXFCDCIDescriptor(MXFDescriptor):
 
         d['Length'].value = self.data.get('Length', 0)
 
-
         # optional
         for key in ('FrameSampleSize', 'ResolutionID', 'Compression', 'VerticalSubsampling',
-                    'SampledWidth', 'SampledHeight'):
+                    'SampledWidth', 'SampledHeight', 'LinkedSlotID'):
             if key in self.data:
                 d[key].value = self.data[key]
 
@@ -636,10 +635,13 @@ class MXFRGBADescriptor(MXFDescriptor):
         d = self.create_aaf_instance()
 
         for key in ('ImageAspectRatio', 'StoredWidth', 'FrameLayout', 'PixelLayout',
-                    'VideoLineMap', 'StoredHeight', 'SampleRate', 'Length'):
+                    'VideoLineMap', 'StoredHeight', 'SampleRate', ):
             d[key].value = self.data[key]
 
-        for key in ('FrameSampleSize','SampledWidth', 'SampledHeight', 'Compression',):
+        d['Length'].value = self.data.get('Length', 0)
+
+        # optional
+        for key in ('FrameSampleSize','SampledWidth', 'SampledHeight', 'Compression', 'LinkedSlotID'):
             if key in self.data:
                 d[key].value = self.data[key]
 
@@ -665,8 +667,16 @@ class MXFANCDataDescriptor(MXFDescriptor):
 
     def link(self):
         d = self.create_aaf_instance()
-        for key in ('SampleRate', 'Length',):
+        for key in ('SampleRate', ):
             d[key].value = self.data[key]
+
+        d['Length'].value = self.data.get('Length', 0)
+
+        # optional
+        for key in ('LinkedSlotID', ):
+            if key in self.data:
+                d[key].value = self.data[key]
+
         return d
 
 @register_mxf_class
@@ -676,6 +686,13 @@ class MXFMPEG2VideoDescriptor(MXFCDCIDescriptor):
     def link(self):
         # 060e2b34.04010103.04010202.01040300
         self.data['ResolutionID'] = 4076 #XDCAM HD 50Mbit
+
+        d['Length'].value = self.data.get('Length', 0)
+
+        # optional
+        for key in ('LinkedSlotID', ):
+            if key in self.data:
+                d[key].value = self.data[key]
 
         return super(MXFMPEG2VideoDescriptor, self).link()
 
@@ -690,8 +707,16 @@ class MXFPCMDescriptor(MXFDescriptor):
         d = self.create_aaf_instance()
         # required
         for key in ('BlockAlign', 'AverageBPS', 'Channels',
-            'QuantizationBits', 'AudioSamplingRate', 'SampleRate', 'Length'):
+            'QuantizationBits', 'AudioSamplingRate', 'SampleRate'):
             d[key].value = self.data[key]
+
+        d['Length'].value = self.data.get('Length', 0)
+
+        # optional
+        for key in ('LinkedSlotID', ):
+            if key in self.data:
+                d[key].value = self.data[key]
+
         n = self.root.aaf.create.NetworkLocator()
         n['URLString'].value = ama_path(self.root.path)
         d['Locator'].append(n)
