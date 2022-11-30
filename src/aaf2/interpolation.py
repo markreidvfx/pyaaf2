@@ -145,9 +145,7 @@ def scale_handle(p0, p1, p2):
     #  /    |
     # /p0---p2
     y = (p1[1] - p0[1]) * (p2[0] - p0[0]) / (p1[0] - p0[0])
-    p.y = p0.y + y;
-    p.x = p2.x;
-    return [p2[0], p[1] + y]
+    return [p2[0], p0[1] + y]
 
 def bezier_interpolate(p0, p1, p2, p3, x):
 
