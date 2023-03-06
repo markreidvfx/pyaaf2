@@ -17,6 +17,8 @@ import tempfile
 import shutil
 import time
 import fractions
+import random
+import string
 from aaf2 import auid
 
 from pprint import pprint
@@ -26,9 +28,6 @@ FFPROBE_EXEC = "ffprobe"
 
 Audio_Profiles = aaf2.audio.pcm_profiles
 Video_Profiles = aaf2.video.dnx_profiles
-
-# FFMPEG_EXEC = "/Users/mark/Dev/ffmpeg/ffmpeg_g"
-# FFPROBE_EXEC = "/Users/mark/Dev/ffmpeg/ffprobe_g"
 
 def probe(path, show_packets=False):
 
@@ -85,6 +84,9 @@ def has_alpha(stream):
         return True
     return False
 
+def random_str(size=12, chars=string.ascii_lowercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
 def conform_media(path,
                   output_dir,
                   start=None,
@@ -95,7 +97,9 @@ def conform_media(path,
                   frame_rate=None,
                   video_profile_name=None,
                   audio_profile_name=None,
-                  ignore_alpha=False):
+                  ignore_alpha=False,
+                  copy_dnxhd_streams=True,
+                  lut3d=None):
 
     if not video_profile_name:
         video_profile_name = 'dnx_1080p_36_23.97'
@@ -110,7 +114,6 @@ def conform_media(path,
     out_files = []
 
     cmd = [FFMPEG_EXEC,'-y', '-nostdin']
-
     # cmd.extend(['-loglevel', 'debug'])
 
     if end:
@@ -127,7 +130,7 @@ def conform_media(path,
             start = seconds_to_timecode(start_seconds - fast_start)
             cmd.extend(['-ss', seconds_to_timecode(fast_start)])
 
-    frame_rate = video_profile['frame_rate']
+    frame_rate = video_profile['frame_rate'] or frame_rate
     pix_fmt = video_profile['pix_fmt']
     bitrate = video_profile['bitrate']
     dnxhd_profile = video_profile.get("video_profile", None)
@@ -148,14 +151,24 @@ def conform_media(path,
     #sample_rate =44100
     sample_rate = audio_profile['sample_rate']
 
+    prefix = random_str()
+
     for stream in format['streams']:
 
         #pprint(stream)
         stream_index = stream['index']
         if stream['codec_type'] == 'video':
             out_meta = {}
-            # pprint(stream)
+
             alpha = has_alpha(stream)
+            is_dnxhd_codec = stream['codec_name'] == 'dnxhd'
+            out_rate = frame_rate or str(stream['avg_frame_rate'])
+
+            # disable resize on stream copy
+            if copy_dnxhd_streams and is_dnxhd_codec:
+                width = None
+                height = None
+
             passes = 1
             if alpha and not ignore_alpha:
                 passes = 2
@@ -165,14 +178,18 @@ def conform_media(path,
                     if frame_rate:
                         cmd.extend(['-r', frame_rate])
                 else:
-                    cmd.extend(['-an','-vcodec', 'dnxhd', '-pix_fmt', pix_fmt])
-                    if dnxhd_profile:
-                        cmd.extend(['-profile:v', dnxhd_profile])
+                    if copy_dnxhd_streams and is_dnxhd_codec:
+                        cmd.extend(['-an','-vcodec', 'copy'])
+                    else:
+                        cmd.extend(['-an','-vcodec', 'dnxhd', '-pix_fmt', pix_fmt])
+                        if dnxhd_profile:
+                            cmd.extend(['-profile:v', dnxhd_profile])
 
-                    if bitrate:
-                        cmd.extend(['-vb', '%dM' % bitrate])
-                    if frame_rate:
-                        cmd.extend(['-r', frame_rate])
+                        if bitrate:
+                            cmd.extend(['-vb', '%dM' % bitrate])
+
+                        if frame_rate:
+                            cmd.extend(['-r', frame_rate])
 
                 if not start is None:
                     cmd.extend(['-ss', str(start)])
@@ -180,9 +197,16 @@ def conform_media(path,
                 if not duration is None:
                     cmd.extend(['-t', str(duration)])
 
+                cmd.extend(['-map', '0:%d' % stream_index])
+
                 vfilter = []
                 if i == 1:
                     vfilter.append("alphaextract")
+
+                if i != 1 and lut3d:
+                    # fix issues with windows paths, need to escape ':" for filter syntax
+                    clean_path = lut3d.replace("\\", '/').replace(':', '\\:')
+                    vfilter.append(f"lut3d=file='{clean_path}'")
 
                 if width and height:
                     out_width = width
@@ -214,11 +238,10 @@ def conform_media(path,
                     # cmd.extend(['-s', "%dx%d" % (width, height)])
 
                 if i == 1:
-                    out_file = os.path.join(output_dir, 'out_%d.alpha' % (stream_index))
+                    out_file = os.path.join(output_dir, 'out_%s_%d.alpha' % (prefix, stream_index))
                     out_meta['path_alpha'] = out_file
                 else:
-                    out_rate = frame_rate or str(stream['avg_frame_rate'])
-                    out_file = os.path.join(output_dir, 'out_%d.dnxhd' % (stream_index))
+                    out_file = os.path.join(output_dir, 'out_%s_%d.dnxhd' % (prefix, stream_index))
                     out_meta = {'path':out_file, 'frame_rate':out_rate, 'type': 'video', 'profile':video_profile_name}
                     out_meta['width'] = out_width
                     out_meta['height'] = out_height
@@ -226,7 +249,7 @@ def conform_media(path,
                 cmd.extend([out_file])
 
                 #pprint(stream)
-                print("USING FRAMREATE",  out_rate, str(stream['avg_frame_rate']))
+                print("using frame rate",  out_rate, str(stream['avg_frame_rate']))
 
             out_files.append(out_meta)
 
@@ -234,21 +257,23 @@ def conform_media(path,
 
             input_sample_rate = int(stream['sample_rate'])
             channels = stream['channels']
+            # NOTE: each channel of each stream gets extracted
+            for channel in range(channels):
+                cmd.extend(['-vn', '-acodec', 'pcm_s16le', '-ar', str(sample_rate)])
+                cmd.extend(['-map', '0:%d' % stream_index, '-af', "pan=1c|c0=c%d" % (channel)])
 
-            cmd.extend(['-vn', '-acodec', 'pcm_s16le', '-ar', str(sample_rate)])
-            # afilter = ['-af', "aresample=async=1:first_pts=0"]
-            # cmd.extend(afilter)
-            if not start is None:
-                cmd.extend(['-ss', str(start)])
+                if not start is None:
+                    cmd.extend(['-ss', str(start)])
 
-            if not duration is None:
-                cmd.extend(['-t', str(duration)])
+                if not duration is None:
+                    cmd.extend(['-t', str(duration)])
 
-            out_file = os.path.join(output_dir, 'out_%d_%d_%d.wav' % (stream_index, sample_rate, channels))
+                out_file = os.path.join(output_dir, 'out_%s_%d_%d_%d.wav' % (prefix, stream_index, channel, sample_rate))
 
-            cmd.extend([out_file])
+                cmd.extend([out_file])
 
-            out_files.append({'path':out_file, 'sample_rate':sample_rate, 'channels':channels,'type': 'audio'})
+                out_files.append({'path':out_file, 'sample_rate':sample_rate, 'channels':1,'type': 'audio'})
+
 
     print(subprocess.list2cmdline(cmd))
 
@@ -280,6 +305,7 @@ def import_video_essence(f, mastermob, stream, compmob=None, tapemob=None):
     alpha_path = stream.get("path_alpha", None)
 
     color_slot = mastermob.import_dnxhd_essence(stream['path'], edit_rate, tape=tape)
+
     if alpha_path:
         pixel_layout = [{u'Code': u'CompAlpha', u'Size': 8}]
         width = stream['width']
@@ -374,8 +400,7 @@ def create_aaf(path, media_streams, mobname, tape_name=None, start_timecode=None
 
                 print("imported audio in %f secs" % (time.time()- start))
 
-
-
+        return mastermob.mob_id
 
 if __name__ == "__main__":
     from optparse import OptionParser
@@ -397,6 +422,12 @@ if __name__ == "__main__":
 
     parser.add_option('--ignore_alpha', action='store_true', dest="ignore_alpha", default=False,
                       help = "ignore alpha channel if present")
+
+    parser.add_option('--lut3d', type="string", dest="lut3d", metavar="FILE",
+                      help = "apply 3d lut to video tracks")
+
+    parser.add_option('--disable_dnxhd_copy', action='store_false', dest="copy_dnxhd_streams", default=True,
+                      help = "force re-encoding of streams if they are already encoded in dnxhd")
 
     parser.add_option("-v", '--video-profile', type='string', dest = 'video_profile', default="dnx_1080p_36_23.97",
                       help = "encoding profile for video [default: 1080p_36_23.97]")
@@ -436,8 +467,13 @@ if __name__ == "__main__":
             codec = 'dnxhd'
             if key.startswith("dnxhr"):
                 codec = 'dnxhr'
-            print(row_format.format(key, value['size'],
-                                    value['frame_rate'], value['bitrate'], value['pix_fmt'], codec))
+
+            size = "%dx%d" % value['size'] if value['size'] else 'variable'
+            frame_rate = str(value['frame_rate']) if value['frame_rate'] else 'variable'
+            bitrate = str(value['bitrate']) if value['bitrate'] else 'auto'
+
+            print(row_format.format(key, size,
+                                    frame_rate, bitrate, value['pix_fmt'], codec))
 
         sys.exit()
 
@@ -489,8 +525,10 @@ if __name__ == "__main__":
                                  frame_rate=options.framerate,
                                  video_profile_name = options.video_profile.lower(),
                                  audio_profile_name = options.audio_profile.lower(),
-                                 ignore_alpha = options.ignore_alpha)
-                                 )
+                                 ignore_alpha = options.ignore_alpha,
+                                 copy_dnxhd_streams = options.copy_dnxhd_streams,
+                                 lut3d = options.lut3d
+                                 ))
     except:
         print(traceback.format_exc())
         shutil.rmtree(tempdir)
