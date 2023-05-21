@@ -257,18 +257,34 @@ class AAFObject(object):
         if topdown:
             yield self, streams
 
-    def copy(self, new_dir=None):
-        # new_obj = self.__class__(self.root)
+    def copy(self, new_dir=None, root=None, classdef_cache=set()):
         new_obj = self.__class__.__new__(self.__class__)
-        new_obj.root = self.root
+        root = root or self.root
+        new_obj.root = root
+
+        # if copying to new root make sure classdef is defined
+        # to prevent excessive calls a cache is used skip already
+        # processed classdefs
+        if root is not self.root:
+            classdef = self.classdef
+            if classdef.auid not in classdef_cache:
+                root.metadict.register_external_classdef(self.classdef)
+                classdef_cache.add(classdef.auid)
+
         if type(new_obj) is AAFObject:
             new_obj.class_id = self.class_id
         new_obj.dir = new_dir
         if new_dir:
+            assert new_dir.storage is root.cfb
             new_obj.dir.class_id = self.class_id
 
         for pid, p in self.property_entries.items():
-            new_obj.property_entries[pid] = p.copy(new_obj)
+            # the pid in the new root could be different
+            if pid >= 0x8000 and root is not self.root:
+                pdef = new_obj.classdef.lookup_propertydef(p.propertydef.auid)
+                pid = pdef.pid
+
+            new_obj.property_entries[pid] = p.copy(new_obj, pid, classdef_cache)
 
         return new_obj
 

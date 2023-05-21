@@ -41,6 +41,9 @@ class TypeDef(core.AAFObject):
             properties.add_auid_property(self, PID_AUID, type_auid)
         return self
 
+    def copy(self, root=None):
+        return self.__class__(root or self.root, self.name, self.auid)
+
     @property
     def unique_key(self):
         return self.auid
@@ -84,6 +87,9 @@ class TypeDefInt(TypeDef):
             properties.add_u8_property(self, PID_INT_SIZE, size)
             properties.add_bool_property(self, PID_INT_SIGNED, signed)
         return self
+
+    def copy(self, root=None):
+        return TypeDefInt(root or self.root, self.name, self.auid, self.size, self.signed)
 
     @property
     def signed(self):
@@ -140,6 +146,9 @@ class TypeDefStrongRef(TypeDef):
             properties.add_classdef_weakref_property(self, PID_STRONGREF_REF_TYPE, classdef)
         return self
 
+    def copy(self, root=None):
+        return TypeDefStrongRef(root or self.root, self.name, self.auid, self.ref_classdef.auid)
+
     @property
     def store_format(self):
         return properties.SF_STRONG_OBJECT_REFERENCE
@@ -164,6 +173,9 @@ class TypeDefWeakRef(TypeDef):
             properties.add_auid_array_propertry(self, PID_WEAKREF_TARGET_SET, path)
 
         return self
+
+    def copy(self, root=None):
+        return TypeDefWeakRef(root or self.root, self.name, self.auid, self.ref_classdef.auid, self.path)
 
     @property
     def store_format(self):
@@ -226,6 +238,9 @@ class TypeDefEnum(TypeDef):
             properties.add_s64le_array_property(self, PID_ENUM_VALUES, values)
 
         return self
+
+    def copy(self, root=None):
+        return TypeDefEnum(root or self.root, self.name, self.auid, self.element_typedef.auid, self.elements)
 
     @property
     def byte_size(self):
@@ -311,6 +326,9 @@ class TypeDefFixedArray(TypeDef):
             properties.add_u32le_property(self, PID_FIXED_COUNT, size)
         return self
 
+    def copy(self, root=None):
+        return TypeDefFixedArray(root or self.root, self.name, self.auid, self.element_typedef.auid, self.size)
+
     @property
     def element_typedef(self):
         if PID_FIXED_TYPE in self.property_entries:
@@ -378,6 +396,9 @@ class TypeDefVarArray(TypeDef):
         if root:
             properties.add_typedef_weakref_property(self, PID_VAR_TYPE, typedef)
         return self
+
+    def copy(self, root=None):
+        return TypeDefVarArray(root or self.root, self.name, self.auid, self.element_typedef.auid)
 
     @property
     def store_format(self):
@@ -456,6 +477,9 @@ class TypeDefSet(TypeDef):
             properties.add_typedef_weakref_property(self, PID_SET_TYPE, typedef)
         return self
 
+    def copy(self, root=None):
+        return TypeDefSet(root or self.root, self.name, self.auid, self.element_typedef)
+
     @property
     def element_typedef(self):
         if PID_SET_TYPE in self.property_entries:
@@ -515,6 +539,9 @@ class TypeDefString(TypeDef):
             properties.add_typedef_weakref_property(self, PID_STR_TYPE, typedef)
         return self
 
+    def copy(self, root=None):
+        return TypeDefString(root or self.root, self.name, self.auid, self.element_typedef.auid)
+
     @property
     def element_typedef(self):
         if PID_STR_TYPE in self.property_entries:
@@ -563,6 +590,11 @@ class TypeDefRecord(TypeDef):
 
         self._fields = None
         return self
+
+    def copy(self, root=None):
+        names = list(iter_utf16_array(self['MemberNames'].data))
+        types = [typedef.auid for typedef in self['MemberTypes'].value]
+        return TypeDefRecord(root or self.root, self.name, self.auid, zip(names, types))
 
     @property
     def member_names(self):
@@ -719,6 +751,9 @@ class TypeDefRename(TypeDef):
             properties.add_typedef_weakref_property(self, PID_RENAME_TYPE, typedef)
         return self
 
+    def copy(self, root=None):
+        return TypeDefRename(root or self.root, self.name, self.auid, self.renamed_typedef.auid)
+
     @property
     def renamed_typedef(self):
         if PID_RENAME_TYPE in self.property_entries:
@@ -765,6 +800,9 @@ class TypeDefExtEnum(TypeDef):
             properties.add_auid_array_propertry(self, PID_EXTENUM_VALUES, values)
 
         return self
+
+    def copy(self, root=None):
+        return TypeDefExtEnum(root or self.root, self.name, self.auid, self.elements)
 
     def register_element(self, element_name, element_auid):
 
@@ -890,6 +928,9 @@ class TypeDefGenericCharacter(TypeDef):
             properties.add_u8_property(self, dynamic_pid, size)
 
         return self
+
+    def copy(self, root=None):
+        return TypeDefGenericCharacter(root or self.root, self.name, self.auid, self.size)
 
     @property
     def size(self):

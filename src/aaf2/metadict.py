@@ -124,7 +124,7 @@ class PropertyDef(core.AAFObject):
         return self.typedef.store_format
 
     def __repr__(self):
-        return "<%s PropertyDef" % self.property_name
+        return "<%s PropertyDef>" % self.property_name
 
 @register_class
 class ClassDef(core.AAFObject):
@@ -230,29 +230,41 @@ class ClassDef(core.AAFObject):
             return self.property_entries[PID_PROPERTIES].values()
         return []
 
+    def lookup_propertydef(self, property_auid):
+        for classdef in self.relatives():
+            p = classdef.property_entries.get(PID_PROPERTIES, {}).get(property_auid, None)
+            if p:
+                return p
+
     def register_propertydef(self, name, property_auid, pid, typedef, optional, unique=False):
 
-        typedef = str2auid(typedef)
+        # check if PropertyDef is already defined
         property_auid = str2auid(property_auid)
+        p = self.property_entries.get(PID_PROPERTIES, {}).get(property_auid, None)
+        if p:
+            return p
+
+        # print(self, name, pid)
+        typedef = str2auid(typedef)
         if isinstance(typedef, AUID):
             typedef_auid = typedef
         else:
             typedef = self.root.metadict.lookup_typedef(typedef)
             typedef_auid = typedef.auid
 
-        # check its not already defined
-        if property_auid in self.property_entries[PID_PROPERTIES].references:
-            return self.property_entries[PID_PROPERTIES].get(property_auid)
-
         # None signifies Dynamically allocated Local Tags
         # I think this is similar to MXF where pids > 0x8000 < 0xFFFF
         # are extensions pids
         if pid is None:
-            assert False
             pid = self.root.metadict.next_free_pid()
+            # assert False
 
         p = PropertyDef(self.root, name, property_auid, pid, typedef_auid, optional, unique)
         # # this is done low level to avoid recursion errors
+
+        if PID_PROPERTIES not in self.property_entries:
+            properties.add_strongref_set_property(self, PID_PROPERTIES, "Properties", PID_AUID)
+
         properties.add2set(self, PID_PROPERTIES, p.auid, p)
         self.propertydef_by_pid[pid] = p
         return p
@@ -425,6 +437,77 @@ class MetaDictionary(core.AAFObject):
         if c.class_name != "Root":
             properties.add2set(self, PID_CLASSDEFS, c.auid, c)
         return c
+
+    def register_external_typedef(self, ext_typedef):
+        if not isinstance(ext_typedef, types.TypeDef):
+            return None
+
+        typedef = self.lookup_typedef(ext_typedef.auid)
+
+        # create typedef if missing
+        if not typedef:
+            if isinstance(ext_typedef, (types.TypeDefStrongRef,
+                                        types.TypeDefWeakRef)):
+                # could this cause RecursionError?
+                classdef = ext_typedef.ref_classdef
+                self.register_external_classdef(classdef)
+
+            elif isinstance(ext_typedef, (types.TypeDefFixedArray,
+                                          types.TypeDefVarArray,
+                                          types.TypeDefSet,
+                                          types.TypeDefString,
+                                          types.TypeDefEnum)):
+
+                self.register_external_typedef(ext_typedef.element_typedef)
+
+            elif isinstance(ext_typedef, types.TypeDefRecord):
+                for t in ext_typedef.member_types:
+                    self.register_external_typedef(t)
+
+            elif isinstance(ext_typedef, types.TypeDefRename):
+                self.register_external_typedef(ext_typedef.renamed_typedef)
+
+            elif isinstance(ext_typedef, types.TypeDefEnum):
+                self.register_external_typedef(ext_typedef.element_typedef)
+
+            typedef = ext_typedef.copy(self.root)
+
+            self['TypeDefinitions'].append(typedef)
+            self.typedefs_by_name[typedef.type_name] = typedef
+            self.typedefs_by_auid[typedef.auid] = typedef
+
+        # make sure enum has all the values
+        if isinstance(ext_typedef, (types.TypeDefExtEnum, types.TypeDefEnum)):
+            ext_elements = ext_typedef.elements
+            elements = typedef.elements
+
+            for k, v in ext_elements.items():
+                if k not in elements:
+                    typedef.register_element(v, k)
+
+        return typedef
+
+    def register_external_classdef(self, ext_classdef):
+        class_chain = list(ext_classdef.relatives())
+        class_chain.reverse()
+        for c in class_chain[1:]:
+            classdef = self.lookup_classdef(c.auid)
+            if not classdef:
+                classdef = self.register_classdef(c.class_name,
+                                                  c.auid,
+                                                  c.parent.auid,
+                                                  c.concrete)
+
+            for p in c.propertydefs:
+                typedef = self.register_external_typedef(p.typedef)
+                pid = p.pid
+
+                if pid >= 0x8000:
+                    pid = None
+
+                classdef.register_propertydef(p.property_name, p.auid, pid, typedef.auid, p.optional, p.unique)
+
+        return self.lookup_classdef(ext_classdef.auid)
 
     def lookup_class(self, class_id):
         aaf_class = AAFClaseID_dict.get(class_id, None)

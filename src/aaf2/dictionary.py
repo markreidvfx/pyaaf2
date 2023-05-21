@@ -255,3 +255,27 @@ class Dictionary(core.AAFObject):
 
     def lookup_taggedvaluedef(self, name):
         return lookup_def(self, name, TaggedValueDef, 'TaggedValueDefinitions')
+
+    def update(self, other):
+        if not isinstance(other, Dictionary):
+            raise ValueError("other must be a Dictionary object")
+
+        for def_type in ('DataDefinitions',
+                         'ContainerDefinitions',
+                         'CodecDefinitions',
+                         'ParameterDefinitions',
+                         'OperationDefinitions',
+                         'InterpolationDefinitions',
+                         'TaggedValueDefinitions'):
+
+            for other_def in other[def_type].values():
+                if other_def.auid not in self[def_type]:
+                    self[def_type].append(other_def.copy(root=self.root))
+
+                elif def_type == 'OperationDefinitions':
+                    # make sure operation all the same parameters
+                    opdef = self.lookup_operationdef(d.auid)
+                    for p in d.parameters:
+                        param = self.lookup_parameterdef(p.auid)
+                        if param.unique_key not in opdef.parameters:
+                            opdef.append(param)

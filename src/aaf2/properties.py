@@ -133,8 +133,8 @@ class Property(object):
         if propertydef:
             return propertydef.typedef
 
-    def copy(self, parent):
-        p = self.__class__(parent, self.pid, self.format, version=PROPERTY_VERSION)
+    def copy(self, parent, pid, cache=None):
+        p = self.__class__(parent, pid, self.format, version=PROPERTY_VERSION)
         p.data = bytes(self.data)
         return p
 
@@ -178,7 +178,6 @@ class Property(object):
             return "<%s %s>" % (name, str(self.typedef))
         else:
             return "<%s %d bytes>" % (self.__class__.__name__, len(self.data))
-
 class StreamProperty(Property):
     __slots__ = ('stream_name', 'dir')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
@@ -186,10 +185,8 @@ class StreamProperty(Property):
         self.stream_name = None
         self.dir = None
 
-    def copy(self, parent):
-        p = super(StreamProperty, self).copy(parent)
-        p.stream_name = self.stream_name
-
+    def copy(self, parent, pid, cache):
+        p = super(StreamProperty, self).copy(parent, pid)
         a = self.open('r')
         b = p.open("w")
 
@@ -200,7 +197,7 @@ class StreamProperty(Property):
         while byte_size > 0:
             d = a.read(read_size)
             b.write(d)
-            byte_size -= read_size
+            byte_size -= len(d)
 
         return p
 
@@ -310,17 +307,19 @@ class StrongRefProperty(Property):
         else:
             self.objectref = value
 
-    def copy(self, parent):
-        p = super(StrongRefProperty, self).copy(parent)
-        p.ref = self.ref
+    def copy(self, parent, pid, cache):
+        p = super(StrongRefProperty, self).copy(parent, pid)
+        if parent.root is self.parent.root:
+            p.ref = self.ref
+            dir_entry = None
+            if parent.dir:
+                dir_entry = parent.dir.get(p.ref)
+                if dir_entry is None:
+                    dir_entry = parent.dir.makedir(p.ref)
 
-        dir_entry = None
-        if parent.dir:
-            dir_entry = parent.dir.get(p.ref)
-            if dir_entry is None:
-                dir_entry = parent.dir.makedir(p.ref)
-
-        p.object = self.value.copy(dir_entry)
+            p.object = self.value.copy(dir_entry)
+        else:
+            p.value = self.value.copy(root=parent.root, classdef_cache=cache)
         return p
 
     def decode(self):
@@ -356,6 +355,9 @@ class StrongRefProperty(Property):
 
         if not ref_classdef.isinstance(value.classdef):
             raise TypeError("must be instance of: %s" % ref_classdef.class_name)
+
+        if value.root is not self.parent.root:
+            raise AAFAttachError("Object is from a different root")
 
         if self.ref is None:
             propdef = self.propertydef
@@ -414,26 +416,31 @@ class StrongRefVectorProperty(Property):
         else:
             self.objects = {}
 
-    def copy(self, parent):
-        p = super(StrongRefVectorProperty, self).copy(parent)
-        p.references = list(self.references)
+    def copy(self, parent, pid, cache):
+        p = super(StrongRefVectorProperty, self).copy(parent, pid)
 
-        p.objects = {}
-        p.index_name = self.index_name
-        p.next_free_key = self.next_free_key
-        p.last_free_key = self.last_free_key
-        p.data = self.data
+        if parent.root is self.parent.root:
+            p.objects = {}
+            p.references = list(self.references)
+            p.index_name = p.index_name
+            p.next_free_key = self.next_free_key
+            p.last_free_key = self.last_free_key
+            p.data = self.data
 
-        for i, value in enumerate(self):
-            ref = self.index_ref_name(self.references[i])
-            dir_entry = None
-            if parent.dir:
-                dir_entry = parent.dir.get(ref)
-                if dir_entry is None:
-                    dir_entry = parent.dir.makedir(ref)
+            for i, value in enumerate(self):
+                ref = self.index_ref_name(self.references[i])
+                dir_entry = None
+                if parent.dir:
+                    dir_entry = parent.dir.get(ref)
+                    if dir_entry is None:
+                        dir_entry = parent.dir.makedir(ref)
 
-            c = value.copy(dir_entry)
-            p.objects[i] = c
+                c = value.copy(dir_entry)
+                p.objects[i] = c
+        else:
+            for i, value in enumerate(self):
+                c = value.copy(root=parent.root, classdef_cache=cache)
+                p.append(c)
 
         return p
 
@@ -535,8 +542,11 @@ class StrongRefVectorProperty(Property):
         if index >= len(self):
             raise IndexError("StrongRefVectorProperty assignment index out of range")
 
+        if value.root is not self.parent.root:
+            raise AAFAttachError("Object is from a different root")
+
         if value.dir:
-            raise AAFAttachError("object already attached")
+            raise AAFAttachError("Object already attached")
 
         obj = self.get(index, None)
         if obj:
@@ -617,8 +627,12 @@ class StrongRefVectorProperty(Property):
 
         for obj in value:
             assert ref_classdef.isinstance(obj.classdef)
+
+            if obj.root is not self.parent.root:
+                raise AAFAttachError("Object is from a different root")
+
             if obj.dir:
-                raise AAFAttachError("object already attached")
+                raise AAFAttachError("Object already attached")
 
         for obj in value:
             i = len(self.references)
@@ -692,24 +706,29 @@ class StrongRefSetProperty(Property):
         else:
             self.objects = {}
 
-    def copy(self, parent):
-        p = super(StrongRefSetProperty, self).copy(parent)
+    def copy(self, parent, pid, cache):
+        p = super(StrongRefSetProperty, self).copy(parent, pid)
 
-        p.references = dict(self.references)
-        p.next_free_key = self.next_free_key
-        p.last_free_key = self.last_free_key
-        p.key_size = self.key_size
-        p.index_name = self.index_name
-        p.key_pid = self.key_pid
+        if parent.root is self.parent.root:
+            p.references = dict(self.references)
+            p.next_free_key = self.next_free_key
+            p.last_free_key = self.last_free_key
+            p.key_size = self.key_size
+            p.index_name = self.index_name
+            p.key_pid = self.key_pid
 
-        for key, value in self.items():
-            ref = self.index_ref_name(key)
-            dir_entry = None
-            if parent.dir:
-                dir_entry = parent.dir.get(ref)
-                if dir_entry is None:
-                    dir_entry = parent.dir.makedir(ref)
-            p.objects[key] = value.copy(dir_entry)
+            for key, value in self.items():
+                ref = self.index_ref_name(key)
+                dir_entry = None
+                if parent.dir:
+                    dir_entry = parent.dir.get(ref)
+                    if dir_entry is None:
+                        dir_entry = parent.dir.makedir(ref)
+                p.objects[key] = value.copy(dir_entry)
+        else:
+            for value in self.values():
+                c = value.copy(root=parent.root, classdef_cache=cache)
+                p.append(c)
 
         return p
 
@@ -856,8 +875,10 @@ class StrongRefSetProperty(Property):
         for item in values:
             if not classdef.isinstance(item.classdef):
                 raise TypeError("Invalid Value, expected {}, got {}".format(classdef, item.classdef))
+            if item.root is not self.parent.root:
+                raise AAFAttachError("Object is from a different root")
             if item.dir:
-                raise AAFAttachError("object already attached")
+                raise AAFAttachError("Object already attached")
 
         if self.key_pid is None:
             self.key_pid = classdef.unique_key_pid
@@ -985,12 +1006,31 @@ class WeakRefProperty(Property):
         self.key_size = None
         self.ref = None
 
-    def copy(self, parent):
-        p = super(WeakRefProperty, self).copy(parent)
-        p.weakref_index = self.weakref_index
-        p.key_pid = self.pid
-        p.key_size = self.key_size
-        p.ref = self.ref
+    def copy(self, parent, pid, cache):
+        p = super(WeakRefProperty, self).copy(parent, pid)
+
+        if parent.root is self.parent.root:
+            p.weakref_index = self.weakref_index
+            p.key_pid = self.pid
+            p.key_size = self.key_size
+            p.ref = self.ref
+        else:
+            weakref_index = parent.root.weakref_index(p.pid_path)
+            ref_parent, target_property = parent.root.weakref_prop(weakref_index)
+
+            # add property value if not present
+            if self.ref not in target_property:
+                v = self.value
+                if self.ref_classdef.auid == CLASSDEF_AUID:
+                    parent.root.metadict.register_external_classdef(v)
+                if self.ref_classdef.auid == TYPEDEF_AUID:
+                    parent.root.metadict.register_external_typedef(v)
+                else:
+                    c = v.copy(root=parent.root, classdef_cache=cache)
+                    target_property.append(c)
+
+            p.value = target_property[self.ref]
+
         return p
 
     def decode(self):
@@ -1041,6 +1081,9 @@ class WeakRefProperty(Property):
         ref_classdef = self.ref_classdef
         assert ref_classdef.isinstance(value.classdef)
 
+        if value.root is not self.parent.root:
+            raise AAFAttachError("Object is from a different root")
+
         if self.key_pid is None:
             self.key_pid = ref_classdef.unique_key_pid
         if self.key_size is None:
@@ -1062,13 +1105,22 @@ class WeakRefArrayProperty(Property):
         self.key_pid = None
         self.key_size = None
 
-    def copy(self, parent):
-        p = super(WeakRefArrayProperty, self).copy(parent)
-        p.references = list(self.references)
-        p.index_name = self.index_name
-        p.weakref_index = self.weakref_index
-        p.key_pid = self.key_pid
-        p.key_size = self.key_size
+    def copy(self, parent, pid, cache):
+        p = super(WeakRefArrayProperty, self).copy(parent, pid)
+        if parent.root is self.parent.root:
+            p.references = list(self.references)
+            p.index_name = self.index_name
+            p.weakref_index = self.weakref_index
+            p.key_pid = self.key_pid
+            p.key_size = self.key_size
+        else:
+            weakref_index = parent.root.weakref_index(p.pid_path)
+            ref_parent, target_property = parent.root.weakref_prop(weakref_index)
+            for ref in self.references:
+                # copy property here if not present?
+                assert ref in target_property
+                p.append(target_property[ref])
+
         return p
 
     def encode(self, data):
@@ -1127,6 +1179,9 @@ class WeakRefArrayProperty(Property):
     def pid_path(self):
         return self.typedef.element_typedef.pid_path
 
+    def __contains__(self, key):
+        return key in self.references
+
     def __len__(self):
         return len(self.references)
 
@@ -1143,6 +1198,8 @@ class WeakRefArrayProperty(Property):
         for item in values:
             if not ref_classdef.isinstance(item.classdef):
                 raise TypeError("Invalid Value")
+            if item.root is not self.parent.root:
+                raise AAFAttachError("Object is from a different root")
 
         if self.index_name is None:
             propdef = self.propertydef
