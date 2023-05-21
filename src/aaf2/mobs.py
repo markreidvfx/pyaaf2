@@ -17,6 +17,7 @@ from . import video
 from . import audio
 from .rational import AAFRational
 from .auid import AUID
+from .components import SourceReference
 
 
 @register_class
@@ -145,6 +146,34 @@ class Mob(core.AAFObject):
         clip.start = start or 0
         clip.length = length or max(source_slot.length - clip.start, 0)
         return clip
+
+    def dependant_mobs(self):
+        """
+            Yields all mobs that this mob is dependant on in depth first order.
+        """
+
+        visited = set()
+        stack = [self]
+
+        while stack:
+            mob = stack[-1]
+            children_processed = True
+
+            for obj, _ in mob.walk_references(topdown=True):
+                if isinstance(obj, SourceReference):
+                    ref_mob = obj.mob
+                    if not ref_mob:
+                        continue
+                    if ref_mob.mob_id not in visited:
+                        stack.append(ref_mob)
+                        children_processed = False
+
+            if children_processed:
+                stack.pop(-1)
+                if mob.mob_id not in visited:
+                    visited.add(mob.mob_id)
+                    if mob is not self:
+                        yield mob
 
     def __repr__(self):
         s = "%s.%s" % (self.__class__.__module__,
