@@ -1190,6 +1190,22 @@ class WeakRefArrayProperty(Property):
             r = resolve_weakref(self, ref)
             yield r
 
+    def get(self, key, default=None):
+        if key not in self:
+            return default
+        return resolve_weakref(self, key)
+
+    def __getitem__(self, key):
+        result = self.get(key, default=None)
+        if result is None:
+            raise KeyError(key)
+        return result
+
+    def items(self):
+        for key in self.references:
+            obj = resolve_weakref(self, key)
+            yield (key, obj)
+
     @writeonly
     def extend(self, values):
         ref_classdef = self.ref_classdef
