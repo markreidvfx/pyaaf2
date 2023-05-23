@@ -49,6 +49,8 @@ SF_DATA_SET                               = 0xDA
 
 PROPERTY_VERSION=32
 
+sentinel = object()
+
 def writeonly(func):
     def func_wrapper(self, *args, **kwargs):
         if not self.writeable:
@@ -529,8 +531,8 @@ class StrongRefVectorProperty(Property):
         return len(self.references)
 
     def __getitem__(self, index):
-        item = self.get(index, None)
-        if item is None:
+        item = self.get(index, sentinel)
+        if item is sentinel:
             raise IndexError(index)
         return item
 
@@ -834,19 +836,14 @@ class StrongRefSetProperty(Property):
     def __len__(self):
         return len(self.references)
 
-    def get_object(self, key):
-        for obj in self.value:
-            if obj.name == key:
-                return obj
-
     def get(self, key, default=None):
         if key not in self:
-            return default or self.get_object(key)
+            return default
         return self.read_object(key)
 
     def __getitem__(self, key):
-        result = self.get(key, default=None)
-        if result is None:
+        result = self.get(key, default=sentinel)
+        if result is sentinel:
             raise KeyError(key)
         return result
 
@@ -1196,8 +1193,8 @@ class WeakRefArrayProperty(Property):
         return resolve_weakref(self, key)
 
     def __getitem__(self, key):
-        result = self.get(key, default=None)
-        if result is None:
+        result = self.get(key, default=sentinel)
+        if result is sentinel:
             raise KeyError(key)
         return result
 

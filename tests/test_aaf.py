@@ -41,10 +41,11 @@ class AAFTests(unittest.TestCase):
         test_file = common.test_file_01()
         shutil.copy(test_file, new_file)
 
+        test_mob_id = None
         with self.assertRaises(ValueError):
             with aaf2.open(new_file, 'r+') as f:
-                # mobs = f.content.mobs
                 mob = f.create.MasterMob("TestExitMob")
+                test_mob_id = mob.mob_id
                 f.content.mobs.append(mob)
 
                 raise ValueError('asd')
@@ -60,7 +61,7 @@ class AAFTests(unittest.TestCase):
         with aaf2.open(new_file, 'r') as f:
             # Make sure that the file can still be opened with aaf2.open
             # and that the save method wasn't run.
-            self.assertIsNone(f.content.mobs.get('TestExitMob'))
+            self.assertIsNone(f.content.mobs.get(test_mob_id, None))
 
     def test_exit_with_exception_with_save(self):
 
@@ -68,10 +69,12 @@ class AAFTests(unittest.TestCase):
         test_file = common.test_file_01()
         shutil.copy(test_file, new_file)
 
+        test_mob_id = None
+
         with self.assertRaises(ValueError):
             with aaf2.open(new_file, 'r+') as f:
-                # mobs = f.content.mobs
                 mob = f.create.MasterMob("TestExitMob")
+                test_mob_id = mob.mob_id
                 f.content.mobs.append(mob)
 
                 f.save()
@@ -89,7 +92,9 @@ class AAFTests(unittest.TestCase):
         with aaf2.open(new_file, 'r') as f:
             # Make sure that the file can still be opened with aaf2.open
             # and that the save method wasn't run.
-            self.assertIsNotNone(f.content.mobs.get('TestExitMob'))
+            for mob in f.content.mobs:
+                print(mob)
+            self.assertIsNotNone(f.content.mobs.get(test_mob_id, None))
 
     def test_exit_with_internal_exception(self):
         """This scenario is a bad situation... explosion
