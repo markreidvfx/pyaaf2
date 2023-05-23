@@ -52,7 +52,7 @@ class AAFCopyTests(unittest.TestCase):
 
     def test_mob_copy(self):
         test_file = os.path.join(common.test_files_dir(),"test_file_01.aaf")
-        result_file = common.get_test_file('copy_mobs.aaf')
+        result_file = common.get_test_file('copy_all_mobs.aaf')
 
         with aaf2.open(test_file, 'r') as a:
             with aaf2.open(result_file, 'w', extensions=False) as b:
@@ -72,3 +72,30 @@ class AAFCopyTests(unittest.TestCase):
             with aaf2.open(result_file, 'w', extensions=False) as b:
                 with self.assertRaises(aaf2.exceptions.AAFAttachError):
                     b.content.mobs.append(mob.copy())
+
+    def test_copy_toplevel(self):
+        test_file = os.path.join(common.test_files_dir(),"test_file_01.aaf")
+        result_file = common.get_test_file('copy_toplevel_mobs.aaf')
+
+        mob_ids = []
+        with aaf2.open(test_file, 'r') as a:
+            with aaf2.open(result_file, 'w', extensions=False) as b:
+                b.dictionary.update(a.dictionary)
+                mobs = []
+
+                # gather all the dependant mobs
+                for mob in a.content.toplevel():
+                    mobs.append(mob)
+                    mobs.extend(mob.dependant_mobs())
+
+                for mob in mobs:
+                    mob_ids.append(mob.mob_id)
+                    b.content.mobs.append(mob.copy(root=b))
+
+        with aaf2.open(test_file, 'r') as a:
+            with aaf2.open(result_file, 'r', extensions=False) as b:
+                for mob_id in mob_ids:
+                    self.assertTrue(mob_id in b.content.mobs)
+                    mob_a = a.content.mobs[mob_id]
+                    mob_b = a.content.mobs[mob_id]
+                    self.compare_objects(mob_a, mob_b)

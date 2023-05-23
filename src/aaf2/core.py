@@ -257,8 +257,9 @@ class AAFObject(object):
         if topdown:
             yield self, streams
 
-    def copy(self, new_dir=None, root=None, classdef_cache=set()):
+    def copy(self, new_dir=None, root=None, classdef_cache=None):
         new_obj = self.__class__.__new__(self.__class__)
+        classdef_cache = classdef_cache or set()
         root = root or self.root
         new_obj.root = root
 
@@ -282,6 +283,7 @@ class AAFObject(object):
             # the pid in the new root could be different
             if pid >= 0x8000 and root is not self.root:
                 pdef = new_obj.classdef.lookup_propertydef(p.propertydef.auid)
+                assert pdef
                 pid = pdef.pid
 
             new_obj.property_entries[pid] = p.copy(new_obj, pid, classdef_cache)
