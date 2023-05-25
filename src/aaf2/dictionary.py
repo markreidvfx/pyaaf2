@@ -274,8 +274,8 @@ class Dictionary(core.AAFObject):
 
                 elif def_type == 'OperationDefinitions':
                     # make sure operation all the same parameters
-                    opdef = self.lookup_operationdef(d.auid)
-                    for p in d.parameters:
+                    opdef = self.lookup_operationdef(other_def.auid)
+                    for p in other_def.parameters:
                         param = self.lookup_parameterdef(p.auid)
                         if param.unique_key not in opdef.parameters:
                             opdef.append(param)
