@@ -30,6 +30,7 @@ P_HEADER_STRUCT = struct.Struct(str('<BBH'))
 
 OPERATIONGROUP_PARAMETERS_AUID = AUID("06010104-060a-0000-060e-2b3401010102")
 
+sentinel = object()
 
 class AAFObject(object):
     __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
@@ -337,29 +338,29 @@ class AAFObject(object):
         if key not in self.keys():
             return default
 
-        p = self.get(key, None)
-        if p is None:
+        p = self.get(key, sentinel)
+        if p is sentinel:
             return default
         return p.value
 
     def __getitem__(self, key):
-        result = self.get(key, default=None)
-        if result is None:
+        result = self.get(key, default=sentinel)
+        if result is sentinel:
             raise KeyError(key)
         return result
 
     def __delitem__(self, key):
-        result = self.get(key, default=None, allkeys=False)
-        if result is None:
+        result = self.get(key, default=sentinel, allkeys=False)
+        if result is sentinel:
             raise KeyError(key)
 
         del self.property_entries[result.pid]
         if self.dir:
             self.root.manager.add_modified(self)
 
-    def __contains__(self, key, all=False):
-        result = self.get(key, default=None, allkeys=False)
-        if result is None:
+    def __contains__(self, key):
+        result = self.get(key, default=sentinel, allkeys=False)
+        if result is sentinel:
             return False
         return True
 
