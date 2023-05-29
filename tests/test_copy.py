@@ -16,10 +16,13 @@ import common
 
 class AAFCopyTests(unittest.TestCase):
 
-    def compare_objects(self, a, b):
+    def compare_objects(self, a, b, skip_some=False):
         for key in a.keys():
             if a[key].format_name() == "Property":
-                self.assertEqual(a[key].value, b[key].value)
+                if key in ("Description", "Name") and skip_some:
+                    continue
+                else:
+                    self.assertEqual(a[key].data, b[key].data, "key = {}".format(key))
             else:
                 pa = a[key]
                 pb = b[key]
@@ -29,14 +32,14 @@ class AAFCopyTests(unittest.TestCase):
                     for key, item_a in pa.items():
                         self.assertTrue(key in pb)
                         item_b = pb[key]
-                        self.compare_objects(item_a, item_b)
+                        self.compare_objects(item_a, item_b, skip_some)
 
                 elif isinstance(pa, properties.StrongRefVectorProperty):
                     for item_a, item_b in zip(pa, pb):
-                        self.compare_objects(item_a, item_b)
+                        self.compare_objects(item_a, item_b, skip_some)
                 elif isinstance(pa, (properties.StrongRefProperty,
                                      properties.WeakRefProperty)):
-                    self.compare_objects(pa.value, pb.value)
+                    self.compare_objects(pa.value, pb.value, skip_some)
 
                 elif isinstance(pa, properties.StreamProperty):
                     read_size = a.root.cfb.sector_size
@@ -66,6 +69,8 @@ class AAFCopyTests(unittest.TestCase):
                     other_mob = a.content.mobs.get(mob.mob_id, None)
                     self.assertEqual(mob.mob_id, other_mob.mob_id)
                     self.compare_objects(mob, other_mob)
+
+                self.compare_objects(a.dictionary, b.dictionary, skip_some=True)
 
         result_file = common.get_test_file('copy_mobs_fail.aaf')
         with aaf2.open(test_file, 'r') as a:
@@ -99,3 +104,5 @@ class AAFCopyTests(unittest.TestCase):
                     mob_a = a.content.mobs[mob_id]
                     mob_b = a.content.mobs[mob_id]
                     self.compare_objects(mob_a, mob_b)
+
+                self.compare_objects(a.dictionary, b.dictionary, skip_some=True)
