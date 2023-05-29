@@ -1,4 +1,3 @@
-
 from __future__ import (
     unicode_literals,
     absolute_import,
@@ -47,9 +46,15 @@ SF_OPAQUE_STREAM                          = 0x40
 SF_DATA_VECTOR                            = 0xD2
 SF_DATA_SET                               = 0xDA
 
-PROPERTY_VERSION=32
+CLASSDEF_AUID          = AUID("0d010101-0101-0100-060e-2b3402060101")
+TYPEDEF_AUID           = AUID("0d010101-0203-0000-060e-2b3402060101")
 
+MOB_MOBID_AUID         = AUID("01011510-0000-0000-060e-2b3401010101")
+ESSENCEDATA_MOBID_AUID = AUID("06010106-0100-0000-060e-2b3401010102")
+
+PROPERTY_VERSION=32
 sentinel = object()
+
 
 def writeonly(func):
     def func_wrapper(self, *args, **kwargs):
@@ -61,11 +66,6 @@ def writeonly(func):
 
     return func_wrapper
 
-CLASSDEF_AUID = AUID("0d010101-0101-0100-060e-2b3402060101")
-TYPEDEF_AUID = AUID("0d010101-0203-0000-060e-2b3402060101")
-
-MOB_MOBID_AUID = AUID("01011510-0000-0000-060e-2b3401010101")
-ESSENCEDATA_MOBID_AUID = AUID("06010106-0100-0000-060e-2b3401010102")
 
 class Property(object):
     __slots__ = ('pid', 'format', 'version', 'data', 'parent', '_propertydef')
@@ -180,6 +180,8 @@ class Property(object):
             return "<%s %s>" % (name, str(self.typedef))
         else:
             return "<%s %d bytes>" % (self.__class__.__name__, len(self.data))
+
+
 class StreamProperty(Property):
     __slots__ = ('stream_name', 'dir')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
@@ -284,6 +286,7 @@ class StreamProperty(Property):
     def value(self):
         return self.parent.dir.get(self.stream_name)
 
+
 class StrongRefProperty(Property):
     __slots__ = ('ref', 'objectref')
     def __init__(self, parent, pid, format, version=PROPERTY_VERSION):
@@ -343,7 +346,6 @@ class StrongRefProperty(Property):
             obj = self.parent.root.manager.read_object(dir_entry)
             self.object = obj
         return obj
-
 
     @value.setter
     @writeonly
@@ -940,7 +942,6 @@ class StrongRefSetProperty(Property):
 
         return obj
 
-
     @property
     def value(self):
         return [item for item in self]
@@ -984,6 +985,7 @@ class StrongRefSetProperty(Property):
 
     def __repr__(self):
         return "<%s to %s %d items>" % (self.__class__.__name__, str(self.index_name), len(self.references))
+
 
 def resolve_weakref(p, ref):
     ref_class_id = p.ref_classdef.auid
@@ -1091,6 +1093,7 @@ class WeakRefProperty(Property):
         self.ref = value.unique_key
         self.data = self.encode()
         self.add_pid_entry()
+
 
 class WeakRefArrayProperty(Property):
     __slots__ = ('references', 'index_name', 'weakref_index', 'key_pid', 'key_size')
@@ -1255,6 +1258,8 @@ class WeakRefArrayProperty(Property):
 
 class WeakRefVectorProperty(WeakRefArrayProperty):
     pass
+
+
 class WeakRefSetProperty(WeakRefArrayProperty):
     pass
 
@@ -1263,8 +1268,10 @@ class WeakRefSetProperty(WeakRefArrayProperty):
 class WeakRefPropertyId(WeakRefProperty):
     pass
 
+
 class UniqueIdProperty(Property):
     pass
+
 
 class OpaqueStreamProperty(Property):
     pass

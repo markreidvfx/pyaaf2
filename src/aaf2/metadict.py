@@ -4,9 +4,8 @@ from __future__ import (
     print_function,
     division,
     )
-import traceback
+
 from io import BytesIO
-from .exceptions import AAFPropertyError
 from . import types
 from .model import classdefs
 from .model import typedefs as base_typedefs
@@ -31,6 +30,7 @@ PID_CONCRETE   = 0x000A
 
 sentinel = object()
 
+
 @register_class
 class PropertyDef(core.AAFObject):
     class_id = AUID("0d010101-0202-0000-060e-2b3402060101")
@@ -49,9 +49,6 @@ class PropertyDef(core.AAFObject):
             properties.add_u16le_property(self, PID_PID, pid)
             properties.add_auid_property(self, PID_AUID, auid)
             properties.add_auid_property(self, PID_TYPE, typedef)
-
-        # if auid == AUID("0e040101-0101-0111-060e-2b3401010101"):
-        #     print(name, pid)
 
         return self
 
@@ -125,6 +122,7 @@ class PropertyDef(core.AAFObject):
 
     def __repr__(self):
         return "<%s PropertyDef>" % self.property_name
+
 
 @register_class
 class ClassDef(core.AAFObject):
@@ -244,7 +242,6 @@ class ClassDef(core.AAFObject):
         if p:
             return p
 
-        # print(self, name, pid)
         typedef = str2auid(typedef)
         if isinstance(typedef, AUID):
             typedef_auid = typedef
@@ -301,6 +298,7 @@ class ClassDef(core.AAFObject):
     def __repr__(self):
         return "<%s %s>" % (self.class_name, "ClassDef")
 
+
 root_classes = {
 'Root' : ('b3b398a5-1c90-11d4-8053-080036210804', None, True, {
     "Header"              : ('0d010301-0102-0100-060e-2b3401010102', 0x0002, '05022800-0000-0000-060E-2B3401040101', False, False),
@@ -315,6 +313,7 @@ root_types = {
 
 PID_CLASSDEFS = 0x0003
 PID_TYPEDEFS  = 0x0004
+
 
 @register_class
 class MetaDictionary(core.AAFObject):
@@ -558,7 +557,6 @@ class MetaDictionary(core.AAFObject):
         self.local_pids.add(result)
         return result
 
-
     def read_properties(self):
         super(MetaDictionary, self).read_properties()
         for key, typedef in self['TypeDefinitions'].items():
@@ -586,7 +584,6 @@ class MetaDictionary(core.AAFObject):
                 # skip root typedefs
                 if key in (AUID('05022800-0000-0000-060E-2B3401040101'),
                            AUID('05022700-0000-0000-060E-2B3401040101')):
-                    # print("skipping root typedef")
                     continue
 
                 if key not in self['TypeDefinitions']:
@@ -604,7 +601,6 @@ class MetaDictionary(core.AAFObject):
                                 prop = typedef.property_entries.pop(old_pid)
                                 prop.pid = new_pid
                                 typedef.property_entries[new_pid] = prop
-                                # print("conflict", typedef, pdef.name, old_pid, "->", new_pid)
 
                     self['TypeDefinitions'].append(typedef)
                     if classdef.auid not in self['ClassDefinitions']:
@@ -615,7 +611,6 @@ class MetaDictionary(core.AAFObject):
             for key, classdef in self.classdefs_by_auid.items():
                 # skip root classdefs
                 if key in (AUID('b3b398a5-1c90-11d4-8053-080036210804'), ):
-                    # print("skipping root")
                     continue
 
                 if key not in self['ClassDefinitions']:

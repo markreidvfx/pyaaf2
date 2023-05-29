@@ -1,4 +1,3 @@
-
 from __future__ import (
     unicode_literals,
     absolute_import,
@@ -8,17 +7,12 @@ from __future__ import (
 
 import sys
 from io import BytesIO
-import weakref
 import struct
 import array
 
 from .utils import (
-    read_u8,
-    read_u16le,
-    read_u32le,
     write_u8,
     write_u16le,
-    write_u32le,
     safe_print,
     )
 from .exceptions import AAFPropertyError, AAFAttachError
@@ -31,6 +25,7 @@ P_HEADER_STRUCT = struct.Struct(str('<BBH'))
 OPERATIONGROUP_PARAMETERS_AUID = AUID("06010104-060a-0000-060e-2b3401010102")
 
 sentinel = object()
+
 
 class AAFObject(object):
     __slots__ = ('class_id', 'root', 'dir', 'property_entries', '__weakref__' )
@@ -109,8 +104,8 @@ class AAFObject(object):
             for p in self.property_entries.values():
                 p.decode()
                 if isinstance(p, (properties.StrongRefSetProperty,
-                                properties.StrongRefVectorProperty,
-                                properties.WeakRefArrayProperty)):
+                                  properties.StrongRefVectorProperty,
+                                  properties.WeakRefArrayProperty)):
                     p.read_index()
 
     def validate(self):
@@ -144,7 +139,6 @@ class AAFObject(object):
         s = self.dir.touch("properties").open(mode='rw')
 
         with BytesIO() as f:
-            # print("writing", f.dir.path())
             byte_order = 0x4c
             entry_count = len(self.property_entries)
             version = properties.PROPERTY_VERSION
@@ -154,14 +148,9 @@ class AAFObject(object):
             write_u16le(f, entry_count)
 
             for p in self.property_entries.values():
+                assert p.data is not None
                 write_u16le(f, p.pid)
                 write_u16le(f, p.format)
-                if p.data is None:
-                    print("??", p)
-                    print("!!", p.data)
-                    print(p.value)
-                    raise Exception()
-
                 write_u16le(f, len(p.data))
 
             # write the data
@@ -173,9 +162,8 @@ class AAFObject(object):
             # write index's
             for p in self.property_entries.values():
                 if isinstance(p, (properties.StrongRefSetProperty,
-                                properties.StrongRefVectorProperty,
-                                properties.WeakRefArrayProperty)):
-                    # print('writing index', self, p)
+                                  properties.StrongRefVectorProperty,
+                                  properties.WeakRefArrayProperty)):
                     p.write_index()
 
     def detach(self, delete=False):
@@ -395,8 +383,6 @@ class AAFObject(object):
                 for key, obj in p.items():
                     safe_print(space + indent, obj)
                     obj.dump(space + indent*2)
-
                 continue
-                # print(space, p.name,  p.typedef)
 
             safe_print(space, p.name, p.typedef, p.value)
