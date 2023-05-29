@@ -12,6 +12,7 @@ Features
 - Read/Write AAF files
 - Modifying existing AAF files inplace
 - Embedding DNxHD/DNxHR/WAV media
+- Copying objects between files
 - Low level read/write Compound File Binary access
 - Lazy file reading
 - Zero dependencies, does not use AAF SDK
