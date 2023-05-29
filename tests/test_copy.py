@@ -106,3 +106,57 @@ class AAFCopyTests(unittest.TestCase):
                     self.compare_objects(mob_a, mob_b)
 
                 self.compare_objects(a.dictionary, b.dictionary, skip_some=True)
+
+
+    def test_copy_slots(self):
+        src_file = common.get_test_file('copy_src_slots.aaf')
+        dst_file = common.get_test_file('copy_dst_slots.aaf')
+
+        src_mob_id = None
+        dst_mob_id = None
+        video_rate = "25"
+
+        with aaf2.open(src_file, 'w') as f:
+
+            comp_mob = f.create.CompositionMob()
+            comp_mob.name = "src_comp"
+            src_mob_id = comp_mob.mob_id
+            sequence = f.create.Sequence(media_kind="picture")
+            timeline_slot = comp_mob.create_timeline_slot(video_rate)
+            timeline_slot.segment = sequence
+            for i in range(10):
+                sequence.components.append(f.create.Filler('picture', 100))
+
+            sequence = f.create.Sequence(media_kind="sound")
+            timeline_slot = comp_mob.create_timeline_slot(video_rate)
+            timeline_slot.segment = sequence
+            for i in range(10):
+                sequence.components.append(f.create.Filler('sound', 100))
+
+            f.content.mobs.append(comp_mob)
+
+        with aaf2.open(src_file, 'r') as a:
+            with aaf2.open(dst_file, 'w') as b:
+                dst_comp_mob = b.create.CompositionMob()
+                dst_comp_mob.name = 'dest_comp'
+                dst_mob_id = dst_comp_mob.mob_id
+                b.content.mobs.append(dst_comp_mob)
+
+                src_comp_mob = a.content.mobs.get(src_mob_id, None)
+                self.assertIsNotNone(src_comp_mob)
+
+                for slot in src_comp_mob.slots:
+                    dst_comp_mob.slots.append(slot.copy(root=b))
+
+        with aaf2.open(src_file, 'r') as a:
+            with aaf2.open(dst_file, 'r') as b:
+                src_comp_mob = a.content.mobs.get(src_mob_id, None)
+                self.assertIsNotNone(src_comp_mob)
+
+                dst_comp_mob = b.content.mobs.get(dst_mob_id, None)
+                self.assertIsNotNone(dst_comp_mob)
+
+                self.assertNotEqual(src_comp_mob.name, dst_comp_mob.name)
+
+                for slot_a, slot_b in zip(src_comp_mob.slots, dst_comp_mob.slots):
+                    self.compare_objects(slot_a, slot_b)
