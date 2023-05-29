@@ -71,6 +71,11 @@ class Sequence(Segment):
     class_id = AUID("0d010101-0101-0f00-060e-2b3402060101")
     __slots__ = ()
 
+    def __init__(self, media_kind=None, length=None):
+        super(Sequence, self).__init__(media_kind, length)
+        # initialize components to empty list
+        self.components.value = []
+
     @property
     def components(self):
         return self['Components']
