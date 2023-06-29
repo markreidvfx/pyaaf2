@@ -639,7 +639,7 @@ def main():
         parser.error("No such video profile: %s" % args.video_profile)
 
     try:
-        timecode_to_frames(args.start_timecode, args.start_timecode_fps)
+        timecode_to_frames(args.start_timecode, args.start_timecode_rate)
     except:
         parser.error("invalid timecode string: %s at %d fps" % (args.start_timecode, args.start_timecode_fps))
 
