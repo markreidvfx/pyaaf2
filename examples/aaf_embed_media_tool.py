@@ -371,7 +371,7 @@ def create_matte_key_definition(f):
 def import_video_essence(f, mastermob, stream, compmob=None, tapemob=None, timecode_start_time=None):
     tape_clip = None
     edit_rate = stream['frame_rate']
-    start_time = None
+
     if tapemob:
         tape_clip = tapemob.create_source_clip(1, start=timecode_start_time)
 
@@ -417,6 +417,8 @@ def import_video_essence(f, mastermob, stream, compmob=None, tapemob=None, timec
         op_group.segments.append(mastermob.create_source_clip(color_slot.slot_id, length=length))
         op_group.segments.append(mastermob.create_source_clip(alpha_slot.slot_id, length=length))
 
+    return color_slot
+
 def create_mastermob_from_streams(f, media_streams, mob_name, tape_name=None, edit_rate = None):
     mastermob = f.create.MasterMob(mob_name)
     f.content.mobs.append(mastermob)
@@ -457,17 +459,20 @@ def create_mastermob_from_streams(f, media_streams, mob_name, tape_name=None, ed
             break
 
     tapemob = None
-
+    timecode_slot = None
     if tape_name:
         tapemob = f.create.SourceMob()
-        tapemob.create_tape_slots(tape_name, edit_rate, timecode_rate)
+        _, timecode_slot = tapemob.create_tape_slots(tape_name, edit_rate, timecode_rate)
         f.content.mobs.append(tapemob)
 
     for stream in media_streams:
         if stream['type'] == 'video':
             print("importing video...")
             start = time.time()
-            import_video_essence(f, mastermob, stream, compmob, tapemob, timecode_start_time)
+            slot = import_video_essence(f, mastermob, stream, compmob, tapemob, timecode_start_time)
+            # otio currently uses the length of the timecodes slot length for available ranges
+            # in a media reference ensure it matches video length
+            timecode_slot.segment.length = slot.segment.length
             print("imported video in %f secs" % (time.time()- start))
 
     for stream in media_streams:
@@ -475,7 +480,6 @@ def create_mastermob_from_streams(f, media_streams, mob_name, tape_name=None, ed
         if stream['type'] == 'audio':
             print("importing audio...")
             start = time.time()
-            sample_rate = stream['sample_rate']
             slot = mastermob.import_audio_essence(stream['path'], edit_rate)
             if compmob:
                 sound_slot = compmob.create_sound_slot(edit_rate)
