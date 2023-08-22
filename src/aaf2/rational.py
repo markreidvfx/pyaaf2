@@ -6,6 +6,7 @@ from __future__ import (
     )
 
 import sys
+import logging
 from fractions import Fraction, _RATIONAL_FORMAT
 from decimal import Decimal
 import numbers
@@ -92,6 +93,16 @@ class AAFRational(Fraction):
                             "Rational instances")
 
         if denominator == 0:
+            if numerator == 0:
+                # AAF seemingly can have valid 0/0 property values,
+                # which we default to 0/1, which is mathematically not
+                # correct but works around this weird AAF behaviour (observed in
+                # AAF files exported from Storyboard Pro)
+                logging.warning("Fraction(0,0) not mathematically plausible, "
+                                "use Fraction(0,1) instead.")
+                self._numerator = 0
+                self._denominator = 1
+                return self
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
         # don't find the gcd
         #g = gcd(numerator, denominator)
