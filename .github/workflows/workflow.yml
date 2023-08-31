@@ -39,7 +39,7 @@ jobs:
         name: wheel
         path: dist/*.whl
 
-  test:
+  test-wheels:
     runs-on: ${{ matrix.os }}
     needs: build
 
@@ -47,7 +47,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, windows-latest, macos-latest]
-        python-version: ["2.7", "3.7", "3.8", "3.9", "3.10"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
     - uses: actions/checkout@v3
@@ -72,8 +72,34 @@ jobs:
         python -m pip install dist/*
         python -m unittest discover tests -v
 
+  test-wheels-27:
+    runs-on: ubuntu-latest
+    container: coatldev/six:latest
+    needs: build
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v1.1.0
+
+      - name: Download wheel
+        uses: actions/download-artifact@v3
+        with:
+          name: wheel
+          path: dist
+
+      - name: Run Unit Tests
+        shell: bash
+        run: |
+          python2 -m pip install dist/*
+          python2 -m unittest discover tests -v
+
   latest-release:
-    needs: test
+    needs:
+      - test-wheels
+      - test-wheels-27
     runs-on: ubuntu-latest
     steps:
       - name: Download sdist
