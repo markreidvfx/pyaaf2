@@ -74,7 +74,7 @@ jobs:
 
   test-wheels-27:
     runs-on: ubuntu-latest
-    container: coatldev/six:latest
+    container: python:2.7.18
     needs: build
 
     steps:
