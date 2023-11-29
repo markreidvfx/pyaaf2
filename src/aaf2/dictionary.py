@@ -13,6 +13,7 @@ from . import core
 from .utils import register_class
 
 def short_name(name):
+    name = name.replace(" ", "")
     for s in ('DataDef_', 'ContainerDef_'):
         name = name.replace(s, "")
     return name
