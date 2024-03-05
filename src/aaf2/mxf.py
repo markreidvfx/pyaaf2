@@ -285,6 +285,12 @@ class MXFPackage(MXFObject):
         return mob
 
 @register_mxf_class
+class MXFCompositionPackage(MXFPackage):
+    class_id = AUID("060e2b34-0253-0101-0d01-010101013500")
+    def create_aaf_instance(self):
+        return self.root.aaf.create.CompositionMob()
+
+@register_mxf_class
 class MXFMaterialPackage(MXFPackage):
     class_id = AUID("060e2b34-0253-0101-0d01-010101013600")
     def create_aaf_instance(self):
