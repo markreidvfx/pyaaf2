@@ -147,26 +147,29 @@ def scale_handle(p0, p1, p2):
     y = (p1[1] - p0[1]) * (p2[0] - p0[0]) / (p1[0] - p0[0])
     return [p2[0], p0[1] + y]
 
-def bezier_interpolate(p0, p1, p2, p3, x):
+def bezier_interpolate(p0, p1, p2, p3, x, scale_handles=False):
 
     # degenerate cases 1
     # p0 is after p3
     if p0[0] >= p3[0]:
-        return p[1]
+        return p0[1]
 
-    # degenerate cases 2
-    # p1 after p3 or before p0
-    if p1[0] > p3[0]:
-        p1 = scale_handle(p0, p1, p3)
-    elif p1[0] < p0[0]:
-        p1 = [p0[0], p1[1]]
+    # Media Composer doesn't perform any scaling or clamping of handles
+    # if their x positions are out not between p0.x and p3.x.
+    if scale_handles:
+        # degenerate cases 2
+        # p1 after p3 or before p0
+        if p1[0] > p3[0]:
+            p1 = scale_handle(p0, p1, p3)
+        elif p1[0] < p0[0]:
+            p1 = [p0[0], p1[1]]
 
-    # degenerate cases 3
-    # p2 before p0 or after p3
-    if p2[0] < p0[0]:
-        p2 = scale_handle(p3, p2, p0)
-    elif p2[0] > p3[0]:
-        p2 = [p3[0], p2[1]]
+        # degenerate cases 3
+        # p2 before p0 or after p3
+        if p2[0] < p0[0]:
+            p2 = scale_handle(p3, p2, p0)
+        elif p2[0] > p3[0]:
+            p2 = [p3[0], p2[1]]
 
     # offset points so x is the x axis
     pa = p0[0] - x
