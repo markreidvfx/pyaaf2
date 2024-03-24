@@ -222,7 +222,7 @@ class Window(QtWidgets.QTreeView):
             root = list(f.content.mastermobs())
 
         if options.sourcemobs:
-           root = list(f.content.GetSourceMobs())
+           root = list(f.content.sourcemobs())
 
         if options.dictionary:
             root = f.dictionary
