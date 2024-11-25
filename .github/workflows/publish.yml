@@ -18,7 +18,7 @@ jobs:
     # It also restores the files timestamps.
 
     - name: Download sdist and wheel from commit ${{ github.sha }}
-      uses: dawidd6/action-download-artifact@v2
+      uses: dawidd6/action-download-artifact@v6
       with:
         workflow: workflow.yml
         workflow_conclusion: success
@@ -27,7 +27,7 @@ jobs:
         path: dist
 
     - name: Download sdist from commit ${{ github.sha }}
-      uses: dawidd6/action-download-artifact@v2
+      uses: dawidd6/action-download-artifact@v6
       with:
         workflow: workflow.yml
         workflow_conclusion: success
