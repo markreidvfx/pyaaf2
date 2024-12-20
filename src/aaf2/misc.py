@@ -269,6 +269,8 @@ class VaryingValue(Parameter):
         if self.interpolationdef.auid == LinearInterp:
             t_len = float(p2.time) - float(p1.time)
             t_diff = t - float(p1.time)
+            if t_diff == 0:
+                return float(p1.value)
             t_mix = t_diff/t_len
 
             v0 = float(p1.value)
