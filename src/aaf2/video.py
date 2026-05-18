@@ -149,6 +149,17 @@ dnx_compression_auids = {
 
 }
 
+compression_ids_hevc = {
+    'HEVC_Video'                                    : AUID('04010202-0140-0000-060e-2b340401010d'),
+    'HEVC_MainProfile'                              : AUID('04010202-0141-0000-060e-2b340401010d'),
+    'HEVC_MainProfile_Unconstrained'                : AUID('04010202-0141-1001-060e-2b340401010d'),
+    'HEVC_Main10Profile'                            : AUID('04010202-0141-2000-060e-2b340401010d'),
+    'HEVC_Main10Profile_Unconstrained'              : AUID('04010202-0141-2001-060e-2b340401010d'),
+    'HEVC_Main422Profile'                           : AUID('04010202-0142-0000-060e-2b340401010d'),
+    'HEVC_Main422Profile_Unconstrained'             : AUID('04010202-0142-2001-060e-2b340401010d'),
+    'HEVC_Main44416IntraProfile_Unconstrained'      : AUID('04010202-0146-5001-060e-2b340401010d'),
+}
+
 compression_ids = {
 'CompressedPicture'                   : AUID('04010202-0000-0000-060e-2b3404010101'),
 'AVCBaselineUnconstrained'            : AUID('04010202-0131-1001-060e-2b340401010d'),

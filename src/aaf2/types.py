@@ -849,7 +849,8 @@ class TypeDefExtEnum(TypeDef):
                 if value.lower() == data.lower():
                     return key.bytes_le
 
-        raise ValueError("invalid ext enum value: %s" % str(data))
+        return data.bytes_le #emcodem: tolerate unknown ext enum AUIDs (e.g. Sony/ARRI colorspaces) and forward the raw value instead of raising
+        #raise ValueError("invalid ext enum value: %s" % str(data))
 
 @register_class
 class TypeDefIndirect(TypeDef):

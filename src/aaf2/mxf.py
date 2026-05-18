@@ -7,6 +7,8 @@ from __future__ import (
 import sys
 import struct
 import datetime
+import os
+import urllib.parse
 
 from io import BytesIO
 import io
@@ -141,9 +143,20 @@ def decode_mob_id(data):
     m = MobID(str(uid1) + str(uid2))
     return m
 
-def ama_path(path):
-    prefix ="file://"
-    return prefix + path
+def ama_path(path: str) -> str:
+    if path.startswith('\\\\'):
+        # UNC path, avid want this with two slashes at the start
+        
+        encoded_path = urllib.parse.quote(path.replace("\\", "/"), safe='/')
+        return f"file:{encoded_path}"
+    elif ':' in path:
+        # Local drive path, for avid we must append three slashes, otherwise it does not detect Source Path and Name correctly in the bin
+        encoded_path = urllib.parse.quote(path.replace("\\", "/"), safe='/')
+        return f"file:///{encoded_path}"
+    else:
+        # fallback for relative paths or non-Windows (untested)
+        encoded_path = urllib.parse.quote(path.replace("\\", "/"), safe='/')
+        return f"file://{encoded_path}"
 
 class MXFObject(object):
     def __init__(self):
@@ -556,6 +569,12 @@ class MXFDescriptor(MXFObject):
                 self.data['Locator'] = decode_strong_ref_array(f)
             elif tag == 0x3401:
                 self.data['PixelLayout'] = decode_pixel_layout(f)
+            elif tag == 0x3210:
+                self.data['TransferCharacteristic'] = reverse_auid(decode_auid(data)) #0x3210
+            elif tag == 0x3219:
+                self.data['ColorPrimaries'] = reverse_auid(decode_auid(data)) #0x3219
+            elif tag == 0x321a:
+                self.data['CodingEquations'] = reverse_auid(decode_auid(data)) #0x321a
 
 @register_mxf_class
 class MXFMultipleDescriptor(MXFDescriptor):
@@ -569,6 +588,8 @@ class MXFMultipleDescriptor(MXFDescriptor):
         for item in self.iter_strong_refs("FileDescriptors"):
             # if isinstance(item, MXFAES3AudioDescriptor):
             #     continue
+            if item is None:
+                continue
             d['FileDescriptors'].append(item.link())
         d['Length'].value = self.data.get('Length', 0)
 
@@ -576,7 +597,8 @@ class MXFMultipleDescriptor(MXFDescriptor):
         n['URLString'].value = ama_path(self.root.path)
         d['Locator'].append(n)
 
-        d['SampleRate'].value = self.data['SampleRate']
+        if 'SampleRate' in self.data:
+            d['SampleRate'].value = self.data['SampleRate']
 
         if self.root.ama:
             n = self.root.aaf.create.NetworkLocator()
@@ -604,13 +626,16 @@ class MXFCDCIDescriptor(MXFDescriptor):
         d['Length'].value = self.data.get('Length', 0)
 
         # optional
-        for key in ('FrameSampleSize', 'ResolutionID', 'Compression', 'VerticalSubsampling',
-                    'SampledWidth', 'SampledHeight', 'LinkedSlotID'):
+        for key in ('FrameSampleSize', 'ResolutionID', 'Compression', 'VerticalSubsampling', 'TransferCharacteristic',
+                    'ColorPrimaries', 'CodingEquations', 'SampledWidth', 'SampledHeight', 'LinkedSlotID'):
             if key in self.data:
                 d[key].value = self.data[key]
 
         for item in self.iter_strong_refs("Locator"):
-            d['Locator'].append(item.link())
+            if item is not None:
+                d['Locator'].append(item.link())
+        
+        if not len(d['Locator']):
             n = self.root.aaf.create.NetworkLocator()
             n['URLString'].value = ama_path(self.root.path)
             d['Locator'].append(n)
@@ -746,6 +771,19 @@ class MXFImportDescriptor(MXFDescriptor):
     def link(self):
         d = self.create_aaf_instance()
         n = self.root.aaf.create.NetworkLocator()
+
+        # Prefer an existing Locator already embedded in the MXF (e.g. the Avid
+        # physical-package Network Locator set by bmxtranswrap's --import
+        if ("Locator" in self.data
+            and len(self.data["Locator"]) == 1
+            and self.data["Locator"][0] in self.root.objects):
+            _loc = self.root.objects[self.data["Locator"][0]]
+            if ("URLString" in _loc.data):
+                n['URLString'].value = _loc.data["URLString"]
+                d['Locator'].append(n)
+                return d
+
+        # Fallback: no usable embedded locator -> use the MXF's own path.
         n['URLString'].value = ama_path(self.root.path)
         d['Locator'].append(n)
 
@@ -857,6 +895,69 @@ def iter_tags(f, length):
 def auid_to_str_list(v, sep=',', prefix=""):
     return sep.join('%s%02x' % (prefix, i)  for i in bytearray(v.bytes_be))
 
+
+# === BEGIN footer-first MXF parsing (added 2026-05-02) =======================
+# Speeds up parsing of MXF files whose header is not Closed Complete by jumping
+# straight to the footer's repeated metadata via the Random Index Pack at EOF.
+#
+# Disable at runtime with env var PYAAF2_MXF_FOOTER_FIRST=0 to fall back to
+# header-walk only (original behavior).
+#
+
+def _strip_version(auid):
+    """Return the UL's 16 bytes with byte 7 (registry version) zeroed out,
+    so equality is tolerant to registry-version bumps in muxer output. None
+    in → None out, so the helper composes with read_auid_be at EOF."""
+    if auid is None:
+        return None
+    b = bytearray(auid.bytes_be)
+    b[7] = 0
+    return bytes(b)
+
+# Partition Pack ULs per SMPTE 377M (byte 13 = kind, byte 14 = status).
+# Stored as byte-7-masked bytes so lookups via _strip_version() are version-tolerant.
+_HEADER_PARTITION_PACK_KEYS = frozenset(_strip_version(AUID(s)) for s in (
+    "060e2b34-0205-0101-0d01-020101020100",  # Open Incomplete
+    "060e2b34-0205-0101-0d01-020101020200",  # Closed Incomplete
+    "060e2b34-0205-0101-0d01-020101020300",  # Open Complete
+    "060e2b34-0205-0101-0d01-020101020400",  # Closed Complete
+))
+_FOOTER_PARTITION_PACK_KEYS = frozenset(_strip_version(AUID(s)) for s in (
+    "060e2b34-0205-0101-0d01-020101040200",  # Closed Incomplete
+    "060e2b34-0205-0101-0d01-020101040400",  # Closed Complete
+))
+_PRIMER_KEY = _strip_version(AUID("060e2b34-0205-0101-0d01-020101050100"))
+_RIP_KEY    = _strip_version(AUID("060e2b34-0205-0101-0d01-020101110100"))
+
+
+def _read_rip_footer_offset(f, file_size):
+    """Return the absolute byte offset of the footer partition by reading the
+    Random Index Pack at end-of-file, or None if the file has no usable RIP
+    (partial files, growing files, or non-conforming muxers).
+    """
+    if file_size < 20:
+        return None
+    f.seek(file_size - 4)
+    rip_total = read_u32be(f)
+    if rip_total < 20 or rip_total > file_size:
+        return None
+    f.seek(file_size - rip_total)
+    if _strip_version(read_auid_be(f)) != _RIP_KEY:
+        return None
+    payload_len = ber_length(f)
+    # RIP payload is N entries of (BodySID:u32 + ByteOffset:u64) = 12 bytes each.
+    # The last entry points to the footer partition.
+    n = payload_len // 12
+    if n == 0:
+        return None
+    last_offset = None
+    for _ in range(n):
+        f.read(4)  # BodySID — discarded
+        last_offset = read_u64be(f)
+    return last_offset
+# === END footer-first MXF parsing ============================================
+
+
 class MXFFile(object):
 
     def __init__(self, path):
@@ -869,29 +970,101 @@ class MXFFile(object):
         self.ama = False
         self.aaf = None
         with io.open(path, 'rb') as f:
+            # Try the footer-first fast path (RIP → footer's repeated metadata).
+            # Set PYAAF2_MXF_FOOTER_FIRST=0 to disable and use header-walk only.
+            if os.environ.get('PYAAF2_MXF_FOOTER_FIRST', '1') != '0':
+                if self._try_parse_from_footer(f):
+                    return
+            self._parse_from_header_walk(f)
 
-            for key, length in iter_kl(f):
+    def _parse_from_header_walk(self, f):
+        # Original parsing path: walk KLVs from the start of the file, picking
+        # up the primer + header partition pack + metadata sets, stopping once
+        # we've passed the header partition's announced size.
+        #
+        # Behavior change vs. pre-2026-05-02: matches all four header partition
+        # pack variants (Open/Closed × Incomplete/Complete) instead of only
+        # Closed Complete, so the early-exit guard fires on those files too
+        # rather than walking the entire file.
+        f.seek(0)
+        for key, length in iter_kl(f):
+            if not self.header_partition_size is None and f.tell() > self.header_partition_size:
+                break
+            mkey = _strip_version(key)
+            if mkey == _PRIMER_KEY:
+                self.local_tags = self.read_primer(f, length)
+            elif mkey in _HEADER_PARTITION_PACK_KEYS:
+                self.read_header(f, length)
+            else:
+                obj = self.read_object(f, key, length)
+                if obj:
+                    obj.root = self
+                    self.objects[obj.instance_id] = obj
+                if isinstance(obj, MXFPreface):
+                    self.preface = obj
 
-                # only read until the first body partition
-                if not self.header_partition_size is None and f.tell() > self.header_partition_size:
-                    break
+    def _try_parse_from_footer(self, f):
+        # Try to populate state from the footer partition's repeated metadata,
+        # located via the Random Index Pack at EOF. Returns True on success.
+        # On any failure (no RIP, footer without metadata repetition, parse
+        # error) returns False with state reset so the header-walk fallback
+        # starts clean.
+        try:
+            success = self._parse_footer_inner(f)
+        except Exception:
+            success = False
+        if success:
+            return True
+        self.preface = None
+        self.objects = {}
+        self.local_tags = {}
+        self.header_operation_pattern = None
+        self.header_partition_size = None
+        return False
 
-                if key == AUID("060e2b34-0205-0101-0d01-020101050100"):
-                    self.local_tags = self.read_primer(f, length)
-                elif key == AUID("060e2b34-0205-0101-0d01-020101020400"):
-                    self.read_header(f, length)
-                else:
-                    # print('{')
-                    # print(key,  auid_to_str_list(key, sep='.'))
-                    obj = self.read_object(f, key, length)
-                    if obj:
-                        # print(obj.__class__.__name__, obj.instance_id)
-                        obj.root = self
-                        self.objects[obj.instance_id] = obj
+    def _parse_footer_inner(self, f):
+        f.seek(0, io.SEEK_END)
+        file_size = f.tell()
+        footer_offset = _read_rip_footer_offset(f, file_size)
+        if footer_offset is None or footer_offset >= file_size:
+            return False
 
-                    if isinstance(obj, MXFPreface):
-                        self.preface = obj
-                    # print('}')
+        f.seek(footer_offset)
+        key = read_auid_be(f)
+        if _strip_version(key) not in _FOOTER_PARTITION_PACK_KEYS:
+            return False
+        length = ber_length(f)
+        pack_value_start = f.tell()
+        # Footer partition pack has the same layout as the header pack, so
+        # read_header populates header_partition_size / header_operation_pattern
+        # from footer values — which on a finalized file equal the header's.
+        self.read_header(f, length)
+        # Skip any unread bytes of the partition pack (e.g. EssenceContainers list).
+        f.seek(pack_value_start + length)
+
+        metadata_end = footer_offset + self.header_partition_size
+        if metadata_end <= f.tell():
+            # Footer pack reports header_byte_count == 0, i.e. no metadata
+            # repetition here. Fall back to header walk.
+            return False
+
+        for k, klen in iter_kl(f):
+            if f.tell() > metadata_end:
+                break
+            mk = _strip_version(k)
+            if mk == _PRIMER_KEY:
+                self.local_tags = self.read_primer(f, klen)
+            elif mk in _HEADER_PARTITION_PACK_KEYS or mk in _FOOTER_PARTITION_PACK_KEYS:
+                # Hit the next partition (or RIP) — done.
+                break
+            else:
+                obj = self.read_object(f, k, klen)
+                if obj:
+                    obj.root = self
+                    self.objects[obj.instance_id] = obj
+                if isinstance(obj, MXFPreface):
+                    self.preface = obj
+        return self.preface is not None
 
     def resolve(self, ref):
         if isinstance(ref, MXFRef):

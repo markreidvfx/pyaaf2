@@ -7,6 +7,8 @@ from __future__ import (
 
 import logging
 
+_log = logging.getLogger(__name__)
+
 import sys
 import os
 import io
@@ -104,7 +106,7 @@ class Stream(object):
             raise ValueError('New position is before the start of the stream')
 
         if offset > self.dir.byte_size:
-            # logging.debug("overseek %d bytes, padding with zeros" % (offset - self.dir.byte_size))
+            # _log.debug("overseek %d bytes, padding with zeros" % (offset - self.dir.byte_size))
             self.pos = self.dir.byte_size
             bytes_left = offset - self.dir.byte_size
             min_seek_size = self.storage.sector_size * 4
@@ -211,7 +213,7 @@ class Stream(object):
         orig_pos = None
         # convert from minifat to fat
         if minifat and byte_size >= self.storage.min_stream_max_size:
-            # logging.debug("converting stream for minifat to fat")
+            # _log.debug("converting stream for minifat to fat")
             orig_pos = self.pos
             self.seek(0)
             realloc_data = self.read()
@@ -226,7 +228,7 @@ class Stream(object):
         sector_count = (byte_size + sector_size - 1) // sector_size
 
         current_sects= len(self.fat_chain)
-        # logging.debug("%d bytes requires %d sectors at %d has %d" % (byte_size, sector_count, self.sector_size(), current_sects))
+        # _log.debug("%d bytes requires %d sectors at %d has %d" % (byte_size, sector_count, self.sector_size(), current_sects))
 
         while len(self.fat_chain) < sector_count:
             last_sector_id = self.fat_chain[-1] if self.fat_chain else None
@@ -1116,10 +1118,10 @@ class CompoundFileBinary(object):
             # create dir_fat_chain and read root dir entry
             self.dir_fat_chain = self.get_fat_chain(self.dir_sector_start)
             if len(self.dir_fat_chain) != self.dir_sector_count:
-                logging.info("read dir_sector_count missmatch, using fat chain length")
+                _log.info("read dir_sector_count missmatch, using fat chain length")
                 self.dir_sector_count = len(self.dir_fat_chain)
 
-            logging.debug("read %d dir sectors" % len(self.dir_fat_chain))
+            _log.debug("read %d dir sectors" % len(self.dir_fat_chain))
             self.root = self.read_dir_entry(0)
             self.dir_cache[0] = self.root
 
@@ -1129,14 +1131,14 @@ class CompoundFileBinary(object):
 
             if self.root.sector_id is not None and mini_stream_byte_size != self.root.byte_size:
                 message = "mini stream size missmatch: %d != %d, using size from minifat"
-                logging.warning(message % (self.root.byte_size, mini_stream_byte_size))
+                _log.warning(message % (self.root.byte_size, mini_stream_byte_size))
         else:
             self.setup_empty(sector_size)
             self.write_header()
 
-            logging.debug("pos: %d" % self.f.tell())
+            _log.debug("pos: %d" % self.f.tell())
 
-            logging.debug("writing root dir sector")
+            _log.debug("writing root dir sector")
             self.root.write()
             self.f.write(bytearray(self.sector_size - 128))
             self.write_fat()
@@ -1239,7 +1241,7 @@ class CompoundFileBinary(object):
         # raise NotImplementedError("mode: %s supported not implemented" % self.f.mode)
 
     def write_header(self):
-        logging.debug("writiing header")
+        _log.debug("writiing header")
         f = self.f
         f.seek(0)
         f.write(b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1') # Magic
@@ -1276,19 +1278,19 @@ class CompoundFileBinary(object):
         f.seek(0)
 
         self.magic = f.read(8)
-        logging.debug("magic: %s" % str([self.magic]))
+        _log.debug("magic: %s" % str([self.magic]))
 
         if self.magic != b'\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1':
             raise CompoundFileBinaryError("invalid file magic signature: {}".format([self.magic]))
 
         self.class_id = auid.AUID(bytes_le=f.read(16))
-        logging.debug("clsid: %s" % str(self.class_id))
+        _log.debug("clsid: %s" % str(self.class_id))
 
         self.minor_version = read_u16le(f)
-        logging.debug("minor_version: %d" % self.minor_version)
+        _log.debug("minor_version: %d" % self.minor_version)
 
         self.major_version = read_u16le(f)
-        logging.debug("major_version: %d" % self.major_version)
+        _log.debug("major_version: %d" % self.major_version)
 
         byte_order = read_u16le(f)
         if byte_order == 0xFFFE:
@@ -1296,15 +1298,15 @@ class CompoundFileBinary(object):
         else:
             raise NotImplementedError("endian format:0x%X not supported" % byte_order)
 
-        logging.debug("byte_order: %s" % self.byte_order)
+        _log.debug("byte_order: %s" % self.byte_order)
 
         size = read_u16le(f)
         self.sector_size = pow(2, size)
-        logging.debug("sector_size: %d -> %d" % (size, self.sector_size))
+        _log.debug("sector_size: %d -> %d" % (size, self.sector_size))
 
         size = read_u16le(f)
         self.mini_stream_sector_size = pow(2, size)
-        logging.debug("mini_stream_sector_size: %d -> %d" % (size, self.mini_stream_sector_size))
+        _log.debug("mini_stream_sector_size: %d -> %d" % (size, self.mini_stream_sector_size))
 
         if not self.sector_size in (4096, 512):
             raise NotImplementedError("unsupported sector size: %d" % self.sector_size)
@@ -1314,35 +1316,35 @@ class CompoundFileBinary(object):
         f.read(6) # skip reserved
 
         self.dir_sector_count = read_u32le(f)
-        logging.debug("dir_sector_count: %d" % self.dir_sector_count)
+        _log.debug("dir_sector_count: %d" % self.dir_sector_count)
 
         self.fat_sector_count = read_u32le(f)
-        logging.debug("fat_sector_count: %d" % self.fat_sector_count)
+        _log.debug("fat_sector_count: %d" % self.fat_sector_count)
 
         self.dir_sector_start = read_u32le(f)
-        logging.debug("dir_sector_start: %d" % self.dir_sector_start)
+        _log.debug("dir_sector_start: %d" % self.dir_sector_start)
 
         self.transaction_signature = read_u32le(f)
-        logging.debug("transaction_signature: %d" % self.transaction_signature)
+        _log.debug("transaction_signature: %d" % self.transaction_signature)
 
         self.min_stream_max_size = read_u32le(f)
-        logging.debug("min_stream_max_size: %d" % self.min_stream_max_size)
+        _log.debug("min_stream_max_size: %d" % self.min_stream_max_size)
 
         self.minifat_sector_start = read_u32le(f)
-        logging.debug("minifat_sector_start: %d" % self.minifat_sector_start)
+        _log.debug("minifat_sector_start: %d" % self.minifat_sector_start)
 
         self.minifat_sector_count = read_u32le(f)
-        logging.debug("minifat_sector_count: %d" % self.minifat_sector_count)
+        _log.debug("minifat_sector_count: %d" % self.minifat_sector_count)
 
         self.difat_sector_start = read_u32le(f)
-        logging.debug("difat_sector_start: %d" % self.difat_sector_start)
+        _log.debug("difat_sector_start: %d" % self.difat_sector_start)
 
         self.difat_sector_count = read_u32le(f)
-        logging.debug("difat_sector_count: %d" % self.difat_sector_count)
+        _log.debug("difat_sector_count: %d" % self.difat_sector_count)
 
         self.difat = [[]]
 
-        logging.debug("reading header difat at %d" % f.tell())
+        _log.debug("reading header difat at %d" % f.tell())
         for i in range(109):
             item = read_u32le(f)
             self.difat[0].append(item)
@@ -1353,7 +1355,7 @@ class CompoundFileBinary(object):
 
         # reading difat sectors
         while sectors_left:
-            logging.debug("reading difat sid: %d", sid)
+            _log.debug("reading difat sid: %d", sid)
             sector_type = fat_sector_types.get(sid, sid)
             if not isinstance(sector_type, int):
                 break
@@ -1367,7 +1369,7 @@ class CompoundFileBinary(object):
             self.difat.append(difat)
 
             sid = difat[-1]
-            logging.debug("next difat: %d" % sid)
+            _log.debug("next difat: %d" % sid)
             sectors_left -= 1
 
     def iter_difat(self):
@@ -1386,7 +1388,7 @@ class CompoundFileBinary(object):
         # write header entries
         f.seek(76)
 
-        logging.debug("writing header difat")
+        _log.debug("writing header difat")
         for i in range(109):
             write_u32le(f, self.difat[0][i])
 
@@ -1405,7 +1407,7 @@ class CompoundFileBinary(object):
                 raise IOError("bad difat sector type")
 
             pos = (sid + 1) * self.sector_size
-            logging.debug("writing difat to sid: %d at: %d" % (sid,pos))
+            _log.debug("writing difat to sid: %d at: %d" % (sid,pos))
             f.seek(pos)
             for i in range(self.sector_size // 4):
                 write_u32le(f, table[i])
@@ -1428,7 +1430,7 @@ class CompoundFileBinary(object):
         #  len(fat_sectors),self.fat_sector_count
         # assert len(fat_sectors) == self.fat_sector_count
         if len(fat_sectors) != self.fat_sector_count:
-            logging.warning("fat sector count missmatch difat: %d header: %d" % (len(fat_sectors), self.fat_sector_count))
+            _log.warning("fat sector count missmatch difat: %d header: %d" % (len(fat_sectors), self.fat_sector_count))
             self.fat_sector_count = len(fat_sectors)
 
         for sid in fat_sectors:
@@ -1444,14 +1446,14 @@ class CompoundFileBinary(object):
             if v == FREESECT:
                 self.fat_freelist.append(i)
 
-        logging.debug("read %d fat sectors ", sector_count)
+        _log.debug("read %d fat sectors ", sector_count)
 
         if self.sector_size == 4096 and len(self.fat) > RANGELOCKSECT:
             if self.fat[RANGELOCKSECT] != ENDOFCHAIN:
-                logging.warning("range lock sector has data")
+                _log.warning("range lock sector has data")
 
     def write_fat(self):
-        logging.debug("writing fat")
+        _log.debug("writing fat")
         f = self.f
         sector_count = 0
 
@@ -1472,7 +1474,7 @@ class CompoundFileBinary(object):
         fat_table_struct = Struct(str('<%dI' % element_count))
         for i, sid in enumerate(fat_sectors):
 
-            # logging.debug("writing fat to sid: %d" % sid)
+            # _log.debug("writing fat to sid: %d" % sid)
             f.seek((sid + 1) *  self.sector_size)
             start = i * element_count
             end = start + element_count
@@ -1501,7 +1503,7 @@ class CompoundFileBinary(object):
 
         mini_stream_byte_size = ((last_used_sector+1) * self.mini_stream_sector_size)
 
-        logging.debug("read %d mini fat sectors", sector_count)
+        _log.debug("read %d mini fat sectors", sector_count)
         return mini_stream_byte_size
 
     def write_minifat(self):
@@ -1575,7 +1577,7 @@ class CompoundFileBinary(object):
 
         # if we got here need to add additional fat
         sid = self.next_free_sect()
-        # logging.warning("growing minifat to sid %d" % sid)
+        # _log.warning("growing minifat to sid %d" % sid)
 
         idx_start = len(self.minifat)
         idx_end = idx_start + self.sector_size // 4
@@ -1605,12 +1607,12 @@ class CompoundFileBinary(object):
             # Handle Range Lock Sector
             if i == RANGELOCKSECT and self.sector_size == 4096:
                 self.fat[i] = ENDOFCHAIN
-                logging.warning("range lock sector in fat freelist, marking ENDOFCHAIN")
+                _log.warning("range lock sector in fat freelist, marking ENDOFCHAIN")
                 return self.next_free_sect()
             return i
 
         # if we got here need to add additional fat
-        # logging.debug("fat full, growing")
+        # _log.debug("fat full, growing")
 
         difat_table = None
         difat_index = None
@@ -1624,7 +1626,7 @@ class CompoundFileBinary(object):
         new_difat_sect = None
         if difat_index is None:
             new_difat_sect = len(self.fat) + 1
-            logging.debug("adding new difat to sid: %d" % new_difat_sect)
+            _log.debug("adding new difat to sid: %d" % new_difat_sect)
             if self.difat_sector_count == 0:
                 self.difat_sector_start = new_difat_sect
                 self.difat_sector_count = 1
@@ -1647,7 +1649,7 @@ class CompoundFileBinary(object):
                     break
 
         new_fat_sect = len(self.fat)
-        # logging.debug("adding new fat to sid: %d" % new_fat_sect)
+        # _log.debug("adding new fat to sid: %d" % new_fat_sect)
 
         self.difat[difat_table][difat_index] = new_fat_sect
 
@@ -1664,7 +1666,7 @@ class CompoundFileBinary(object):
         # that covers file offsets 0x7FFFFF00-0x7FFFFFFF in the file
         if RANGELOCKSECT < idx_end and RANGELOCKSECT > idx_start and self.sector_size == 4096:
             non_free_sids.add(RANGELOCKSECT)
-            logging.debug("adding range lock")
+            _log.debug("adding range lock")
             self.fat[RANGELOCKSECT] = ENDOFCHAIN
 
         freelist = [i for i in range(idx_start, idx_end) if i not in non_free_sids]
@@ -1786,7 +1788,7 @@ class CompoundFileBinary(object):
 
     def mini_stream_grow(self):
         sid = self.next_free_sect()
-        # logging.debug("adding to mini stream fat sid: %d" %  sid)
+        # _log.debug("adding to mini stream fat sid: %d" %  sid)
         if not self.mini_stream_chain:
             self.mini_stream_chain = [sid]
             self.root.sector_id = sid
@@ -1800,11 +1802,11 @@ class CompoundFileBinary(object):
 
         if minifat:
             sect = self.next_free_minifat_sect()
-            # logging.debug("creating new mini sector: %d" % sect)
+            # _log.debug("creating new mini sector: %d" % sect)
             fat = self.minifat
         else:
             sect = self.next_free_sect()
-            # logging.debug("creating new sector: %d" % sect)
+            # _log.debug("creating new sector: %d" % sect)
             fat = self.fat
 
         if start_sid is None:
@@ -1847,7 +1849,7 @@ class CompoundFileBinary(object):
             raise ValueError("can not add entry to non storage type")
 
         dir_id = self.next_free_dir_id()
-        logging.debug("next dir id %d" % dir_id)
+        _log.debug("next dir id %d" % dir_id)
 
         entry = DirEntry(self, dir_id)
         entry.name = basename
@@ -2153,7 +2155,7 @@ class CompoundFileBinary(object):
                 raise ValueError("can only open stream type DirEntry's")
 
             if mode == 'w':
-                logging.debug("stream: %s exists, overwriting" % path)
+                _log.debug("stream: %s exists, overwriting" % path)
                 self.free_fat_chain(entry.sector_id, entry.byte_size < self.min_stream_max_size)
                 entry.sector_id = None
                 entry.byte_size = 0

@@ -307,6 +307,17 @@ class StreamInfo:
 
         return (depth, h_samp, v_samp)
 
+    def get_hevc_compression(self):
+        if not self.is_picture:
+            return None
+
+        profile = self.metadata.get('profile', None)
+        key = 'CompressedPicture'
+        if profile == "Main":
+            key = 'HEVC_MainProfile_Unconstrained'
+       
+        return video.compression_ids_hevc[key]
+
     def get_avc_compression(self):
         if not self.is_picture:
             return None
@@ -355,6 +366,8 @@ class StreamInfo:
             return video.compression_ids['mjpeg']
         if codec_name == 'h264':
             return self.get_avc_compression()
+        if codec_name == 'hevc':
+            return self.get_hevc_compression()
 
         return video.compression_ids['CompressedPicture']
 
